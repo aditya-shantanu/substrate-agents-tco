@@ -163,7 +163,8 @@
     <div class="row"><label for="peak">Peak hour vs average hour</label><input id="peak" type="number" min="1" step="0.25" value="2"><span class="unit">×</span>
       <div class="hint">Capacity is bought for the busiest moment, not the average. The measured OpenClaw fleet model saw a P99 peak ≈3× the mean at 1,000 agents (random schedules); big fleets smooth this out, aligned cron schedules make it far worse. Use ~1 if the pool autoscales through the day.</div></div>
     <div class="row"><label for="cycleCap">Max suspend/resume cycles per worker</label><input id="cycleCap" type="number" min="0" step="0.25" value="0"><span class="unit">/min</span>
-      <div class="hint">0 = no cap. Caps churn per worker (snapshot I/O, GCS traffic, node pressure grow with cycle rate). Applied at the peak hour: if agents wake often enough to hit it, each worker hosts fewer agents than time-sharing alone would allow, and cost rises. Each worker's hard physical ceiling is shown in the churn tile.</div></div>
+      <div class="hint">0 = no cap. Caps churn per worker (snapshot I/O, GCS traffic, node pressure grow with cycle rate). Applied at the peak hour: if agents wake often enough to hit it, each worker hosts fewer agents than time-sharing alone would allow, and cost rises.</div>
+      <div class="hint" id="capHint" style="color:var(--text-2)"></div></div>
   </div>
 
   <div class="card">
@@ -636,7 +637,22 @@ function recompute() {
       ? `limited by the churn cap, not by time-sharing (time alone would allow ${fmt(G.nTime,1)} / ${fmt(M.nTime,1)})`
       : "gVisor / microVM, after safety margins";
   $("k_churn").textContent = `${fmt(G.resumesPerSec*60,0)}/min`;
-  const capTxt = num("cycleCap") > 0 ? ` Cap: ${fmt(num("cycleCap"),2)}/min (${fmt(num("cycleCap")*60,0)}×/hr)${G.capBinds ? " — BINDING" : ""}.` : "";
+
+  // Where the cap starts to matter: the peak per-worker cycle rate the
+  // time-sharing packing would produce if the cap didn't exist.
+  const thG = w.acts * G.nTime * num("peak") / 1440;
+  const thM = w.acts * M.nTime * num("peak") / 1440;
+  const cap = num("cycleCap");
+  if (cap <= 0) {
+    $("capHint").textContent = `No cap set. At current settings workers peak at ~${fmt(thG,2)}/min (gVisor) / ~${fmt(thM,2)}/min (microVM); a cap below that would bind and raise cost.`;
+  } else if (!G.capBinds && !M.capBinds) {
+    $("capHint").textContent = `⚠ This cap is NOT binding — it is above the ~${fmt(thG,2)}/min (gVisor) / ~${fmt(thM,2)}/min (microVM) peak rate workers actually need, so it changes nothing. Set it below those values to see the TCO impact.`;
+  } else {
+    $("capHint").textContent = `BINDING: each worker is limited to ${fmt(G.N,1)} (gVisor) / ${fmt(M.N,1)} (microVM) agents by the cap; time-sharing alone would allow ${fmt(G.nTime,1)} / ${fmt(M.nTime,1)}.`;
+  }
+  const capTxt = cap > 0
+    ? ` Cap: ${fmt(cap,2)}/min (${fmt(cap*60,0)}×/hr) — ${G.capBinds||M.capBinds ? "BINDING" : "not binding"}.`
+    : "";
   $("k_churnSub").textContent = `fleet-wide resumes (avg; ~${fmt(G.resumesPerSec*60*num("peak"),0)}/min at peak). Each worker cycles ${fmt(G.cyclesPerWorkerHr,1)}×/hr avg (${fmt(G.cyclesPerWorkerHr*num("peak"),0)}×/hr peak); physical ceiling ${fmt(G.ceilingPerWorkerHr,0)}×/hr (gVisor).${capTxt}`;
   $("k_nodes").textContent = `${fmt(G.nodes,0)} / ${fmt(M.nodes,0)}`;
   $("k_nodesSub").textContent = `${fmt(G.workers,0)} / ${fmt(M.workers,0)} workers for ${fmt(fleet,0)} agents (gV / µVM)`;
