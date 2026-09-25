@@ -1,0 +1,123 @@
+# Auto-suspend service + fleet load for the density experiment.
+# Substitute ${PROJECT_ID} (envsubst) before applying, and deploy the glutton
+# ActorTemplate first (substrate/benchmarking/workloads/deploy.sh).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-sim
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autosuspender
+  namespace: agent-sim
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: autosuspender }
+  template:
+    metadata:
+      labels: { app: autosuspender }
+    spec:
+      containers:
+      - name: autosuspender
+        image: us-docker.pkg.dev/${PROJECT_ID}/gcr.io/ate-images/agents-tco:latest
+        command: ["/app/autosuspender"]
+        args:
+        - --atespace=agents-sim
+        # Compressed-time policy: at --compress=60 in agentsim, 10s here plays
+        # the role of a ~10min real-world idle window. Keep poll well under it.
+        - --idle-timeout=10s
+        - --poll=2s
+        - --max-running=10m
+        - --max-concurrent=8
+        ports:
+        - { name: http, containerPort: 8080 }
+        volumeMounts:
+        - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
+        - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits: { cpu: "1", memory: 512Mi }
+      volumes:
+      - name: servicedns-ca
+        projected:
+          sources:
+          - clusterTrustBundle:
+              signerName: servicedns.podcert.ate.dev/identity
+              labelSelector:
+                matchLabels: { podcert.ate.dev/canarying: live }
+              path: ca.crt
+      - name: podidentity
+        projected:
+          sources:
+          - podCertificate:
+              signerName: podidentity.podcert.ate.dev/identity
+              keyType: ECDSAP256
+              credentialBundlePath: credential-bundle.pem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autosuspender
+  namespace: agent-sim
+spec:
+  selector: { app: autosuspender }
+  ports:
+  - { name: http, port: 8080, targetPort: 8080 }
+---
+# The simulated personal-agent fleet. Run after autosuspender is up:
+#   kubectl -n agent-sim create -f - (or kubectl apply) ; then
+#   kubectl -n agent-sim logs -f job/agentsim | tee run.log
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: agentsim
+  namespace: agent-sim
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels: { app: agentsim }
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: agentsim
+        image: us-docker.pkg.dev/${PROJECT_ID}/gcr.io/ate-images/agents-tco:latest
+        command: ["/app/agentsim"]
+        args:
+        - --atespace=agents-sim
+        - --agents=50
+        - --compress=60           # a day of behavior in 24 wall-clock minutes
+        - --duration=30m
+        - --sessions-per-day=3
+        - --session-minutes=8
+        - --session-ping-seconds=30
+        - --wakes-per-day=40
+        - --mem-target=128Mi      # working set filled at boot, snapshotted after
+        - --mem-read=all          # page the working set back in on every wake
+        - --mem-churn=16Mi        # dirty a rotating window every turn
+        - --disk-bytes=65536      # file write every turn + digest read-back
+        - --suspender-url=http://autosuspender.agent-sim.svc.cluster.local:8080
+        volumeMounts:
+        - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
+        - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }
+        resources:
+          requests: { cpu: 250m, memory: 256Mi }
+          limits: { cpu: "2", memory: 1Gi }
+      volumes:
+      - name: servicedns-ca
+        projected:
+          sources:
+          - clusterTrustBundle:
+              signerName: servicedns.podcert.ate.dev/identity
+              labelSelector:
+                matchLabels: { podcert.ate.dev/canarying: live }
+              path: ca.crt
+      - name: podidentity
+        projected:
+          sources:
+          - podCertificate:
+              signerName: podidentity.podcert.ate.dev/identity
+              keyType: ECDSAP256
+              credentialBundlePath: credential-bundle.pem

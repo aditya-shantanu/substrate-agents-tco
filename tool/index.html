@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Substrate on GKE — cost per agent per month</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1:#fcfcfb; --page:#f9f9f7;
+    --text-1:#0b0b0b; --text-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,0.10);
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --good:#006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface-1:#1a1a19; --page:#0d0d0d;
+      --text-1:#ffffff; --text-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --good:#0ca30c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--page); color:var(--text-1);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  header { padding:20px 24px 4px; max-width:1500px; margin:0 auto; }
+  header h1 { font-size:19px; margin:0 0 2px; }
+  header p { margin:0; color:var(--text-2); max-width:75em; }
+  .layout { display:grid; grid-template-columns: 450px 1fr; gap:16px;
+            max-width:1500px; margin:12px auto 60px; padding:0 24px; align-items:start; }
+  @media (max-width: 1050px) { .layout { grid-template-columns: 1fr; } }
+  .card { background:var(--surface-1); border:1px solid var(--border);
+          border-radius:10px; padding:14px 16px 16px; margin-bottom:14px; }
+  .card h2 { font-size:13.5px; margin:0 0 2px; }
+  .card .why { color:var(--muted); font-size:12px; margin:0 0 10px; }
+  .row { display:grid; grid-template-columns: 1fr 96px 46px; gap:8px;
+         align-items:center; margin:6px 0; }
+  .row label { color:var(--text-2); }
+  .row .hint, .duo-wrap .hint { grid-column:1 / -1; color:var(--muted); font-size:11.5px;
+               margin:-2px 0 4px; }
+  input[type=number], select {
+    width:100%; padding:5px 6px; border:1px solid var(--border); border-radius:6px;
+    background:var(--page); color:var(--text-1); font:inherit; font-size:13px;
+  }
+  .unit { color:var(--muted); font-size:12px; }
+  .derived { background:var(--page); border-radius:8px; padding:8px 10px;
+             margin-top:10px; font-size:12.5px; color:var(--text-2); }
+  .derived b { color:var(--text-1); font-weight:600; }
+
+  /* two-scenario number inputs */
+  .duo { display:grid; grid-template-columns: 1fr 96px 96px; gap:8px; align-items:center; margin:6px 0;}
+  .duo label { color:var(--text-2); }
+  .duo-head { display:grid; grid-template-columns: 1fr 96px 96px; gap:8px;
+              color:var(--muted); font-size:11.5px; margin:8px 0 0; }
+  .duo-head span:nth-child(2), .who.g { color:var(--s1); font-weight:600; }
+  .duo-head span:nth-child(3), .who.m { color:var(--s2); font-weight:600; }
+  .shape-row { display:grid; grid-template-columns: 74px 1fr; gap:8px; align-items:center; margin:6px 0; }
+  .shape-row .who { font-size:12.5px; }
+  .machine-cost { color:var(--muted); font-size:11.5px; margin:0 0 6px 82px; }
+  .machine-cost b { color:var(--text-2); }
+
+  /* results */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
+  .tile { background:var(--surface-1); border:1px solid var(--border);
+          border-radius:10px; padding:14px 16px; }
+  .tile .lbl { color:var(--text-2); font-size:12.5px; display:flex; align-items:center; gap:7px;}
+  .keydot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .tile .val { font-size:30px; font-weight:600; letter-spacing:-0.5px; margin-top:2px; }
+  .tile .sub { color:var(--muted); font-size:12px; margin-top:2px; }
+  .tile.hero .val { font-size:46px; }
+  .chart-card h3, .card h3 { font-size:13px; margin:0 0 2px; }
+  .chart-card .sub, .card .subtitle { color:var(--muted); font-size:12px; margin:0 0 6px; }
+  svg text { font:11px system-ui,-apple-system,"Segoe UI",sans-serif; fill:var(--muted); }
+  svg .dlabel { fill:var(--text-2); font-weight:600; }
+  .legend { display:flex; gap:16px; margin:4px 0 2px; font-size:12px; color:var(--text-2); flex-wrap:wrap;}
+  .legend .key { display:inline-block; width:14px; height:0; border-top:2px solid; vertical-align:middle; margin-right:5px; border-radius:1px;}
+  .legend .swatch { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:5px;}
+  #tooltip { position:fixed; pointer-events:none; background:var(--surface-1);
+             border:1px solid var(--border); border-radius:8px; padding:8px 10px;
+             font-size:12px; box-shadow:0 4px 14px rgba(0,0,0,0.12); display:none; z-index:10; min-width:150px;}
+  #tooltip .tt-title { color:var(--muted); margin-bottom:4px; }
+  #tooltip .tt-row { display:flex; align-items:center; gap:6px; margin:2px 0; }
+  #tooltip .tt-key { width:12px; border-top:2px solid; display:inline-block; }
+  #tooltip .tt-val { font-weight:600; color:var(--text-1); }
+  #tooltip .tt-name { color:var(--text-2); }
+  table.detail { border-collapse:collapse; width:100%; font-size:12.5px; }
+  table.detail th, table.detail td { text-align:right; padding:4px 8px;
+     border-bottom:1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  table.detail th:first-child, table.detail td:first-child { text-align:left; }
+  table.detail th { color:var(--muted); font-weight:500; }
+  table.detail tr.total td { font-weight:700; border-top:2px solid var(--baseline); }
+  table.detail tr.em td { font-weight:600; }
+  details summary { cursor:pointer; color:var(--text-2); font-size:13px; }
+  .anchors { color:var(--text-2); font-size:12.5px; }
+  .anchors b { color:var(--text-1); }
+  .warn { color:#b8860b; font-size:12px; }
+  a { color:var(--s1); }
+  .footnote { color:var(--muted); font-size:11.5px; margin-top:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>What does one agent cost per month on GKE with Substrate?</h1>
+  <p>Substrate lets many mostly-idle agents share a few machines: an idle agent is suspended to a snapshot
+     in cloud storage, and woken (resumed) when a request arrives. Set the assumptions on the left; the right
+     side shows the resulting monthly bill and <b>bill ÷ number of agents</b>. Two sandbox types side by side:
+     <b style="color:var(--s1)">gVisor</b> (any machine) and <b style="color:var(--s2)">microVM</b>
+     (needs nested virtualization → Intel N1/N2/N4/C2/C3/C4 or N4D, GKE Standard only, ~10% CPU tax).
+     Math: <a href="../docs/MODEL.md">docs/MODEL.md</a> · sources: <a href="../docs/RESEARCH-gcp-pricing.md">prices</a>,
+     <a href="../docs/RESEARCH-substrate.md">substrate</a>, <a href="../docs/RESEARCH-workloads.md">workloads</a>,
+     <a href="../docs/RESEARCH-always-on-agent.md">measured OpenClaw run</a>. LLM token costs are not included.</p>
+</header>
+
+<div class="layout">
+<div id="inputs">
+
+  <div class="card">
+    <h2>1 · How busy is one agent?</h2>
+    <p class="why">A personal agent (OpenClaw, Hermes) mostly sleeps: a few chats plus some scheduled check-ins per day.</p>
+    <div class="row"><label for="preset">Start from a preset</label>
+      <select id="preset" style="grid-column:2/4">
+        <option value="personal" selected>Personal agent</option>
+        <option value="chatty">Chatty assistant</option>
+        <option value="coder">Coding agent</option>
+        <option value="custom">Custom</option>
+      </select></div>
+    <div class="row"><label for="sessions">Chat sessions per day</label><input id="sessions" type="number" min="0" step="0.5" value="3"><span class="unit"></span></div>
+    <div class="row"><label for="sessMin">Length of one session</label><input id="sessMin" type="number" min="0.1" step="0.5" value="8"><span class="unit">min</span></div>
+    <div class="row"><label for="wakes">Scheduled check-ins per day</label><input id="wakes" type="number" min="0" step="1" value="40"><span class="unit"></span>
+      <div class="hint">Heartbeats, crons, reminders. OpenClaw's default heartbeat alone is every 30 min ≈ 40–48/day. (A real OpenClaw agent on a 20-min cron measured just 0.72% awake time.)</div></div>
+    <div class="row"><label for="wakeSec">Length of one check-in</label><input id="wakeSec" type="number" min="1" step="1" value="15"><span class="unit">s</span></div>
+    <div class="derived" id="workloadDerived"></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · How fast are suspend and resume?</h2>
+    <p class="why">While an agent is being suspended or resumed, its machine slot is busy but useless — that time is pure overhead added to every wake-up. These numbers depend on the agent (snapshot size, process thaw), not just on Substrate — re-measure for your workload (Phase 2).</p>
+    <div class="row"><label for="srPreset">Start from a measurement</label>
+      <select id="srPreset" style="grid-column:2/4">
+        <option value="openclaw" selected>Real OpenClaw agent (measured)</option>
+        <option value="glutton">Small test actor (bench)</option>
+        <option value="custom">Custom</option>
+      </select>
+      <div class="hint">Default = measured on a real OpenClaw agent on Substrate (2026-09-14, GKE): suspend 2.2 s, resume 3.4 s P50, 55–61 MiB snapshot — most of that is the Node.js process thawing, not Substrate (gVisor restore itself: ~0.2 s). Small glutton test actors measure suspend ≈0.4 s / resume ≈0.24 s. microVM values are estimates until measured.</div>
+    </div>
+    <div class="duo-head"><span></span><span>gVisor</span><span>microVM</span></div>
+    <div class="duo"><label>Suspend takes (s)</label><input id="g_ts" type="number" min="0" step="0.05" value="2.20"><input id="m_ts" type="number" min="0" step="0.05" value="3.00"></div>
+    <div class="duo"><label>Resume takes (s)</label><input id="g_tr" type="number" min="0" step="0.05" value="3.40"><input id="m_tr" type="number" min="0" step="0.05" value="4.50"></div>
+    <div class="row"><label for="tidle">Wait before suspending</label><input id="tidle" type="number" min="0" step="1" value="10"><span class="unit">s</span>
+      <div class="hint">How long the auto-suspend service waits after the last request before suspending. Protects multi-message conversations from suspend-thrash, but the wait itself occupies the worker on every wake-up. The OpenClaw demo ran an aggressive 2 s; its measured occupancy per cron wake was 8.3 s total (work + wait + suspend).</div></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Safety margins</h2>
+    <p class="why">You can't pack machines 100% full and still wake agents instantly, and evenings are busier than 4am.</p>
+    <div class="row"><label for="util">How full workers run at peak</label><input id="util" type="number" min="0.1" max="1" step="0.05" value="0.70"><span class="unit">×</span>
+      <div class="hint">0.7 = keep 30% headroom so a waking agent finds a free worker fast (the router only holds a request 5 s by default).</div></div>
+    <div class="row"><label for="peak">Peak hour vs average hour</label><input id="peak" type="number" min="1" step="0.25" value="2"><span class="unit">×</span>
+      <div class="hint">Capacity is bought for the busiest moment, not the average. The measured OpenClaw fleet model saw a P99 peak ≈3× the mean at 1,000 agents (random schedules); big fleets smooth this out, aligned cron schedules make it far worse. Use ~1 if the pool autoscales through the day.</div></div>
+  </div>
+
+  <div class="card">
+    <h2>4 · Machines &amp; prices <span style="font-weight:400;color:var(--muted)">(us-central1, Sep 2026)</span></h2>
+    <p class="why">A machine (GKE node) is carved into fixed-size <i>workers</i>; each worker hosts one live agent at a time. The microVM list only shows machines that support nested virtualization. <a href="../docs/RESEARCH-gcp-pricing.md">Price sources</a>.</p>
+    <div class="duo-wrap">
+      <div class="shape-row"><span class="who g">gVisor</span><select id="g_shape"></select></div>
+      <div class="machine-cost" id="g_machineCost"></div>
+      <div class="shape-row"><span class="who m">microVM</span><select id="m_shape"></select></div>
+      <div class="machine-cost" id="m_machineCost"></div>
+    </div>
+    <div class="duo-head"><span></span><span>gVisor</span><span>microVM</span></div>
+    <div class="duo"><label>How you pay</label>
+      <select id="g_price"><option value="od">on-demand</option><option value="spot">spot</option><option value="cud1">1-yr commit</option><option value="cud3" selected>3-yr commit</option></select>
+      <select id="m_price"><option value="od">on-demand</option><option value="spot">spot</option><option value="cud1">1-yr commit</option><option value="cud3" selected>3-yr commit</option></select></div>
+    <div class="duo"><label>CPU per worker (vCPU)</label><input id="g_wcpu" type="number" min="0.1" step="0.1" value="0.5"><input id="m_wcpu" type="number" min="0.1" step="0.1" value="0.5"></div>
+    <div class="duo"><label>Memory per worker (GiB)</label><input id="g_wmem" type="number" min="0.25" step="0.25" value="1"><input id="m_wmem" type="number" min="0.25" step="0.25" value="1"></div>
+    <div class="duo-wrap"><div class="hint">Worker memory must fit the agent plus sandbox overhead: ~200 MiB for gVisor, ~128 MiB for the microVM monitor.</div></div>
+    <div class="row"><label for="allocFrac">Share of a machine usable by workers</label><input id="allocFrac" type="number" min="0.5" max="1" step="0.01" value="0.85"><span class="unit">×</span>
+      <div class="hint">The rest goes to the OS, kubelet and Substrate's node agent.</div></div>
+    <div class="row"><label for="nestPen">Nested-virt CPU tax (microVM only)</label><input id="nestPen" type="number" min="0" max="50" step="1" value="10"><span class="unit">%</span></div>
+  </div>
+
+  <div class="card">
+    <h2>5 · Storage &amp; shared costs</h2>
+    <p class="why">A sleeping agent is just a compressed snapshot in cloud storage, plus its share of cluster-wide fixed costs.</p>
+    <div class="row"><label for="snapGiB">Snapshot size per agent</label><input id="snapGiB" type="number" min="0.01" step="0.05" value="0.06"><span class="unit">GiB</span>
+      <div class="hint">Default = measured 55–61 MB for a real OpenClaw agent (small test actor: ~30 MB). Tracks the agent's live memory, not its chat history; budget up to ~½ of RSS for heavy agents.</div></div>
+    <div class="row"><label for="storeClass">Where snapshots live</label>
+      <select id="storeClass" style="grid-column:2/4">
+        <option value="0.020" selected>GCS Standard — $0.02/GiB-mo</option>
+        <option value="0.010">GCS Nearline — $0.01/GiB-mo</option>
+        <option value="0.100">pd-balanced — $0.10/GiB-mo</option>
+      </select></div>
+    <div class="row"><label for="opsW">Storage writes per suspend</label><input id="opsW" type="number" min="0" step="1" value="7"><span class="unit">ops</span></div>
+    <div class="row"><label for="opsR">Storage reads per resume</label><input id="opsR" type="number" min="0" step="1" value="4"><span class="unit">ops</span>
+      <div class="hint">Measured 5–9 writes per suspend, 3–6 reads per resume ($5.00 / $0.40 per million ops).</div></div>
+    <div class="row"><label for="fleet">Number of agents</label><input id="fleet" type="number" min="1" step="100" value="10000"><span class="unit"></span></div>
+    <div class="row"><label for="cpMo">Control plane &amp; monitoring</label><input id="cpMo" type="number" min="0" step="50" value="500"><span class="unit">$/mo</span>
+      <div class="hint">Substrate API servers, database, router, Prometheus — one bill for the whole fleet, plus GKE's $73/mo cluster fee.</div></div>
+  </div>
+</div>
+
+<div id="results">
+  <div class="kpis">
+    <div class="tile hero">
+      <div class="lbl"><span class="keydot" style="background:var(--s1)"></span>gVisor — cost per agent</div>
+      <div class="val" id="g_hero">–</div>
+      <div class="sub" id="g_heroSub"></div>
+    </div>
+    <div class="tile hero">
+      <div class="lbl"><span class="keydot" style="background:var(--s2)"></span>microVM — cost per agent</div>
+      <div class="val" id="m_hero">–</div>
+      <div class="sub" id="m_heroSub"></div>
+    </div>
+  </div>
+  <div class="kpis" style="margin-top:14px">
+    <div class="tile"><div class="lbl">Worker time one agent uses</div><div class="val" id="k_duty" style="font-size:24px">–</div><div class="sub" id="k_dutySub"></div></div>
+    <div class="tile"><div class="lbl">Agents sharing one worker</div><div class="val" id="k_over" style="font-size:24px">–</div><div class="sub">gVisor / microVM, after safety margins</div></div>
+    <div class="tile"><div class="lbl">Suspend+resume churn</div><div class="val" id="k_churn" style="font-size:24px">–</div><div class="sub" id="k_churnSub"></div></div>
+    <div class="tile"><div class="lbl">Machines needed</div><div class="val" id="k_nodes" style="font-size:24px">–</div><div class="sub" id="k_nodesSub"></div></div>
+  </div>
+  <div id="warnBox"></div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>The monthly bill, and how it divides per agent</h3>
+    <p class="subtitle">Cost per agent = total monthly bill ÷ number of agents. Nothing else is hidden.</p>
+    <div style="overflow-x:auto"><table class="detail" id="billTable"></table></div>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Where the money goes (per agent per month)</h3>
+    <div class="legend" id="bd_legend"></div>
+    <svg id="bd_chart" width="100%" height="120" role="img" aria-label="Stacked cost breakdown bars"></svg>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Cost per agent vs how busy agents are</h3>
+    <p class="sub">Sweeps activity up and down (session/check-in counts scaled together); dots mark your inputs. The busier the agents, the less sharing helps — the dashed lines are what a dedicated, never-suspended worker costs. Log scale.</p>
+    <div class="legend"><span><span class="key" style="border-color:var(--s1)"></span>gVisor</span><span><span class="key" style="border-color:var(--s2)"></span>microVM</span><span style="color:var(--muted)">dashed — dedicated (always-on) worker</span></div>
+    <svg id="duty_chart" width="100%" height="260" role="img" aria-label="Cost versus duty cycle line chart"></svg>
+  </div>
+
+  <div class="card chart-card">
+    <h3>Cost per agent vs suspend+resume speed</h3>
+    <p class="sub">Sweeps the total switch time at your current workload. Slower switching mostly hurts workloads with many short wake-ups.</p>
+    <div class="legend"><span><span class="key" style="border-color:var(--s1)"></span>gVisor</span><span><span class="key" style="border-color:var(--s2)"></span>microVM</span></div>
+    <svg id="sr_chart" width="100%" height="240" role="img" aria-label="Cost versus suspend plus resume time line chart"></svg>
+  </div>
+
+  <div class="card">
+    <h3>Sanity anchors (not apples-to-apples)</h3>
+    <p class="anchors" id="anchors"></p>
+  </div>
+
+  <div class="card">
+    <details><summary><b>All intermediate numbers</b> (everything the charts and tiles show, as a table)</summary>
+      <div style="overflow-x:auto; margin-top:8px"><table class="detail" id="detailTable"></table></div>
+    </details>
+    <p class="footnote">The model: each wake-up occupies a worker for (useful time + idle wait + suspend + resume).
+      Agents per worker = target utilization ÷ (per-agent occupancy × peak ratio). This is the same identity as the
+      benchmarking formula QPS = workers ÷ (live + suspend + resume), inverted. Assumes one live agent per worker
+      (Substrate today); multi-actor workers would raise density further.</p>
+  </div>
+</div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+"use strict";
+/* ---------- price book (us-central1, retrieved 2026-09-25) ---------- */
+const FAM = { // $/hr per vCPU + per GiB
+  e2:  {cpu:0.021811, gib:0.002923, cpuS:0.013090, gibS:0.001754, nested:false},
+  n1:  {cpu:0.031611, gib:0.004237, cpuS:0.018960, gibS:0.002541, nested:true},
+  n2:  {cpu:0.031611, gib:0.004237, cpuS:0.018960, gibS:0.002542, nested:true},
+  n2d: {cpu:0.027502, gib:0.003686, cpuS:0.013410, gibS:0.001795, nested:false},
+  n4:  {cpu:0.031190, gib:0.003540, cpuS:0.017650, gibS:0.002004, nested:true},
+  c3:  {cpu:0.034650, gib:0.003938, cpuS:0.013050, gibS:0.001483, nested:true},
+  c3d: {cpu:0.029563, gib:0.003959, cpuS:0.007210, gibS:0.000966, nested:false},
+  c4:  {cpu:0.034650, gib:0.003938, cpuS:0.020740, gibS:0.002357, nested:true},
+  c4d: {cpu:0.032704, gib:0.003753, cpuS:0.013900, gibS:0.001597, nested:false},
+  t2d: {cpu:0.027502, gib:0.003686, cpuS:0.016501, gibS:0.002212, nested:false},
+};
+const SHAPES = [
+  {id:"e2-standard-16",  fam:"e2",  cpu:16, gib:64},
+  {id:"n2d-standard-16", fam:"n2d", cpu:16, gib:64},
+  {id:"t2d-standard-16", fam:"t2d", cpu:16, gib:64},
+  {id:"c3d-standard-16", fam:"c3d", cpu:16, gib:64},
+  {id:"n1-standard-16",  fam:"n1",  cpu:16, gib:60},
+  {id:"n2-standard-16",  fam:"n2",  cpu:16, gib:64},
+  {id:"n4-standard-16",  fam:"n4",  cpu:16, gib:64},
+  {id:"c3-standard-22",  fam:"c3",  cpu:22, gib:88},
+  {id:"c4-standard-16",  fam:"c4",  cpu:16, gib:60},
+  {id:"c4-highcpu-16",   fam:"c4",  cpu:16, gib:32},
+];
+const CUD = {od:1, cud1:0.63, cud3:0.45}; // resource-based commit discounts
+const PRICE_NAMES = {od:"on-demand", spot:"spot", cud1:"1-yr commit", cud3:"3-yr commit"};
+const CLUSTER_FEE_MO = 0.10*730;
+const OPS_A = 5.0e-6, OPS_B = 4.0e-7;     // GCS class A / class B $ per op
+const HRS_MO = 730;
+
+/* ---------- inputs ---------- */
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+const PRESETS = {
+  personal: {sessions:3,  sessMin:8,  wakes:40, wakeSec:15},
+  chatty:   {sessions:12, sessMin:6,  wakes:48, wakeSec:15},
+  coder:    {sessions:2,  sessMin:45, wakes:8,  wakeSec:30},
+};
+const SR_PRESETS = {
+  glutton:  {g_ts:0.40, g_tr:0.25, m_ts:0.80, m_tr:0.50, snapGiB:0.05},
+  openclaw: {g_ts:2.20, g_tr:3.40, m_ts:3.00, m_tr:4.50, snapGiB:0.06},
+};
+function fillShapes(sel, nestedOnly, def) {
+  sel.innerHTML = "";
+  for (const s of SHAPES) {
+    if (nestedOnly && !FAM[s.fam].nested) continue;
+    const od = (s.cpu*FAM[s.fam].cpu + s.gib*FAM[s.fam].gib) * HRS_MO;
+    const o = document.createElement("option");
+    o.value = s.id;
+    o.textContent = `${s.id} — ${s.cpu} vCPU · ${s.gib} GiB · $${od.toFixed(0)}/mo list`;
+    if (s.id === def) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+fillShapes($("g_shape"), false, "e2-standard-16");
+fillShapes($("m_shape"), true,  "n2-standard-16");
+
+/* ---------- model ---------- */
+function workload() {
+  const sessions = num("sessions"), sessMin = num("sessMin");
+  const wakes = num("wakes"), wakeSec = num("wakeSec");
+  const liveSec = sessions*sessMin*60 + wakes*wakeSec;
+  const acts = sessions + wakes;
+  return {liveSec, acts, duty: liveSec/86400};
+}
+function nodePrice(shape, model) {
+  const s = SHAPES.find(x => x.id === shape), f = FAM[s.fam];
+  if (model === "spot") return s.cpu*f.cpuS + s.gib*f.gibS;
+  return (s.cpu*f.cpu + s.gib*f.gib) * CUD[model];
+}
+function scenario(p, w) {
+  // p: {ts,tr,shape,priceModel,wcpu,wmem,penalty}
+  const fleet = num("fleet");
+  const over = num("tidle") + p.ts + p.tr;             // overhead seconds per wake-up
+  const occSec = w.liveSec + w.acts*over;              // worker-seconds per agent-day
+  const dEff = occSec/86400;
+  const N = num("util") / (dEff * num("peak"));        // agents per worker
+  const s = SHAPES.find(x => x.id === p.shape);
+  const allocCpu = s.cpu*num("allocFrac")*(1-p.penalty);
+  const allocMem = s.gib*num("allocFrac");
+  const wpn = Math.max(1, Math.min(Math.floor(allocCpu/p.wcpu), Math.floor(allocMem/p.wmem)));
+  const nodeHr = nodePrice(p.shape, p.priceModel);
+  const nodeMo = nodeHr*HRS_MO;
+  const workerHr = nodeHr/wpn;
+  const workers = Math.ceil(fleet/N);
+  const nodes = Math.ceil(workers/wpn);
+
+  // The fleet bill, per month
+  const machinesMo = nodes*nodeMo;
+  const snapshotsMo = fleet*num("snapGiB")*parseFloat($("storeClass").value);
+  const opsMo = fleet*w.acts*30.44*(num("opsW")*OPS_A + num("opsR")*OPS_B);
+  const fixedMo = CLUSTER_FEE_MO + num("cpMo");
+  const totalMo = machinesMo + snapshotsMo + opsMo + fixedMo;
+  const perAgent = totalMo/fleet;
+
+  // churn: how many suspend/resume cycles happen to make this work
+  const resumesPerSec = w.acts*fleet/86400;            // avg; peak = ×P
+  const cyclesPerWorkerHr = w.acts*fleet/(workers*24);
+  const ceilingPerWorkerHr = 3600/(w.liveSec/Math.max(w.acts,1e-9) + over);
+
+  return {dEff, N, wpn, nodeHr, nodeMo, workerHr, workers, nodes,
+          machinesMo, snapshotsMo, opsMo, fixedMo, totalMo, perAgent,
+          compute: machinesMo/fleet, storage: snapshotsMo/fleet,
+          opsPerAgent: opsMo/fleet, fixedPerAgent: fixedMo/fleet,
+          dedicated: workerHr*HRS_MO, over,
+          resumesPerSec, cyclesPerWorkerHr, ceilingPerWorkerHr};
+}
+function params(pref) {
+  return {ts:num(pref+"_ts"), tr:num(pref+"_tr"), shape:$(pref+"_shape").value,
+          priceModel:$(pref+"_price").value, wcpu:num(pref+"_wcpu"),
+          wmem:num(pref+"_wmem"), penalty: pref==="m" ? num("nestPen")/100 : 0};
+}
+
+/* ---------- formatting ---------- */
+const fmt$ = v => v >= 1000 ? "$"+Math.round(v).toLocaleString() : v >= 100 ? "$"+v.toFixed(0) : v >= 10 ? "$"+v.toFixed(1) : "$"+v.toFixed(2);
+const fmt = (v,d=1) => v.toLocaleString(undefined,{maximumFractionDigits:d});
+const pct = v => (v*100).toFixed(2)+"%";
+
+/* ---------- tooltip ---------- */
+const tt = $("tooltip");
+function showTT(html, x, y) {
+  tt.innerHTML = ""; tt.appendChild(html); tt.style.display = "block";
+  const r = tt.getBoundingClientRect();
+  tt.style.left = Math.min(x+14, window.innerWidth - r.width - 8)+"px";
+  tt.style.top  = Math.min(y+14, window.innerHeight - r.height - 8)+"px";
+}
+function hideTT(){ tt.style.display = "none"; }
+function ttBox(title, rows) {
+  const box = document.createElement("div");
+  const t = document.createElement("div"); t.className = "tt-title"; t.textContent = title; box.appendChild(t);
+  for (const r of rows) {
+    const d = document.createElement("div"); d.className = "tt-row";
+    const k = document.createElement("span"); k.className = "tt-key"; k.style.borderColor = r.color; d.appendChild(k);
+    const v = document.createElement("span"); v.className = "tt-val"; v.textContent = r.val; d.appendChild(v);
+    const n = document.createElement("span"); n.className = "tt-name"; n.textContent = r.name; d.appendChild(n);
+    box.appendChild(d);
+  }
+  return box;
+}
+
+/* ---------- svg helpers ---------- */
+const NS = "http://www.w3.org/2000/svg";
+function el(name, attrs, parent) {
+  const e = document.createElementNS(NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function niceTicks(max, n=5) {
+  const raw = max/n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>max/s<=n) || 10*mag;
+  const ticks = []; for (let v=0; v<=max*1.0001; v+=step) ticks.push(v);
+  return ticks;
+}
+
+/* ---------- line chart ---------- */
+function lineChart(svg, opts) {
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 900, H = +svg.getAttribute("height");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const m = {l:56, r:130, t:12, b:30};
+  const iw = W-m.l-m.r, ih = H-m.t-m.b;
+  const xmin = opts.xLog ? Math.log10(opts.xs[0]) : opts.xs[0];
+  const xmax = opts.xLog ? Math.log10(opts.xs[opts.xs.length-1]) : opts.xs[opts.xs.length-1];
+  const X = v => m.l + ((opts.xLog?Math.log10(v):v) - xmin)/(xmax-xmin)*iw;
+  let ymax = 0;
+  for (const s of opts.series) ymax = Math.max(ymax, ...s.ys.filter(Number.isFinite));
+  if (opts.dashedY) ymax = Math.max(ymax, ...opts.dashedY.map(d=>d.y));
+  ymax *= 1.08;
+  const Y = v => m.t + ih - v/ymax*ih;
+  for (const tval of niceTicks(ymax)) {
+    el("line", {x1:m.l, x2:W-m.r, y1:Y(tval), y2:Y(tval), stroke:css("--grid"), "stroke-width":1}, svg);
+    const t = el("text", {x:m.l-8, y:Y(tval)+4, "text-anchor":"end"}, svg);
+    t.textContent = fmt$(tval);
+  }
+  const xticks = opts.xLog ? opts.xTicks : niceTicks(xmax);
+  for (const tv of xticks) {
+    const t = el("text", {x:X(tv), y:H-10, "text-anchor":"middle"}, svg);
+    t.textContent = opts.xFmt(tv);
+  }
+  el("line", {x1:m.l, x2:W-m.r, y1:m.t+ih, y2:m.t+ih, stroke:css("--baseline"), "stroke-width":1}, svg);
+  for (const d of (opts.dashedY||[])) {
+    el("line", {x1:m.l, x2:W-m.r, y1:Y(d.y), y2:Y(d.y), stroke:d.color,
+      "stroke-width":1.5, "stroke-dasharray":"5 4", opacity:0.55}, svg);
+    const t = el("text", {x:W-m.r+6, y:Y(d.y)+4, class:"dlabel"}, svg);
+    t.textContent = d.label;
+  }
+  opts.series.forEach(s => {
+    const pts = opts.xs.map((x,i)=>[X(x), Y(s.ys[i])]);
+    el("path", {d:"M"+pts.map(p=>p.map(v=>v.toFixed(1)).join(",")).join("L"),
+      fill:"none", stroke:s.color, "stroke-width":2, "stroke-linejoin":"round", "stroke-linecap":"round"}, svg);
+    const last = pts[pts.length-1];
+    const t = el("text", {x:last[0]+8, y:last[1]+4, class:"dlabel"}, svg);
+    t.textContent = s.name + " " + fmt$(s.ys[s.ys.length-1]) + "/mo";
+  });
+  if (opts.curX != null) {
+    opts.series.forEach(s => {
+      const i = nearestIdx(opts.xs, opts.curX);
+      el("circle", {cx:X(opts.xs[i]), cy:Y(s.ys[i]), r:4.5, fill:s.color,
+        stroke:css("--surface-1"), "stroke-width":2}, svg);
+    });
+  }
+  const cross = el("line", {y1:m.t, y2:m.t+ih, stroke:css("--baseline"), "stroke-width":1, opacity:0}, svg);
+  const hit = el("rect", {x:m.l, y:m.t, width:iw, height:ih, fill:"transparent"}, svg);
+  hit.addEventListener("pointermove", ev => {
+    const rect = svg.getBoundingClientRect();
+    const px = (ev.clientX-rect.left) * (W/rect.width);
+    const xv = opts.xLog
+      ? Math.pow(10, xmin + (px-m.l)/iw*(xmax-xmin))
+      : xmin + (px-m.l)/iw*(xmax-xmin);
+    const i = nearestIdx(opts.xs, xv);
+    cross.setAttribute("x1", X(opts.xs[i])); cross.setAttribute("x2", X(opts.xs[i]));
+    cross.setAttribute("opacity", 1);
+    showTT(ttBox(opts.xFmt(opts.xs[i]) + opts.ttSuffix,
+      opts.series.map(s=>({color:s.color, name:s.name, val:fmt$(s.ys[i])+"/mo"}))),
+      ev.clientX, ev.clientY);
+  });
+  hit.addEventListener("pointerleave", () => { cross.setAttribute("opacity",0); hideTT(); });
+}
+function nearestIdx(arr, v) {
+  let best=0, bd=Infinity;
+  arr.forEach((a,i)=>{ const d=Math.abs(Math.log(a)-Math.log(Math.max(v,1e-9))); if(d<bd){bd=d;best=i;} });
+  return best;
+}
+
+/* ---------- stacked breakdown bars ---------- */
+const BD_PARTS = [
+  {key:"compute",      name:"Machines (worker share)", color:"--s1"},
+  {key:"storage",      name:"Snapshot storage",        color:"--s2"},
+  {key:"opsPerAgent",  name:"Storage operations",      color:"--s3"},
+  {key:"fixedPerAgent",name:"Cluster fee + control plane", color:"--s4"},
+];
+function breakdownChart(svg, rows) {
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 900, H = +svg.getAttribute("height");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const m = {l:76, r:96, t:10};
+  const iw = W-m.l-m.r;
+  const max = Math.max(...rows.map(r=>r.res.perAgent))*1.02;
+  const barH = 22, gap = 2;
+  rows.forEach((row, ri) => {
+    const y = m.t + ri*(barH+26);
+    const lab = el("text", {x:m.l-10, y:y+barH/2+4, "text-anchor":"end", class:"dlabel"}, svg);
+    lab.textContent = row.label;
+    let x = m.l;
+    BD_PARTS.forEach((p, pi) => {
+      const wpx = row.res[p.key]/max*iw;
+      if (wpx <= 0) return;
+      const isLast = pi === BD_PARTS.length-1 ||
+        BD_PARTS.slice(pi+1).every(q=>row.res[q.key]/max*iw < 0.5);
+      const wDraw = Math.max(0.5, wpx - (isLast?0:gap));
+      let bar;
+      if (isLast) {
+        const r = Math.min(4, wDraw);
+        bar = el("path", {d:`M${x},${y} h${wDraw-r} a${r},${r} 0 0 1 ${r},${r} v${barH-2*r} a${r},${r} 0 0 1 ${-r},${r} h${-(wDraw-r)} z`,
+          fill:css(p.color)}, svg);
+      } else {
+        bar = el("rect", {x:x, y:y, width:wDraw, height:barH, fill:css(p.color)}, svg);
+      }
+      const seg = {name:p.name, val:row.res[p.key], color:css(p.color)};
+      bar.addEventListener("pointermove", ev => {
+        bar.setAttribute("opacity", 0.82);
+        showTT(ttBox(row.label, [{color:seg.color, name:seg.name,
+          val:fmt$(seg.val)+"/mo ("+fmt(seg.val/row.res.perAgent*100,0)+"%)"}]), ev.clientX, ev.clientY);
+      });
+      bar.addEventListener("pointerleave", () => { bar.setAttribute("opacity",1); hideTT(); });
+      x += wpx;
+    });
+    const tot = el("text", {x:x+8, y:y+barH/2+4, class:"dlabel"}, svg);
+    tot.textContent = fmt$(row.res.perAgent)+"/mo";
+  });
+  const leg = $("bd_legend"); leg.innerHTML = "";
+  BD_PARTS.forEach(p => {
+    const s = document.createElement("span");
+    const sw = document.createElement("span"); sw.className = "swatch"; sw.style.background = css(p.color);
+    s.appendChild(sw); s.appendChild(document.createTextNode(p.name));
+    leg.appendChild(s);
+  });
+}
+
+/* ---------- sweeps ---------- */
+function sweepDuty(pG, pM) {
+  const w0 = workload();
+  const xs = [], g = [], mv = [];
+  for (let e = Math.log10(0.002); e <= Math.log10(0.30)+1e-9; e += (Math.log10(0.30)-Math.log10(0.002))/60) {
+    const target = Math.pow(10, e);
+    const k = target/w0.duty;
+    const w = {liveSec:w0.liveSec*k, acts:w0.acts*k, duty:target};
+    xs.push(target*100);
+    g.push(scenario(pG, w).perAgent);
+    mv.push(scenario(pM, w).perAgent);
+  }
+  return {xs, g, m:mv, cur:w0.duty*100};
+}
+function sweepSR(pG, pM) {
+  const w = workload();
+  const xs = [], g = [], mv = [];
+  const ratio = p => p.ts+p.tr > 0 ? p.ts/(p.ts+p.tr) : 0.6;
+  for (let t = 0.05; t <= 10.001; t += 0.165) {
+    xs.push(t);
+    g.push(scenario({...pG, ts:t*ratio(pG), tr:t*(1-ratio(pG))}, w).perAgent);
+    mv.push(scenario({...pM, ts:t*ratio(pM), tr:t*(1-ratio(pM))}, w).perAgent);
+  }
+  return {xs, g, m:mv};
+}
+
+/* ---------- tables ---------- */
+function table(elId, header, rows) {
+  const tbl = $(elId);
+  tbl.innerHTML = "";
+  const thead = document.createElement("tr");
+  for (const h of header) { const th = document.createElement("th"); th.textContent = h; thead.appendChild(th); }
+  tbl.appendChild(thead);
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    if (r.cls) tr.className = r.cls;
+    r.cells.forEach(cell => { const td = document.createElement("td"); td.textContent = String(cell); tr.appendChild(td); });
+    tbl.appendChild(tr);
+  }
+}
+
+/* ---------- render ---------- */
+function recompute() {
+  const w = workload();
+  const pG = params("g"), pM = params("m");
+  const G = scenario(pG, w), M = scenario(pM, w);
+  const fleet = num("fleet");
+
+  $("workloadDerived").innerHTML =
+    `One agent is doing useful work <b>${fmt(w.liveSec/60,0)} min/day</b> across <b>${fmt(w.acts,0)} wake-ups</b>
+     — awake <b>${pct(w.duty)}</b> of the time. Average wake-up: ${fmt(w.liveSec/Math.max(w.acts,1),0)} s of work
+     + ${fmt(G.over,1)} s of overhead (wait + suspend + resume).`;
+
+  $("g_machineCost").innerHTML = `1 machine = <b>${fmt$(G.nodeMo)}/mo</b> at ${PRICE_NAMES[pG.priceModel]} → carved into <b>${G.wpn} workers</b> (${fmt$(G.nodeMo/G.wpn)}/worker/mo)`;
+  $("m_machineCost").innerHTML = `1 machine = <b>${fmt$(M.nodeMo)}/mo</b> at ${PRICE_NAMES[pM.priceModel]} → carved into <b>${M.wpn} workers</b> (${fmt$(M.nodeMo/M.wpn)}/worker/mo)`;
+
+  $("g_hero").textContent = fmt$(G.perAgent)+"/mo";
+  $("g_heroSub").textContent = `${fmt$(G.totalMo)}/mo total ÷ ${fmt(fleet,0)} agents · ${fmt(G.dedicated/G.perAgent,1)}× cheaper than a dedicated worker (${fmt$(G.dedicated)}/mo)`;
+  $("m_hero").textContent = fmt$(M.perAgent)+"/mo";
+  $("m_heroSub").textContent = `${fmt$(M.totalMo)}/mo total ÷ ${fmt(fleet,0)} agents · ${fmt(M.dedicated/M.perAgent,1)}× cheaper than a dedicated worker (${fmt$(M.dedicated)}/mo)`;
+
+  $("k_duty").textContent = pct(G.dEff);
+  $("k_dutySub").textContent = `awake ${pct(w.duty)} + switching overhead ×${fmt(G.dEff/Math.max(w.duty,1e-9),2)} (gVisor)`;
+  $("k_over").textContent = `${fmt(G.N,1)} / ${fmt(M.N,1)}`;
+  $("k_churn").textContent = `${fmt(G.resumesPerSec*60,0)}/min`;
+  $("k_churnSub").textContent = `fleet-wide resumes (avg; ~${fmt(G.resumesPerSec*60*num("peak"),0)}/min at peak). Each worker cycles ${fmt(G.cyclesPerWorkerHr,1)}×/hr; its physical ceiling is ${fmt(G.ceilingPerWorkerHr,0)}×/hr (gVisor)`;
+  $("k_nodes").textContent = `${fmt(G.nodes,0)} / ${fmt(M.nodes,0)}`;
+  $("k_nodesSub").textContent = `${fmt(G.workers,0)} / ${fmt(M.workers,0)} workers for ${fmt(fleet,0)} agents (gV / µVM)`;
+
+  const warns = [];
+  if (G.N < 1 || M.N < 1) warns.push("Sharing is below 1 agent per worker: this workload is busy enough that suspend/resume adds cost instead of saving it.");
+  if (G.over > w.liveSec/Math.max(w.acts,1))
+    warns.push("Overhead per wake-up (wait + suspend + resume) exceeds the useful work per wake-up — most worker time is churn. Shorten the idle wait or batch the check-ins.");
+  $("warnBox").innerHTML = warns.length ? `<div class="card" style="margin-top:14px"><span class="warn">⚠ ${warns.join("<br>⚠ ")}</span></div>` : "";
+
+  table("billTable", ["", "gVisor", "microVM"], [
+    {cells:[`Machines (${G.nodes} / ${M.nodes} × ${fmt$(G.nodeMo)} / ${fmt$(M.nodeMo)})`, fmt$(G.machinesMo)+"/mo", fmt$(M.machinesMo)+"/mo"]},
+    {cells:[`Snapshot storage (${fmt(fleet,0)} agents × ${num("snapGiB")} GiB)`, fmt$(G.snapshotsMo)+"/mo", fmt$(M.snapshotsMo)+"/mo"]},
+    {cells:[`Storage operations (${fmt(w.acts*fleet,0)} wake-ups/day)`, fmt$(G.opsMo)+"/mo", fmt$(M.opsMo)+"/mo"]},
+    {cells:["GKE cluster fee + control plane", fmt$(G.fixedMo)+"/mo", fmt$(M.fixedMo)+"/mo"]},
+    {cls:"total", cells:["Total", fmt$(G.totalMo)+"/mo", fmt$(M.totalMo)+"/mo"]},
+    {cls:"em", cells:[`÷ ${fmt(fleet,0)} agents`, fmt$(G.perAgent)+"/agent/mo", fmt$(M.perAgent)+"/agent/mo"]},
+  ]);
+
+  breakdownChart($("bd_chart"), [
+    {label:"gVisor", res:G},
+    {label:"microVM", res:M},
+  ]);
+
+  const sd = sweepDuty(pG, pM);
+  lineChart($("duty_chart"), {
+    xs:sd.xs, xLog:true, xTicks:[0.3,1,3,10,30], curX:sd.cur,
+    xFmt:v=>fmt(v,1)+"%", ttSuffix:" of the day awake",
+    series:[{name:"gVisor", color:css("--s1"), ys:sd.g},
+            {name:"microVM", color:css("--s2"), ys:sd.m}],
+    dashedY:[{y:G.dedicated, color:css("--s1"), label:"dedicated gV"},
+             {y:M.dedicated, color:css("--s2"), label:"dedicated µVM"}],
+  });
+
+  const ss = sweepSR(pG, pM);
+  lineChart($("sr_chart"), {
+    xs:ss.xs, xLog:false, curX:null,
+    xFmt:v=>fmt(v,1)+"s", ttSuffix:" suspend+resume",
+    series:[{name:"gVisor", color:css("--s1"), ys:ss.g},
+            {name:"microVM", color:css("--s2"), ys:ss.m}],
+  });
+
+  $("anchors").innerHTML =
+    `E2B sandbox (2 vCPU/4 GiB, ~1 h/day active): <b>≈$3.5/mo</b> ·
+     Fly.io suspended machine: run-time + <b>$0.15/GB-mo</b> while stopped ·
+     Hetzner always-on VPS (the community default for OpenClaw): <b>≈$7/mo</b> ·
+     A dedicated always-on worker here: <b>${fmt$(G.dedicated)}/mo</b> (gVisor) / <b>${fmt$(M.dedicated)}/mo</b> (µVM).`;
+
+  table("detailTable", ["", "gVisor", "microVM"], [
+    {cells:["Machine $/hr", "$"+G.nodeHr.toFixed(4), "$"+M.nodeHr.toFixed(4)]},
+    {cells:["Machine $/mo", fmt$(G.nodeMo), fmt$(M.nodeMo)]},
+    {cells:["Workers per machine", G.wpn, M.wpn]},
+    {cells:["Worker $/mo", fmt$(G.dedicated), fmt$(M.dedicated)]},
+    {cells:["Overhead per wake-up (s)", fmt(G.over,2), fmt(M.over,2)]},
+    {cells:["Worker time per agent (occupancy)", pct(G.dEff), pct(M.dEff)]},
+    {cells:["Agents per worker", fmt(G.N,2), fmt(M.N,2)]},
+    {cells:["Workers needed", fmt(G.workers,0), fmt(M.workers,0)]},
+    {cells:["Machines needed", fmt(G.nodes,0), fmt(M.nodes,0)]},
+    {cells:["Fleet resumes per minute (avg)", fmt(G.resumesPerSec*60,1), fmt(M.resumesPerSec*60,1)]},
+    {cells:["Cycles per worker per hour", fmt(G.cyclesPerWorkerHr,1), fmt(M.cyclesPerWorkerHr,1)]},
+    {cells:["Worker cycle ceiling per hour", fmt(G.ceilingPerWorkerHr,0), fmt(M.ceilingPerWorkerHr,0)]},
+    {cells:["Machines $/agent/mo", fmt$(G.compute), fmt$(M.compute)]},
+    {cells:["Snapshot $/agent/mo", "$"+G.storage.toFixed(3), "$"+M.storage.toFixed(3)]},
+    {cells:["Storage ops $/agent/mo", "$"+G.opsPerAgent.toFixed(3), "$"+M.opsPerAgent.toFixed(3)]},
+    {cells:["Fixed $/agent/mo", "$"+G.fixedPerAgent.toFixed(3), "$"+M.fixedPerAgent.toFixed(3)]},
+    {cls:"total", cells:["Total $/agent/mo", fmt$(G.perAgent), fmt$(M.perAgent)]},
+    {cells:["Savings vs dedicated worker", fmt(G.dedicated/G.perAgent,1)+"×", fmt(M.dedicated/M.perAgent,1)+"×"]},
+  ]);
+}
+
+$("preset").addEventListener("change", () => {
+  const p = PRESETS[$("preset").value];
+  if (p) { for (const k in p) $(k).value = p[k]; }
+  recompute();
+});
+$("srPreset").addEventListener("change", () => {
+  const p = SR_PRESETS[$("srPreset").value];
+  if (p) { for (const k in p) $(k).value = p[k]; }
+  recompute();
+});
+document.querySelectorAll("input, select").forEach(i => {
+  if (i.id !== "preset" && i.id !== "srPreset") i.addEventListener("input", () => {
+    if (["sessions","sessMin","wakes","wakeSec"].includes(i.id)) $("preset").value = "custom";
+    if (["g_ts","g_tr","m_ts","m_tr","snapGiB"].includes(i.id)) $("srPreset").value = "custom";
+    recompute();
+  });
+});
+window.addEventListener("resize", recompute);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", recompute);
+recompute();
+</script>
+</body>
+</html>
