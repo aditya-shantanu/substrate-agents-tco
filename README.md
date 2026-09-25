@@ -49,10 +49,13 @@ rate (fleet resumes/min, cycles per worker per hour vs each worker's physical
 ceiling) needed to make the multiplexing work.
 
 Ballpark with defaults (10k agents, measured OpenClaw switch times, 10s idle
-wait, 3yr CUD): **≈$0.7/agent/month on gVisor (e2-standard-16)** and
-**≈$1.1/agent/month on microVM (n2-standard-16)** — versus ~$7–15/month for a
-dedicated always-on worker or VPS. LLM tokens are out of scope (and typically
-dominate — see the OpenClaw heartbeat-cost issue).
+wait, 3yr CUD, both scenarios on the same n2-standard-16 so the comparison is
+apples-to-apples): **≈$1.0/agent/month on gVisor** and **≈$1.1/agent/month on
+microVM** — the residual gap is the nested-virt CPU tax plus slower switch
+estimates. Repointing gVisor at non-nested families it alone can use (E2,
+spot C3D) drops it to ~$0.7 or below. Versus ~$7–15/month for a dedicated
+always-on worker or VPS. LLM tokens are out of scope (and typically dominate
+— see the OpenClaw heartbeat-cost issue).
 
 ## Phase 2: measure it
 

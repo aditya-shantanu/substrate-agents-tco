@@ -330,7 +330,10 @@ function fillShapes(sel, nestedOnly, def) {
     sel.appendChild(o);
   }
 }
-fillShapes($("g_shape"), false, "e2-standard-16");
+// Same default machine for both scenarios so the comparison starts
+// apples-to-apples (it must be nested-virt-capable for microVM's sake);
+// gVisor can be repointed at cheaper non-nested families like E2/C3D.
+fillShapes($("g_shape"), false, "n2-standard-16");
 fillShapes($("m_shape"), true,  "n2-standard-16");
 
 /* ---------- model ---------- */
