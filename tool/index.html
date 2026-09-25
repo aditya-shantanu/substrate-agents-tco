@@ -163,7 +163,7 @@
     <div class="row"><label for="peak">Peak hour vs average hour</label><input id="peak" type="number" min="1" step="0.25" value="2"><span class="unit">×</span>
       <div class="hint">Capacity is bought for the busiest moment, not the average. The measured OpenClaw fleet model saw a P99 peak ≈3× the mean at 1,000 agents (random schedules); big fleets smooth this out, aligned cron schedules make it far worse. Use ~1 if the pool autoscales through the day.</div></div>
     <div class="row"><label for="cycleCap">Max suspend/resume cycles per worker</label><input id="cycleCap" type="number" min="0" step="0.25" value="0"><span class="unit">/min</span>
-      <div class="hint">0 = no cap. Caps churn per worker (snapshot I/O, GCS traffic, node pressure grow with cycle rate). Applied at the peak hour: if agents wake often enough to hit it, each worker hosts fewer agents than time-sharing alone would allow, and cost rises.</div>
+      <div class="hint">0 = no cap. Caps churn per worker (snapshot I/O, GCS traffic, node pressure grow with cycle rate). Applied at the peak hour: if agents wake often enough to hit it, each worker hosts fewer agents than time-sharing alone would allow, and cost rises. <a href="#churnCapExplainer">How the binding threshold is calculated ↓</a></div>
       <div class="hint" id="capHint" style="color:var(--text-2)"></div></div>
   </div>
 
@@ -268,6 +268,36 @@
       Agents per worker = target utilization ÷ (per-agent occupancy × peak ratio). This is the same identity as the
       benchmarking formula QPS = workers ÷ (live + suspend + resume), inverted. Assumes one live agent per worker
       (Substrate today); multi-actor workers would raise density further.</p>
+  </div>
+
+  <div class="card" id="churnCapExplainer">
+    <h3>Where the churn-cap threshold comes from</h3>
+    <p class="subtitle">Why a cap above a certain rate changes nothing, derived from your current inputs (updates live).</p>
+    <p style="color:var(--text-2); font-size:13px; margin:8px 0 4px">
+      The cap is a ceiling on how often one worker may suspend/resume. But your other inputs already
+      determine how much churn a fully-packed worker generates — so a cap <i>above</i> that rate is dead
+      letter, and a cap <i>below</i> it becomes the new limit on how many agents a worker can host.
+      With your current inputs:</p>
+    <ol style="color:var(--text-2); font-size:13px; margin:4px 0 8px; padding-left:22px; line-height:1.7">
+      <li>Each wake-up is one resume + one suspend = <b>1 cycle</b>. One agent wakes
+        <b><span id="ce_acts">–</span>×/day</b> (sessions + check-ins).</li>
+      <li>Time-sharing packs <b><span id="ce_ntime">–</span> agents onto one worker</b>
+        (utilization ÷ (occupancy × peak ratio)) — gVisor / microVM.</li>
+      <li>So a full worker churns <span id="ce_daily">–</span> cycles/day
+        ≈ <b><span id="ce_avg">–</span> cycles/min on average</b>.</li>
+      <li>The cap must hold at the busiest hour: × peak ratio <span id="ce_peak">–</span>
+        → <b>threshold ≈ <span id="ce_thresh">–</span> cycles/min</b>.</li>
+    </ol>
+    <p style="color:var(--text-2); font-size:13px; margin:4px 0">
+      As a formula: <code>threshold = wake-ups/day × agents-per-worker × peak-ratio ÷ 1440</code>.
+      Set the cap below the threshold and agents-per-worker becomes
+      <code>1440 × cap ÷ (wake-ups/day × peak-ratio)</code> = <span id="ce_example">–</span> —
+      more machines for the same fleet, higher cost per agent. Above the threshold, workers never
+      need to churn that fast, so nothing changes.
+      <span id="ce_status" style="font-weight:600"></span></p>
+    <p class="footnote">Independent of this <i>policy</i> cap, each worker has a <i>physical</i> ceiling of
+      one cycle per (work + wait + suspend + resume) = <span id="ce_ceiling">–</span> cycles/min — the
+      time-sharing math already respects it. Full derivation: <a href="../docs/MODEL.md">docs/MODEL.md</a> §3.</p>
   </div>
 </div>
 </div>
@@ -653,6 +683,24 @@ function recompute() {
   const capTxt = cap > 0
     ? ` Cap: ${fmt(cap,2)}/min (${fmt(cap*60,0)}×/hr) — ${G.capBinds||M.capBinds ? "BINDING" : "not binding"}.`
     : "";
+
+  // Bottom-of-page explainer, kept in sync with the same numbers.
+  $("ce_acts").textContent = fmt(w.acts,0);
+  $("ce_ntime").textContent = `${fmt(G.nTime,1)} / ${fmt(M.nTime,1)}`;
+  $("ce_daily").textContent = `${fmt(w.acts*G.nTime,0)} / ${fmt(w.acts*M.nTime,0)}`;
+  $("ce_avg").textContent = `${fmt(w.acts*G.nTime/1440,2)} / ${fmt(w.acts*M.nTime/1440,2)}`;
+  $("ce_peak").textContent = fmt(num("peak"),2);
+  $("ce_thresh").textContent = `${fmt(thG,2)} (gVisor) / ${fmt(thM,2)} (microVM)`;
+  const exCap = cap > 0 ? cap : Math.round(thG*0.75*100)/100;
+  $("ce_example").textContent =
+    `${fmt(1440*exCap/(w.acts*num("peak")),1)} agents at ${cap > 0 ? "your" : "e.g. a"} ${fmt(exCap,2)}/min cap`;
+  $("ce_status").textContent = cap > 0
+    ? (G.capBinds || M.capBinds
+        ? `Your current cap (${fmt(cap,2)}/min) is below the threshold — it is BINDING.`
+        : `Your current cap (${fmt(cap,2)}/min) is above the threshold — it is not binding.`)
+    : "";
+  const liveAvg = w.liveSec/Math.max(w.acts,1e-9);
+  $("ce_ceiling").textContent = `${fmt(60/(liveAvg+G.over),1)} / ${fmt(60/(liveAvg+M.over),1)}`;
   $("k_churnSub").textContent = `fleet-wide resumes (avg; ~${fmt(G.resumesPerSec*60*num("peak"),0)}/min at peak). Each worker cycles ${fmt(G.cyclesPerWorkerHr,1)}×/hr avg (${fmt(G.cyclesPerWorkerHr*num("peak"),0)}×/hr peak); physical ceiling ${fmt(G.ceilingPerWorkerHr,0)}×/hr (gVisor).${capTxt}`;
   $("k_nodes").textContent = `${fmt(G.nodes,0)} / ${fmt(M.nodes,0)}`;
   $("k_nodesSub").textContent = `${fmt(G.workers,0)} / ${fmt(M.workers,0)} workers for ${fmt(fleet,0)} agents (gV / µVM)`;
