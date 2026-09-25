@@ -22,36 +22,34 @@ Analysis: `analysis/report.py` joins the sim log with the occupancy samples
 and prints activation latency, achieved density (mean / p99 / peak — size on
 the peak), and a measured cost-per-agent line.
 
-## Runbook
+## Runbook — the `experiment/` scripts
 
-Prereqs: a Substrate cluster per `substrate/tools/setup-gcp` +
-`hack/install-ate.sh --deploy-ate-system`, and env vars from
-`hack/ate-dev-env.sh` (`PROJECT_ID`, `BUCKET_NAME`).
+Everything is scripted end-to-end in [`experiment/`](experiment/). Prereqs:
+`gcloud` (authed, with ADC: `gcloud auth application-default login`),
+`kubectl`, `ko` (`go install github.com/google/ko@latest`), `envsubst`, Go,
+and a checkout of the substrate repo next door.
 
 ```bash
-# 1. Deploy the glutton workload template (from the substrate repo)
-cd ~/repos/substrate/benchmarking/workloads && ./deploy.sh
+cd service/experiment
+cp env.example.sh env.sh        # set PROJECT_ID, cluster name/zone, knobs
+./10-bootstrap.sh               # GKE cluster + GCS bucket + IAM (~10-15 min)
+./20-install-substrate.sh       # Substrate control plane (ko build + install)
+./30-deploy-workloads.sh        # glutton ActorTemplates + WorkerPool ($WORKER_COUNT)
+./40-deploy-experiment.sh       # our images (ko) + autosuspender + agentsim Job
 
-# 2. Give yourself a worker pool to oversubscribe (10 workers, with limits —
-#    a worker without limits is never schedulable for a template with limits)
-cd ~/repos/substrate/benchmarking && ./deploy_locust.sh --worker-count 10   # or your own WorkerPool
-
-# 3. Build + push this repo's image, deploy the experiment
-cd ~/repos/substrate-agents-tco/service
-PROJECT_ID=$PROJECT_ID ./build.sh
-envsubst < manifests/agent-sim.yaml | kubectl apply -f -
-
-# 4. Watch it live
+# watch it live
 kubectl -n agent-sim port-forward svc/autosuspender 8080 &
-open http://localhost:8080/          # live dashboard (see below)
-kubectl -n agent-sim logs -f job/agentsim | tee run.log
+open http://localhost:8080/
+kubectl -n agent-sim logs -f job/agentsim
 
-# 5. Collect + report when the job finishes
-#    (worker-cost-hr = node $/hr ÷ workers per node; see the calculator)
-curl -s localhost:8080/occupancy.csv > occupancy.csv
-python3 analysis/report.py --sim-log run.log --occupancy occupancy.csv \
-    --compress 60 --worker-cost-hr 0.02
+./50-collect.sh                 # run.log + occupancy.csv + report -> results/<ts>/
+./90-teardown.sh                # delete the cluster (add --bucket for the bucket)
 ```
+
+Experiment knobs (`env.sh`): `WORKER_COUNT`, `AGENTS`, `COMPRESS`,
+`DURATION`, `IDLE_TIMEOUT`. Re-run `40-deploy-experiment.sh` to launch a new
+Job with changed knobs (it replaces the old one); `50-collect.sh` snapshots
+results into a timestamped folder.
 
 Feed the measured suspend/resume averages and achieved utilization back into
 `tool/index.html` to reconcile theory with practice.

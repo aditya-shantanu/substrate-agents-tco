@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
-# Builds and pushes the agents-tco image (autosuspender + agentsim).
-# The Go module `replace`s the sibling substrate checkout, so the docker
-# context is staged with both repos in the layout the Dockerfile expects.
+# Builds and pushes the autosuspender + agentsim images with ko (no Docker
+# daemon needed; the dashboard is embedded in the binary via go:embed).
+# The Dockerfile remains for docker-preferring environments.
 #
-# Usage: PROJECT_ID=my-project [SUBSTRATE_REPO=~/repos/substrate] ./build.sh
+# Usage: KO_DOCKER_REPO=gcr.io/<project>/ate-images ./build.sh
+# Prints AUTOSUSPENDER_IMAGE / AGENTSIM_IMAGE exports for envsubst on
+# manifests/agent-sim.yaml.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUBSTRATE_REPO="${SUBSTRATE_REPO:-${SCRIPT_DIR}/../../substrate}"
-: "${PROJECT_ID:?set PROJECT_ID}"
-IMAGE="${IMAGE:-us-docker.pkg.dev/${PROJECT_ID}/gcr.io/ate-images/agents-tco:latest}"
+: "${KO_DOCKER_REPO:?set KO_DOCKER_REPO, e.g. gcr.io/<project>/ate-images}"
+export KO_DEFAULTPLATFORMS="${KO_DEFAULTPLATFORMS:-linux/amd64}"
 
-CTX="$(mktemp -d)"
-trap 'rm -rf "${CTX}"' EXIT
-echo "staging build context in ${CTX}"
-rsync -a --exclude .git "${SUBSTRATE_REPO}/" "${CTX}/substrate/"
-rsync -a --exclude .git "${SCRIPT_DIR}/" "${CTX}/service/"
+cd "${SCRIPT_DIR}"
+# --base-import-paths names images by the binary's directory (autosuspender,
+# agentsim) instead of an md5 hash.
+AUTOSUSPENDER_IMAGE=$(ko build --base-import-paths ./cmd/autosuspender)
+AGENTSIM_IMAGE=$(ko build --base-import-paths ./cmd/agentsim)
 
-docker build --platform=linux/amd64 -f "${SCRIPT_DIR}/Dockerfile" -t "${IMAGE}" "${CTX}"
-docker push "${IMAGE}"
-echo "pushed ${IMAGE}"
+echo
+echo "export AUTOSUSPENDER_IMAGE=${AUTOSUSPENDER_IMAGE}"
+echo "export AGENTSIM_IMAGE=${AGENTSIM_IMAGE}"

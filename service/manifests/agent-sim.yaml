@@ -1,6 +1,7 @@
 # Auto-suspend service + fleet load for the density experiment.
-# Substitute ${PROJECT_ID} (envsubst) before applying, and deploy the glutton
-# ActorTemplate first (substrate/benchmarking/workloads/deploy.sh).
+# Substitute ${AUTOSUSPENDER_IMAGE} and ${AGENTSIM_IMAGE} (envsubst; build.sh
+# prints them) before applying, and deploy the glutton ActorTemplate first
+# (substrate/benchmarking/workloads/deploy.sh).
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -21,13 +22,12 @@ spec:
     spec:
       containers:
       - name: autosuspender
-        image: us-docker.pkg.dev/${PROJECT_ID}/gcr.io/ate-images/agents-tco:latest
-        command: ["/app/autosuspender"]
+        image: ${AUTOSUSPENDER_IMAGE}
         args:
         - --atespace=agents-sim
         # Compressed-time policy: at --compress=60 in agentsim, 10s here plays
         # the role of a ~10min real-world idle window. Keep poll well under it.
-        - --idle-timeout=10s
+        - --idle-timeout=${IDLE_TIMEOUT}
         - --poll=2s
         - --max-running=10m
         - --max-concurrent=8
@@ -83,13 +83,12 @@ spec:
       restartPolicy: Never
       containers:
       - name: agentsim
-        image: us-docker.pkg.dev/${PROJECT_ID}/gcr.io/ate-images/agents-tco:latest
-        command: ["/app/agentsim"]
+        image: ${AGENTSIM_IMAGE}
         args:
         - --atespace=agents-sim
-        - --agents=50
-        - --compress=60           # a day of behavior in 24 wall-clock minutes
-        - --duration=30m
+        - --agents=${AGENTS}
+        - --compress=${COMPRESS}  # 60 = a day of behavior in 24 wall-clock minutes
+        - --duration=${DURATION}
         - --sessions-per-day=3
         - --session-minutes=8
         - --session-ping-seconds=30
