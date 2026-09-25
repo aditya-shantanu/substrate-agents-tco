@@ -92,11 +92,11 @@ N_time = U / (d_eff * P)      actors per worker, time-sharing limit
 
 **Churn cap.** Operators may cap suspend/resume cycles per worker (snapshot
 I/O, GCS traffic and node pressure all scale with cycle rate). With `A`
-activations per agent-day and a cap `C` cycles/worker/hour applied at the
+activations per agent-day and a cap `C` cycles/worker/minute applied at the
 peak hour:
 
 ```
-N_churn = 24·C / (A · P)
+N_churn = 1440·C / (A · P)
 N       = min(N_time, N_churn)
 ```
 
