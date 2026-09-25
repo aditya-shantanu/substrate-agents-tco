@@ -87,8 +87,22 @@ scheduling:
 | `P` | peak-to-average activity ratio (diurnal concentration), e.g. 2–4 for consumer agents. Capacity must be provisioned for the peak. |
 
 ```
-N = U / (d_eff * P)      actors per worker
+N_time = U / (d_eff * P)      actors per worker, time-sharing limit
 ```
+
+**Churn cap.** Operators may cap suspend/resume cycles per worker (snapshot
+I/O, GCS traffic and node pressure all scale with cycle rate). With `A`
+activations per agent-day and a cap `C` cycles/worker/hour applied at the
+peak hour:
+
+```
+N_churn = 24·C / (A · P)
+N       = min(N_time, N_churn)
+```
+
+When `N_churn` binds, workers sit partly idle (below `U`) because they may
+not churn faster — density is capped by cycles, not by time, and cost per
+agent rises accordingly. The tool flags which limit is binding.
 
 (If you provision with autoscaling that tracks the diurnal curve, set `P`
 closer to 1 and instead reflect autoscaler slack in `U`.)

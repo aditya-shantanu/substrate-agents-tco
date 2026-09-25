@@ -13,12 +13,15 @@
 //     actors"), so lost signals can't leak workers forever.
 //
 // It also samples worker-pool occupancy (workers assigned vs total, actor
-// state counts) on an interval; the samples are served at /occupancy.csv and
-// are the raw material for the density/oversubscription report.
+// state counts) on an interval. The samples power three read-only views:
+// a live dashboard at "/", machine-readable /state.json, and /occupancy.csv
+// (the raw material for analysis/report.py).
 package main
 
 import (
 	"context"
+	_ "embed"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -35,10 +38,32 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+//go:embed dashboard.html
+var dashboardHTML []byte
+
 type activity struct {
 	lastTouch time.Time
 	inflight  int
 }
+
+// sample is one occupancy observation; JSON field names are the dashboard's
+// contract (and the /occupancy.csv column order).
+type sample struct {
+	T            int64 `json:"t"`
+	WorkersTotal int   `json:"workers_total"`
+	WorkersActiv int   `json:"workers_active"`
+	Assigned     int   `json:"assigned"`
+	ActorsTotal  int   `json:"actors_total"`
+	Running      int   `json:"running"`
+	Resuming     int   `json:"resuming"`
+	Suspending   int   `json:"suspending"`
+	Suspended    int   `json:"suspended"`
+	Paused       int   `json:"paused"`
+	Crashed      int   `json:"crashed"`
+}
+
+// maxSamples bounds the in-memory window: 6h at the default 5s interval.
+const maxSamples = 4320
 
 type server struct {
 	api      ateapipb.ControlClient
@@ -56,8 +81,8 @@ type server struct {
 	suspendErrs  atomic.Int64
 	suspendNsSum atomic.Int64
 
-	csvMu   sync.Mutex
-	csvRows []string
+	samplesMu sync.Mutex
+	samples   []sample
 
 	stateCounts atomic.Value // map[ateapipb.ActorState]int
 }
@@ -96,7 +121,6 @@ func main() {
 		inFlight:    map[string]bool{},
 	}
 	s.stateCounts.Store(map[ateapipb.ActorState]int{})
-	s.csvRows = []string{"unix_ms,workers_total,workers_active,workers_assigned,actors_total,running,resuming,suspending,suspended,paused,crashed"}
 
 	ctx := context.Background()
 	go s.reconcileLoop(ctx, *poll)
@@ -108,6 +132,11 @@ func main() {
 	mux.HandleFunc("POST /end", s.handleActivity("end"))
 	mux.HandleFunc("GET /metrics", s.handleMetrics)
 	mux.HandleFunc("GET /occupancy.csv", s.handleOccupancy)
+	mux.HandleFunc("GET /state.json", s.handleState)
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(dashboardHTML)
+	})
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 	slog.Info("autosuspender up", "listen", *listen, "atespace", *atespace,
 		"idle_timeout", idleTimeout.String(), "max_running", maxRunning.String())
@@ -285,27 +314,67 @@ func (s *server) sampleLoop(ctx context.Context, every time.Duration) {
 			continue
 		}
 		c, _ := s.stateCounts.Load().(map[ateapipb.ActorState]int)
-		row := fmt.Sprintf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
-			time.Now().UnixMilli(), total, active, assigned,
-			c[ateapipb.ActorState_ACTOR_STATE_UNSPECIFIED],
-			c[ateapipb.ActorState_ACTOR_STATE_RUNNING],
-			c[ateapipb.ActorState_ACTOR_STATE_RESUMING],
-			c[ateapipb.ActorState_ACTOR_STATE_SUSPENDING],
-			c[ateapipb.ActorState_ACTOR_STATE_SUSPENDED],
-			c[ateapipb.ActorState_ACTOR_STATE_PAUSED],
-			c[ateapipb.ActorState_ACTOR_STATE_CRASHED])
-		s.csvMu.Lock()
-		s.csvRows = append(s.csvRows, row)
-		s.csvMu.Unlock()
+		smp := sample{
+			T:            time.Now().UnixMilli(),
+			WorkersTotal: total,
+			WorkersActiv: active,
+			Assigned:     assigned,
+			ActorsTotal:  c[ateapipb.ActorState_ACTOR_STATE_UNSPECIFIED],
+			Running:      c[ateapipb.ActorState_ACTOR_STATE_RUNNING],
+			Resuming:     c[ateapipb.ActorState_ACTOR_STATE_RESUMING],
+			Suspending:   c[ateapipb.ActorState_ACTOR_STATE_SUSPENDING],
+			Suspended:    c[ateapipb.ActorState_ACTOR_STATE_SUSPENDED],
+			Paused:       c[ateapipb.ActorState_ACTOR_STATE_PAUSED],
+			Crashed:      c[ateapipb.ActorState_ACTOR_STATE_CRASHED],
+		}
+		s.samplesMu.Lock()
+		s.samples = append(s.samples, smp)
+		if len(s.samples) > maxSamples {
+			s.samples = s.samples[len(s.samples)-maxSamples:]
+		}
+		s.samplesMu.Unlock()
 	}
+}
+
+func (s *server) snapshotSamples() []sample {
+	s.samplesMu.Lock()
+	defer s.samplesMu.Unlock()
+	out := make([]sample, len(s.samples))
+	copy(out, s.samples)
+	return out
 }
 
 func (s *server) handleOccupancy(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/csv")
-	s.csvMu.Lock()
-	body := strings.Join(s.csvRows, "\n")
-	s.csvMu.Unlock()
-	fmt.Fprintln(w, body)
+	fmt.Fprintln(w, "unix_ms,workers_total,workers_active,workers_assigned,actors_total,running,resuming,suspending,suspended,paused,crashed")
+	for _, r := range s.snapshotSamples() {
+		fmt.Fprintf(w, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+			r.T, r.WorkersTotal, r.WorkersActiv, r.Assigned, r.ActorsTotal,
+			r.Running, r.Resuming, r.Suspending, r.Suspended, r.Paused, r.Crashed)
+	}
+}
+
+// handleState feeds the live dashboard: config, suspend counters, and the
+// most recent samples (capped so the payload stays small at long uptimes).
+func (s *server) handleState(w http.ResponseWriter, _ *http.Request) {
+	samples := s.snapshotSamples()
+	const maxOut = 900 // 75 min at 5s — plenty for a live view
+	if len(samples) > maxOut {
+		samples = samples[len(samples)-maxOut:]
+	}
+	avgMs := 0.0
+	if n := s.suspends.Load(); n > 0 {
+		avgMs = float64(s.suspendNsSum.Load()) / float64(n) / 1e6
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"atespace":       s.atespace,
+		"idle_timeout":   s.idleTimeout.String(),
+		"suspends":       s.suspends.Load(),
+		"suspend_errors": s.suspendErrs.Load(),
+		"suspend_avg_ms": avgMs,
+		"samples":        samples,
+	})
 }
 
 func (s *server) handleMetrics(w http.ResponseWriter, _ *http.Request) {

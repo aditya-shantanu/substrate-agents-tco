@@ -61,15 +61,20 @@ dominate — see the OpenClaw heartbeat-cost issue).
 
 - **autosuspender**: the missing suspend side of the loop (resume-on-request
   already exists in atenet). Activity-signal API + TTL fallback + worker
-  occupancy sampling.
+  occupancy sampling, and a **built-in live dashboard** (`kubectl port-forward
+  svc/autosuspender 8080` → http://localhost:8080/) showing workers busy vs
+  actors awake as the fleet churns, current density, and suspend rate/latency.
+  A healthy run is a sawtooth under the dashed pool line; blue pinned at the
+  line means the pool is saturated.
 - **agentsim**: N simulated personal agents against Glutton actors through
   the router — implicit resume, RAM working-set walk (demand paging), memory
   churn and file I/O every turn, Poisson sessions/wakes, time compression.
 
 Design and experiment matrix: [`docs/PHASE2-DESIGN.md`](docs/PHASE2-DESIGN.md).
-Runbook: [`service/README.md`](service/README.md). Analysis:
-`service/analysis/report.py` (reports density at mean/p99/peak — size on the
-peak, the mean is just your workload's idleness).
+**Runbook with a step-by-step "what you'll see"** (dashboard, log lines,
+summary output, how to read each number): [`service/README.md`](service/README.md).
+Analysis: `service/analysis/report.py` (reports density at mean/p99/peak —
+size on the peak, the mean is just your workload's idleness).
 
 ## Repo map
 
