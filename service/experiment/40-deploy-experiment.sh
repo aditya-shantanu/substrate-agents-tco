@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds+pushes the autosuspender/agentsim images with ko and deploys the
 # experiment: agent-sim namespace, autosuspender Deployment+Service, and the
-# agentsim Job (parameterized from env.sh). Re-running replaces the Job.
+# agentsim Job (parameterized from the environment). Re-running replaces the Job.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 cd "${SERVICE_DIR}"

@@ -218,15 +218,20 @@ func num(v any) float64 {
 	return f
 }
 
-// collect gathers artifacts and renders the final cost card.
+// collect gathers artifacts and renders the final cost card. It brings up
+// its own short-lived port-forward: the long-running one may have died when
+// pods rolled (kubectl port-forward does not reconnect).
 func (a *App) collect() tea.Msg {
 	script := fmt.Sprintf(`
 set -e
 OUT=%q
 mkdir -p "$OUT"
 kubectl -n agent-sim logs job/agentsim > "$OUT/run.log"
-curl -sf localhost:%s/occupancy.csv > "$OUT/occupancy.csv"
-curl -sf localhost:%s/metrics > "$OUT/metrics.txt"
+kubectl -n agent-sim port-forward svc/autosuspender 18086:8080 >/dev/null 2>&1 &
+PF=$!; trap 'kill $PF 2>/dev/null || true' EXIT
+sleep 3
+curl -sf --retry 3 localhost:18086/occupancy.csv > "$OUT/occupancy.csv"
+curl -sf --retry 3 localhost:18086/metrics > "$OUT/metrics.txt"
 MACHINE_TYPE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.labels.node\.kubernetes\.io/instance-type}')
 POOL_NODES=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool -o jsonpath='{range .items[*]}{.spec.nodeName}{"\n"}{end}' | sort -u | grep -c . || echo 1)
 SNAP_GIB=$(gcloud storage du -s "gs://${BUCKET_NAME}/benchmark-workloads/glutton/atespaces/agents-sim/**" 2>/dev/null | awk -v n="${AGENTS}" '$1>0 {printf "%%.3f", $1/n/1073741824}')
@@ -235,7 +240,7 @@ python3 "%s/analysis/final_report.py" \
   --compress "${COMPRESS}" --machine-type "$MACHINE_TYPE" --pool-workers "${WORKER_COUNT}" \
   --pool-nodes "$POOL_NODES" --snap-gib "${SNAP_GIB:-0.05}" --price-model "${PRICE_MODEL}" \
   | tee "$OUT/report.txt"
-`, a.outDir, pfPort, pfPort, a.svcDir)
+`, a.outDir, a.svcDir)
 	cmd := exec.Command("bash", "-c", script)
 	cmd.Dir = a.expDir
 	cmd.Env = append(os.Environ(), a.cfg.env()...)

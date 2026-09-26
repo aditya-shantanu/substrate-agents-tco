@@ -52,6 +52,7 @@ type App struct {
 	waves     []string
 	verdict   string
 	simTick   int
+	liveErrs  int
 
 	report string
 	err    error
@@ -69,10 +70,6 @@ func main() {
 		svcDir: svcDir,
 		stages: newStages(),
 		ch:     make(chan tea.Msg, 256),
-	}
-	if _, err := os.Stat(filepath.Join(a.expDir, "env.sh")); err != nil {
-		fmt.Fprintln(os.Stderr, "experiment/env.sh missing — copy env.example.sh first")
-		os.Exit(1)
 	}
 	p := tea.NewProgram(a, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
@@ -145,12 +142,25 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case liveMsg:
 		if m.err == nil {
+			a.liveErrs = 0
 			a.live = m.st
 			if n := len(m.st.Samples); n > 0 {
 				a.busyHist = append(a.busyHist, m.st.Samples[n-1].Assigned)
 				if len(a.busyHist) > 120 {
 					a.busyHist = a.busyHist[len(a.busyHist)-120:]
 				}
+			}
+		} else {
+			// kubectl port-forward dies when pods roll; restart it after a
+			// few consecutive failures.
+			a.liveErrs++
+			if a.liveErrs >= 3 {
+				a.liveErrs = 0
+				if a.pf != nil && a.pf.Process != nil {
+					_ = a.pf.Process.Kill()
+				}
+				a.pf = exec.Command("kubectl", "-n", "agent-sim", "port-forward", "svc/autosuspender", pfPort+":8080")
+				_ = a.pf.Start()
 			}
 		}
 		return a, nil
@@ -191,12 +201,27 @@ func (a *App) onKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return a, tea.Quit
 	case "q":
-		if a.scr != scrRun {
+		// 'q' quits everywhere except mid-run and while typing in a text field.
+		if a.scr == scrDone || (a.scr == scrConfig && fields[a.cursor].text == nil) {
 			return a, tea.Quit
 		}
 	}
 	if a.scr != scrConfig {
 		return a, nil
+	}
+	// Free-text fields (project, zone, …): type to edit, backspace to erase.
+	if t := fields[a.cursor].text; t != nil {
+		switch k.Type {
+		case tea.KeyRunes, tea.KeySpace:
+			*t(&a.cfg) += string(k.Runes)
+			return a, nil
+		case tea.KeyBackspace:
+			s := t(&a.cfg)
+			if len(*s) > 0 {
+				*s = (*s)[:len(*s)-1]
+			}
+			return a, nil
+		}
 	}
 	switch k.String() {
 	case "up", "k":

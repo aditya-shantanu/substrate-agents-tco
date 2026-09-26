@@ -22,6 +22,27 @@ Analysis: `analysis/report.py` joins the sim log with the occupancy samples
 and prints activation latency, achieved density (mean / p99 / peak — size on
 the peak), and a measured cost-per-agent line.
 
+## The TUI — one command, whole show
+
+```bash
+go run ./cmd/tco
+```
+
+A full-screen terminal app (same visual language as substrate-gke's
+installer): a config screen with prefilled choices — machine type dropdown
+with live prices, node count, **gVisor vs microVM** (list filtered to
+nested-virt machines), fleet size, time compression, test length, idle wait,
+pricing model, and **baseline vs load-test** mode — plus a live feasibility
+check (predicted busy workers vs pool) and a model cost preview before you
+commit. Then a stage rail (skipping whatever is already set up), the live
+test view (awake/asleep agents, worker occupancy bar + sparkline, suspend
+avg, wake p50/p99, throughput, wedge warnings, wave table in load-test
+mode), and the finale: the measured **cost per agent per month** card.
+
+Load-test mode activates agents in waves until refusals/errors cross
+thresholds and reports the last sustainable level — the pool's real maximum
+density for this workload.
+
 ## Runbook — the `experiment/` scripts
 
 Everything is scripted end-to-end in [`experiment/`](experiment/). Prereqs:
@@ -31,7 +52,6 @@ and a checkout of the substrate repo next door.
 
 ```bash
 cd service/experiment
-cp env.example.sh env.sh        # set PROJECT_ID, cluster name/zone, knobs
 ./10-bootstrap.sh               # GKE cluster + GCS bucket + IAM (~10-15 min)
 ./20-install-substrate.sh       # Substrate control plane (ko build + install)
 ./30-deploy-workloads.sh        # glutton ActorTemplates + WorkerPool ($WORKER_COUNT)
@@ -46,7 +66,7 @@ kubectl -n agent-sim logs -f job/agentsim
 ./90-teardown.sh                # delete the cluster (add --bucket for the bucket)
 ```
 
-Experiment knobs (`env.sh`): `WORKER_COUNT`, `AGENTS`, `COMPRESS`,
+Experiment knobs (environment overrides, defaults in `lib.sh`): `WORKER_COUNT`, `AGENTS`, `COMPRESS`,
 `DURATION`, `IDLE_TIMEOUT`. Re-run `40-deploy-experiment.sh` to launch a new
 Job with changed knobs (it replaces the old one); `50-collect.sh` snapshots
 results into a timestamped folder.

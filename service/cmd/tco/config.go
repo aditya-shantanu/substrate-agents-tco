@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -12,6 +15,12 @@ import (
 // the same scripts people can run by hand.
 
 type config struct {
+	// infra (pre-filled, editable text)
+	project  string
+	zone     string
+	cluster  string
+	subsRepo string
+
 	sandbox   string // gvisor | microvm
 	machine   string
 	nodes     int
@@ -28,11 +37,30 @@ type config struct {
 }
 
 func defaultConfig() config {
+	proj := strings.TrimSpace(shellOut("gcloud config get-value project 2>/dev/null"))
+	if proj == "" || proj == "(unset)" {
+		proj = "my-project"
+	}
+	home, _ := os.UserHomeDir()
 	return config{
-		sandbox: "gvisor", machine: "c3-standard-4", nodes: 2, workers: 10,
+		project: proj, zone: "us-central1-c", cluster: "agents-tco",
+		subsRepo: filepath.Join(home, "repos", "substrate"),
+		sandbox:  "gvisor", machine: "c3-standard-4", nodes: 2, workers: 10,
 		agents: 50, compress: 6, duration: "30m", idle: "2s", price: "cud3",
 		loadTest: false, waveStart: 10, waveStep: 10, waveIntvl: "3m",
 	}
+}
+
+func shellOut(cmd string) string {
+	out, _ := exec.Command("bash", "-c", cmd).Output()
+	return string(out)
+}
+
+func regionOf(zone string) string {
+	if i := strings.LastIndex(zone, "-"); i > 0 {
+		return zone[:i]
+	}
+	return zone
 }
 
 func (c config) env() []string {
@@ -41,6 +69,13 @@ func (c config) env() []string {
 		lt = "true"
 	}
 	return []string{
+		"PROJECT_ID=" + c.project,
+		"CLUSTER_LOCATION=" + c.zone,
+		"GCE_REGION=" + regionOf(c.zone),
+		"CLUSTER_NAME=" + c.cluster,
+		"SUBSTRATE_REPO=" + c.subsRepo,
+		"BUCKET_NAME=snapshot-" + c.cluster + "-" + c.project,
+		"KO_DOCKER_REPO=gcr.io/" + c.project + "/ate-images",
 		"SANDBOX_CLASS=" + c.sandbox,
 		"GVISOR_NODE_MACHINE_TYPE=" + c.machine,
 		fmt.Sprintf("NODE_COUNT=%d", c.nodes),
@@ -119,6 +154,7 @@ type field struct {
 	get   func(c *config) string
 	cycle func(c *config, dir int)
 	dim   func(c *config) bool
+	text  func(c *config) *string // non-nil = free-text field (type to edit)
 }
 
 func cycleStr(cur string, opts []string, dir int) string {
@@ -139,14 +175,27 @@ func cycleInt(cur int, opts []int, dir int) int {
 	return opts[0]
 }
 
+func textField(label string, get func(c *config) *string) field {
+	return field{
+		label: label,
+		get:   func(c *config) string { return *get(c) },
+		cycle: func(c *config, d int) {},
+		text:  get,
+	}
+}
+
 var fields = []field{
+	textField("GCP project", func(c *config) *string { return &c.project }),
+	textField("Zone", func(c *config) *string { return &c.zone }),
+	textField("Cluster name", func(c *config) *string { return &c.cluster }),
+	textField("Substrate repo", func(c *config) *string { return &c.subsRepo }),
 	{"Sandbox", func(c *config) string { return c.sandbox },
 		func(c *config, d int) {
 			c.sandbox = cycleStr(c.sandbox, []string{"gvisor", "microvm"}, d)
 			if c.sandbox == "microvm" && !machineByName(c.machine).nested {
 				c.machine = c.machineChoices()[0].name
 			}
-		}, nil},
+		}, nil, nil},
 	{"Machine type", func(c *config) string { return machineByName(c.machine).label(c.price) },
 		func(c *config, d int) {
 			ch := c.machineChoices()
@@ -155,36 +204,36 @@ var fields = []field{
 				names[i] = m.name
 			}
 			c.machine = cycleStr(c.machine, names, d)
-		}, nil},
+		}, nil, nil},
 	{"Nodes in worker pool", func(c *config) string { return fmt.Sprintf("%d", c.nodes) },
-		func(c *config, d int) { c.nodes = clampInt(c.nodes+d, 1, 20) }, nil},
+		func(c *config, d int) { c.nodes = clampInt(c.nodes+d, 1, 20) }, nil, nil},
 	{"Workers (sandbox slots)", func(c *config) string { return fmt.Sprintf("%d", c.workers) },
-		func(c *config, d int) { c.workers = clampInt(c.workers+5*d, 5, 200) }, nil},
+		func(c *config, d int) { c.workers = clampInt(c.workers+5*d, 5, 200) }, nil, nil},
 	{"Simulated agents", func(c *config) string { return fmt.Sprintf("%d", c.agents) },
-		func(c *config, d int) { c.agents = clampInt(c.agents+10*d, 10, 1000) }, nil},
+		func(c *config, d int) { c.agents = clampInt(c.agents+10*d, 10, 1000) }, nil, nil},
 	{"Time compression", func(c *config) string { return fmt.Sprintf("×%d", c.compress) },
-		func(c *config, d int) { c.compress = cycleInt(c.compress, []int{1, 3, 6, 12, 20, 60}, d) }, nil},
+		func(c *config, d int) { c.compress = cycleInt(c.compress, []int{1, 3, 6, 12, 20, 60}, d) }, nil, nil},
 	{"Test length", func(c *config) string { return c.duration },
-		func(c *config, d int) { c.duration = cycleStr(c.duration, []string{"10m", "20m", "30m", "45m", "60m"}, d) }, nil},
+		func(c *config, d int) { c.duration = cycleStr(c.duration, []string{"10m", "20m", "30m", "45m", "60m"}, d) }, nil, nil},
 	{"Idle wait before suspend", func(c *config) string { return c.idle },
-		func(c *config, d int) { c.idle = cycleStr(c.idle, []string{"2s", "5s", "10s", "30s"}, d) }, nil},
+		func(c *config, d int) { c.idle = cycleStr(c.idle, []string{"2s", "5s", "10s", "30s"}, d) }, nil, nil},
 	{"Pricing", func(c *config) string { return c.price },
-		func(c *config, d int) { c.price = cycleStr(c.price, priceModels, d) }, nil},
+		func(c *config, d int) { c.price = cycleStr(c.price, priceModels, d) }, nil, nil},
 	{"Mode", func(c *config) string {
 		if c.loadTest {
 			return "load-test (waves until failure)"
 		}
 		return "baseline (fixed fleet)"
-	}, func(c *config, d int) { c.loadTest = !c.loadTest }, nil},
+	}, func(c *config, d int) { c.loadTest = !c.loadTest }, nil, nil},
 	{"  wave start", func(c *config) string { return fmt.Sprintf("%d agents", c.waveStart) },
 		func(c *config, d int) { c.waveStart = clampInt(c.waveStart+5*d, 5, 500) },
-		func(c *config) bool { return !c.loadTest }},
+		func(c *config) bool { return !c.loadTest }, nil},
 	{"  wave step", func(c *config) string { return fmt.Sprintf("+%d agents", c.waveStep) },
 		func(c *config, d int) { c.waveStep = clampInt(c.waveStep+5*d, 5, 100) },
-		func(c *config) bool { return !c.loadTest }},
+		func(c *config) bool { return !c.loadTest }, nil},
 	{"  wave window", func(c *config) string { return c.waveIntvl },
 		func(c *config, d int) { c.waveIntvl = cycleStr(c.waveIntvl, []string{"2m", "3m", "5m"}, d) },
-		func(c *config) bool { return !c.loadTest }},
+		func(c *config) bool { return !c.loadTest }, nil},
 }
 
 func clampInt(v, lo, hi int) int {

@@ -9,7 +9,7 @@
 # test streams live stats (awake/asleep agents, worker occupancy bar,
 # suspend/resume latencies, throughput); the finale is the results card with
 # measured COST PER AGENT PER MONTH.
-# Defaults for the knobs live in env.sh: WORKER_COUNT, AGENTS, COMPRESS,
+# Knob defaults live in lib.sh; override via environment: WORKER_COUNT, AGENTS, COMPRESS,
 # DURATION, IDLE_TIMEOUT, PRICE_MODEL.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
