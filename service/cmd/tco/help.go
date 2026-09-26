@@ -37,6 +37,8 @@ var helpSections = []helpSection{
 	{"Money", []helpItem{
 		{"Pricing",
 			"On-demand, or 1-/3-year committed-use discounts (37% / 55% off). Only changes the math, never the run."},
+		{"Provision for peaks",
+			"Two lenses on the same question — pick the one you can check. '×N average': the busiest hour has N times the average activity (timezone-driven fleets). 'herd N%': N% of agents can wake at the same instant because schedules align (cron-heavy fleets); herd members are charged a full worker during the burst."},
 	}},
 	{"Mode", []helpItem{
 		{"baseline",

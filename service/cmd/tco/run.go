@@ -246,6 +246,7 @@ python3 "%s/analysis/final_report.py" \
   --run-log "$OUT/run.log" --occupancy "$OUT/occupancy.csv" --metrics "$OUT/metrics.txt" \
   --compress "${COMPRESS}" --machine-type "$MACHINE_TYPE" --pool-workers "${WORKER_COUNT}" \
   --pool-nodes "$POOL_NODES" --snap-gib "${SNAP_GIB:-0.05}" --price-model "${PRICE_MODEL}" \
+  --peak-model "${PEAK_MODEL:-mult}" --peak-value "${PEAK_VALUE:-2}" \
   | tee "$OUT/report.txt"
 `, a.outDir, a.svcDir)
 	cmd := exec.Command("bash", "-c", script)

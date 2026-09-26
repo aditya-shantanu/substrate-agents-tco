@@ -173,7 +173,7 @@ python3 "${SERVICE_DIR}/analysis/final_report.py" \
   --metrics "${OUT}/metrics.txt" --compress "${COMPRESS}" \
   --machine-type "${MACHINE_TYPE}" --pool-workers "${WORKER_COUNT}" \
   --pool-nodes "${POOL_NODES}" --snap-gib "${SNAP_GIB}" \
-  ${PRICE_MODEL:+--price-model ${PRICE_MODEL}} \
+  ${PRICE_MODEL:+--price-model ${PRICE_MODEL}} --peak-model "${PEAK_MODEL:-mult}" --peak-value "${PEAK_VALUE:-2}" \
   | tee "${OUT}/report.txt"
 
 echo "${DIM}artifacts: ${OUT}${RESET}"

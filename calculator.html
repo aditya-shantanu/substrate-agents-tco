@@ -111,9 +111,7 @@
      side shows the resulting monthly bill and <b>bill ÷ number of agents</b>. Two sandbox types side by side:
      <b style="color:var(--s1)">gVisor</b> (any machine) and <b style="color:var(--s2)">microVM</b>
      (needs nested virtualization → Intel N1/N2/N4/C2/C3/C4 or N4D, GKE Standard only, ~10% CPU tax).
-     Math: <a href="../docs/MODEL.md">docs/MODEL.md</a> · sources: <a href="../docs/RESEARCH-gcp-pricing.md">prices</a>,
-     <a href="../docs/RESEARCH-substrate.md">substrate</a>, <a href="../docs/RESEARCH-workloads.md">workloads</a>,
-     <a href="../docs/RESEARCH-always-on-agent.md">measured OpenClaw run</a>. LLM token costs are not included.</p>
+     Math and sources: <a href="MODEL.md">MODEL.md</a> (us-central1 prices retrieved Sept 2026; suspend/resume defaults measured on a live Substrate cluster). LLM token costs are not included.</p>
 </header>
 
 <div class="layout">
@@ -153,6 +151,11 @@
     <div class="duo"><label>Resume takes (s)</label><input id="g_tr" type="number" min="0" step="0.05" value="3.40"><input id="m_tr" type="number" min="0" step="0.05" value="4.50"></div>
     <div class="row"><label for="tidle">Wait before suspending</label><input id="tidle" type="number" min="0" step="1" value="10"><span class="unit">s</span>
       <div class="hint">How long the auto-suspend service waits after the last request before suspending. Protects multi-message conversations from suspend-thrash, but the wait itself occupies the worker on every wake-up. The OpenClaw demo ran an aggressive 2 s; its measured occupancy per cron wake was 8.3 s total (work + wait + suspend).</div></div>
+    <div class="duo-head"><span>CPU intensity per phase (vCPU)</span><span></span><span></span></div>
+    <div class="row"><label for="cpuAct">…while active</label><input id="cpuAct" type="number" min="0.05" step="0.05" value="0.25"><span class="unit">vCPU</span></div>
+    <div class="row"><label for="cpuSus">…while suspending</label><input id="cpuSus" type="number" min="0.05" step="0.05" value="0.30"><span class="unit">vCPU</span></div>
+    <div class="row"><label for="cpuRes">…while restoring</label><input id="cpuRes" type="number" min="0.05" step="0.05" value="1.22"><span class="unit">vCPU</span>
+      <div class="hint">Restore (zstd decompress + page-in) is the most CPU-intensive thing an agent does — measured in the GKE Agent Runtime Benchmark. These weights don't change today's one-agent-per-worker cost; they power the multi-actor projection below.</div></div>
   </div>
 
   <div class="card">
@@ -160,8 +163,16 @@
     <p class="why">You can't pack machines 100% full and still wake agents instantly, and evenings are busier than 4am.</p>
     <div class="row"><label for="util">How full workers run at peak</label><input id="util" type="number" min="0.1" max="1" step="0.05" value="0.70"><span class="unit">×</span>
       <div class="hint">0.7 = keep 30% headroom so a waking agent finds a free worker fast (the router only holds a request 5 s by default).</div></div>
-    <div class="row"><label for="peak">Peak hour vs average hour</label><input id="peak" type="number" min="1" step="0.25" value="2"><span class="unit">×</span>
-      <div class="hint">Capacity is bought for the busiest moment, not the average. The measured OpenClaw fleet model saw a P99 peak ≈3× the mean at 1,000 agents (random schedules); big fleets smooth this out, aligned cron schedules make it far worse. Use ~1 if the pool autoscales through the day.</div></div>
+    <div class="row"><label for="peakModel">Provision for peaks via</label>
+      <select id="peakModel" style="grid-column:2/4">
+        <option value="mult" selected>peak multiplier — busiest hour × average</option>
+        <option value="herd">herd % — fraction waking simultaneously</option>
+      </select>
+      <div class="hint">Two lenses on the same question; pick the one you can check. Multiplier fits timezone-driven fleets (measured peak-to-average). Herd fits cron-heavy fleets: could X% of your agents fire at the same instant?</div></div>
+    <div class="row" id="rowPeakMult"><label for="peak">Peak hour vs average hour</label><input id="peak" type="number" min="1" step="0.25" value="2"><span class="unit">×</span>
+      <div class="hint">Capacity is bought for the busiest moment, not the average. The measured OpenClaw fleet model saw a P99 peak ≈3× the mean at 1,000 agents (random schedules); big fleets smooth this out. Use ~1 if the pool autoscales through the day.</div></div>
+    <div class="row" id="rowHerd" style="display:none"><label for="herd">Herd fraction</label><input id="herd" type="number" min="0" max="100" step="5" value="25"><span class="unit">%</span>
+      <div class="hint">Share of the fleet that can wake simultaneously (aligned heartbeats/crons). Each herd member is charged a full worker during the burst; the rest at average occupancy. Checkable against your cron schedule.</div></div>
     <div class="row"><label for="cycleCap">Max suspend/resume cycles per worker</label><input id="cycleCap" type="number" min="0" step="0.25" value="0"><span class="unit">/min</span>
       <div class="hint">0 = no cap. Caps churn per worker (snapshot I/O, GCS traffic, node pressure grow with cycle rate). Applied at the peak hour: if agents wake often enough to hit it, each worker hosts fewer agents than time-sharing alone would allow, and cost rises. <a href="#churnCapExplainer">How the binding threshold is calculated ↓</a></div>
       <div class="hint" id="capHint" style="color:var(--text-2)"></div></div>
@@ -169,7 +180,7 @@
 
   <div class="card">
     <h2>4 · Machines &amp; prices <span style="font-weight:400;color:var(--muted)">(us-central1, Sep 2026)</span></h2>
-    <p class="why">A machine (GKE node) is carved into fixed-size <i>workers</i>; each worker hosts one live agent at a time. The microVM list only shows machines that support nested virtualization. <a href="../docs/RESEARCH-gcp-pricing.md">Price sources</a>.</p>
+    <p class="why">A machine (GKE node) is carved into fixed-size <i>workers</i>; each worker hosts one live agent at a time. The microVM list only shows machines that support nested virtualization. <a href="MODEL.md">Price sources</a>.</p>
     <div class="duo-wrap">
       <div class="shape-row"><span class="who g">gVisor</span><select id="g_shape"></select></div>
       <div class="machine-cost" id="g_machineCost"></div>
@@ -235,6 +246,12 @@
     <div style="overflow-x:auto"><table class="detail" id="billTable"></table></div>
   </div>
 
+  <div class="card">
+    <h3 style="font-size:13px;margin:0 0 2px">Roadmap upside: multi-actor workers</h3>
+    <p class="subtitle">Substrate today runs one live agent per worker slot. Multi-actor workers (the platform's roadmap lever) would pack agents by CPU instead — suspended agents hold no RAM, and each phase is charged its measured CPU (restore is the peak). A projection, not today's price.</p>
+    <p class="anchors" id="maLine"></p>
+  </div>
+
   <div class="card chart-card">
     <h3>Where the money goes (per agent per month)</h3>
     <div class="legend" id="bd_legend"></div>
@@ -265,7 +282,7 @@
       <div style="overflow-x:auto; margin-top:8px"><table class="detail" id="detailTable"></table></div>
     </details>
     <p class="footnote">The model: each wake-up occupies a worker for (useful time + idle wait + suspend + resume).
-      Agents per worker = target utilization ÷ (per-agent occupancy × peak ratio). This is the same identity as the
+      Agents per worker = target utilization ÷ peak-adjusted occupancy (busiest-hour multiplier, or herd fraction charged at full occupancy — pick one in Safety margins). This is the same identity as the
       benchmarking formula QPS = workers ÷ (live + suspend + resume), inverted. Assumes one live agent per worker
       (Substrate today); multi-actor workers would raise density further.</p>
   </div>
@@ -282,10 +299,10 @@
       <li>Each wake-up is one resume + one suspend = <b>1 cycle</b>. One agent wakes
         <b><span id="ce_acts">–</span>×/day</b> (sessions + check-ins).</li>
       <li>Time-sharing packs <b><span id="ce_ntime">–</span> agents onto one worker</b>
-        (utilization ÷ (occupancy × peak ratio)) — gVisor / microVM.</li>
+        (target utilization ÷ peak-adjusted occupancy) — gVisor / microVM.</li>
       <li>So a full worker churns <span id="ce_daily">–</span> cycles/day
         ≈ <b><span id="ce_avg">–</span> cycles/min on average</b>.</li>
-      <li>The cap must hold at the busiest hour: × peak ratio <span id="ce_peak">–</span>
+      <li>The cap must hold at the worst moment: × peak factor <span id="ce_peak">–</span>
         → <b>threshold ≈ <span id="ce_thresh">–</span> cycles/min</b>.</li>
     </ol>
     <p style="color:var(--text-2); font-size:13px; margin:4px 0">
@@ -297,7 +314,7 @@
       <span id="ce_status" style="font-weight:600"></span></p>
     <p class="footnote">Independent of this <i>policy</i> cap, each worker has a <i>physical</i> ceiling of
       one cycle per (work + wait + suspend + resume) = <span id="ce_ceiling">–</span> cycles/min — the
-      time-sharing math already respects it. Full derivation: <a href="../docs/MODEL.md">docs/MODEL.md</a> §3.</p>
+      time-sharing math already respects it. Full derivation: <a href="MODEL.md">MODEL.md</a> §3.</p>
   </div>
 </div>
 </div>
@@ -386,12 +403,20 @@ function scenario(p, w) {
   const over = num("tidle") + p.ts + p.tr;             // overhead seconds per wake-up
   const occSec = w.liveSec + w.acts*over;              // worker-seconds per agent-day
   const dEff = occSec/86400;
-  const nTime = num("util") / (dEff * num("peak"));    // agents per worker, time-sharing
+  // Two peak lenses (pick one in the UI): busiest-hour multiplier, or a
+  // herd fraction that wakes simultaneously and holds full workers.
+  const herdMode = $("peakModel").value === "herd";
+  const H = num("herd")/100;
+  const nTime = herdMode
+    ? num("util") / (H + (1-H)*dEff)
+    : num("util") / (dEff * num("peak"));              // agents per worker, time-sharing
   // Optional churn cap: a worker may only do so many suspend/resume cycles
-  // per minute. Each agent brings acts/1440 cycles per minute on average,
-  // ×peak at the busiest hour — the cap must hold there.
+  // per minute. In multiplier mode the cap must hold at the busiest hour;
+  // in herd mode it is compared against the average rate (the herd burst is
+  // priced through occupancy, not churn).
+  const peakFactor = herdMode ? 1 : num("peak");
   const cap = num("cycleCap");
-  const nChurn = cap > 0 ? cap*1440/(w.acts*num("peak")) : Infinity;
+  const nChurn = cap > 0 ? cap*1440/(w.acts*peakFactor) : Infinity;
   const N = Math.min(nTime, nChurn);
   const capBinds = nChurn < nTime;
   const s = SHAPES.find(x => x.id === p.shape);
@@ -417,7 +442,21 @@ function scenario(p, w) {
   const cyclesPerWorkerHr = w.acts*fleet/(workers*24);
   const ceilingPerWorkerHr = 3600/(w.liveSec/Math.max(w.acts,1e-9) + over);
 
-  return {dEff, N, nTime, nChurn, capBinds, wpn, nodeHr, nodeMo, workerHr, workers, nodes,
+  // Multi-actor projection (roadmap): agents pack by fungible CPU instead
+  // of one-per-worker slots; suspended agents hold no RAM. Per-phase CPU
+  // weights from the GKE Agent Runtime Benchmark; restore is the peak.
+  const cpuAvg = (w.liveSec*num("cpuAct") + w.acts*(p.ts*num("cpuSus") + p.tr*num("cpuRes")))/86400;
+  const blendCpu = herdMode ? H*num("cpuRes") + (1-H)*cpuAvg : cpuAvg*num("peak");
+  const activeFrac = herdMode ? H + (1-H)*dEff : dEff*num("peak");
+  const maByCpu = allocCpu/Math.max(blendCpu, 1e-9);
+  const maByMem = allocMem/Math.max(p.wmem*activeFrac, 1e-9);
+  const maMemBound = maByMem < maByCpu;
+  const maPerNode = Math.max(1, Math.floor(Math.min(maByCpu, maByMem)*num("util")));
+  const maNodes = Math.ceil(fleet/maPerNode);
+  const maPerAgent = (maNodes*nodeMo + snapshotsMo + opsMo + fixedMo)/fleet;
+
+  return {dEff, N, nTime, nChurn, capBinds, herdMode, peakFactor, wpn, nodeHr, nodeMo, workerHr, workers, nodes,
+          maPerNode, maMemBound, maPerAgent,
           machinesMo, snapshotsMo, opsMo, fixedMo, totalMo, perAgent,
           compute: machinesMo/fleet, storage: snapshotsMo/fleet,
           opsPerAgent: opsMo/fleet, fixedPerAgent: fixedMo/fleet,
@@ -670,8 +709,8 @@ function recompute() {
 
   // Where the cap starts to matter: the peak per-worker cycle rate the
   // time-sharing packing would produce if the cap didn't exist.
-  const thG = w.acts * G.nTime * num("peak") / 1440;
-  const thM = w.acts * M.nTime * num("peak") / 1440;
+  const thG = w.acts * G.nTime * G.peakFactor / 1440;
+  const thM = w.acts * M.nTime * M.peakFactor / 1440;
   const cap = num("cycleCap");
   if (cap <= 0) {
     $("capHint").textContent = `No cap set. At current settings workers peak at ~${fmt(thG,2)}/min (gVisor) / ~${fmt(thM,2)}/min (microVM); a cap below that would bind and raise cost.`;
@@ -689,11 +728,11 @@ function recompute() {
   $("ce_ntime").textContent = `${fmt(G.nTime,1)} / ${fmt(M.nTime,1)}`;
   $("ce_daily").textContent = `${fmt(w.acts*G.nTime,0)} / ${fmt(w.acts*M.nTime,0)}`;
   $("ce_avg").textContent = `${fmt(w.acts*G.nTime/1440,2)} / ${fmt(w.acts*M.nTime/1440,2)}`;
-  $("ce_peak").textContent = fmt(num("peak"),2);
+  $("ce_peak").textContent = fmt(G.peakFactor,2) + (G.herdMode ? " (herd mode: churn compared to the average rate)" : "");
   $("ce_thresh").textContent = `${fmt(thG,2)} (gVisor) / ${fmt(thM,2)} (microVM)`;
   const exCap = cap > 0 ? cap : Math.round(thG*0.75*100)/100;
   $("ce_example").textContent =
-    `${fmt(1440*exCap/(w.acts*num("peak")),1)} agents at ${cap > 0 ? "your" : "e.g. a"} ${fmt(exCap,2)}/min cap`;
+    `${fmt(1440*exCap/(w.acts*G.peakFactor),1)} agents at ${cap > 0 ? "your" : "e.g. a"} ${fmt(exCap,2)}/min cap`;
   $("ce_status").textContent = cap > 0
     ? (G.capBinds || M.capBinds
         ? `Your current cap (${fmt(cap,2)}/min) is below the threshold — it is BINDING.`
@@ -701,7 +740,7 @@ function recompute() {
     : "";
   const liveAvg = w.liveSec/Math.max(w.acts,1e-9);
   $("ce_ceiling").textContent = `${fmt(60/(liveAvg+G.over),1)} / ${fmt(60/(liveAvg+M.over),1)}`;
-  $("k_churnSub").textContent = `fleet-wide resumes (avg; ~${fmt(G.resumesPerSec*60*num("peak"),0)}/min at peak). Each worker cycles ${fmt(G.cyclesPerWorkerHr,1)}×/hr avg (${fmt(G.cyclesPerWorkerHr*num("peak"),0)}×/hr peak); physical ceiling ${fmt(G.ceilingPerWorkerHr,0)}×/hr (gVisor).${capTxt}`;
+  $("k_churnSub").textContent = `fleet-wide resumes (avg; ~${fmt(G.resumesPerSec*60*G.peakFactor,0)}/min at peak). Each worker cycles ${fmt(G.cyclesPerWorkerHr,1)}×/hr avg (${fmt(G.cyclesPerWorkerHr*G.peakFactor,0)}×/hr peak); physical ceiling ${fmt(G.ceilingPerWorkerHr,0)}×/hr (gVisor).${capTxt}`;
   $("k_nodes").textContent = `${fmt(G.nodes,0)} / ${fmt(M.nodes,0)}`;
   $("k_nodesSub").textContent = `${fmt(G.workers,0)} / ${fmt(M.workers,0)} workers for ${fmt(fleet,0)} agents (gV / µVM)`;
 
@@ -720,6 +759,13 @@ function recompute() {
     {cls:"total", cells:["Total", fmt$(G.totalMo)+"/mo", fmt$(M.totalMo)+"/mo"]},
     {cls:"em", cells:[`÷ ${fmt(fleet,0)} agents`, fmt$(G.perAgent)+"/agent/mo", fmt$(M.perAgent)+"/agent/mo"]},
   ]);
+
+  const maVerdict = G.maPerAgent < G.perAgent
+    ? `a further <b>${fmt(G.perAgent/Math.max(G.maPerAgent,1e-9),1)}× / ${fmt(M.perAgent/Math.max(M.maPerAgent,1e-9),1)}×</b> below today's slot-based cost.`
+    : `<b>no upside at these settings</b> — a herd member is charged the restore peak (${num("cpuRes")} vCPU), heavier than today's ${num("g_wcpu")}-vCPU slot; shrink the herd or the restore CPU to see the packing win.`;
+  $("maLine").innerHTML =
+    `gVisor: <b>${fmt$(G.maPerAgent)}/agent/mo</b> at ${fmt(G.maPerNode,0)} agents per machine${G.maMemBound ? " (memory-bound)" : ""} ·
+     microVM: <b>${fmt$(M.maPerAgent)}/agent/mo</b> at ${fmt(M.maPerNode,0)} per machine${M.maMemBound ? " (memory-bound)" : ""} — ${maVerdict}`;
 
   breakdownChart($("bd_chart"), [
     {label:"gVisor", res:G},
@@ -762,6 +808,8 @@ function recompute() {
     {cls: (G.capBinds||M.capBinds)?"em":"", cells:["Agents per worker (min of the two)", fmt(G.N,2), fmt(M.N,2)]},
     {cells:["Workers needed", fmt(G.workers,0), fmt(M.workers,0)]},
     {cells:["Machines needed", fmt(G.nodes,0), fmt(M.nodes,0)]},
+    {cells:["Multi-actor agents/machine (projection)", fmt(G.maPerNode,0)+(G.maMemBound?" (mem-bound)":""), fmt(M.maPerNode,0)+(M.maMemBound?" (mem-bound)":"")]},
+    {cells:["Multi-actor $/agent/mo (projection)", fmt$(G.maPerAgent), fmt$(M.maPerAgent)]},
     {cells:["Fleet resumes per minute (avg)", fmt(G.resumesPerSec*60,1), fmt(M.resumesPerSec*60,1)]},
     {cells:["Cycles per worker per hour", fmt(G.cyclesPerWorkerHr,1), fmt(M.cyclesPerWorkerHr,1)]},
     {cells:["Worker cycle ceiling per hour", fmt(G.ceilingPerWorkerHr,0), fmt(M.ceilingPerWorkerHr,0)]},
@@ -777,6 +825,12 @@ function recompute() {
 $("preset").addEventListener("change", () => {
   const p = PRESETS[$("preset").value];
   if (p) { for (const k in p) $(k).value = p[k]; }
+  recompute();
+});
+$("peakModel").addEventListener("change", () => {
+  const herd = $("peakModel").value === "herd";
+  $("rowPeakMult").style.display = herd ? "none" : "";
+  $("rowHerd").style.display = herd ? "" : "none";
   recompute();
 });
 $("srPreset").addEventListener("change", () => {

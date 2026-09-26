@@ -45,6 +45,8 @@ export COMPRESS="${COMPRESS:-6}"                  # time compression; switch ove
 export DURATION="${DURATION:-30m}"
 export IDLE_TIMEOUT="${IDLE_TIMEOUT:-2s}"
 export PRICE_MODEL="${PRICE_MODEL:-cud3}"         # od | cud1 | cud3
+export PEAK_MODEL="${PEAK_MODEL:-mult}"          # mult | herd — peak lens for the report
+export PEAK_VALUE="${PEAK_VALUE:-2}"             # multiplier (mult) or fraction 0-1 (herd)
 
 # --- load-test mode (./run.sh --load-test) ---
 export LOAD_TEST="${LOAD_TEST:-false}"

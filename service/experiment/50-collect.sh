@@ -37,7 +37,7 @@ python3 "${SERVICE_DIR}/analysis/final_report.py" \
   --metrics "${OUT}/metrics.txt" --compress "${COMPRESS}" \
   --machine-type "${MACHINE_TYPE}" --pool-workers "${WORKER_COUNT}" \
   --pool-nodes "${POOL_NODES}" --snap-gib "${SNAP_GIB:-0.05}" \
-  --price-model "${PRICE_MODEL}" | tee "${OUT}/report.txt"
+  --price-model "${PRICE_MODEL}" --peak-model "${PEAK_MODEL}" --peak-value "${PEAK_VALUE}" | tee "${OUT}/report.txt"
 
 echo
 echo "results in ${OUT}"

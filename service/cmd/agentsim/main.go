@@ -14,7 +14,7 @@
 // Time compression: --compress k divides every workload interval by k so a
 // day of personal-agent behavior plays out in 86400/k seconds of wall clock.
 // Suspend/resume times do NOT compress, so run the model with the compressed
-// workload when comparing predictions (see docs/PHASE2-DESIGN.md).
+// workload when comparing predictions (see MODEL.md).
 package main
 
 import (

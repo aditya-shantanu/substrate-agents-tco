@@ -16,7 +16,7 @@ import (
 
 func runUIShots(out string) {
 	if out == "" {
-		out = "../docs/screenshots"
+		out = "../assets/screenshots"
 	}
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		fatal(err)

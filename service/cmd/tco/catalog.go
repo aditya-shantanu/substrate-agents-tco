@@ -7,7 +7,7 @@ import (
 )
 
 // FAM carries us-central1 per-vCPU / per-GiB on-demand rates and nested-virt
-// support per family (docs/RESEARCH-gcp-pricing.md, retrieved 2026-09-25).
+// support per family (MODEL.md price book, retrieved 2026-09-25).
 var FAM = map[string]struct {
 	cpu, gib float64
 	nested   bool
@@ -25,7 +25,7 @@ var FAM = map[string]struct {
 }
 
 // Machine catalog with us-central1 prices (retrieved 2026-09-25, see
-// docs/RESEARCH-gcp-pricing.md). nested = supports nested virtualization,
+// MODEL.md). nested = supports nested virtualization,
 // which the microVM sandbox class requires.
 type machine struct {
 	name       string
@@ -91,7 +91,7 @@ func machineByName(name string) machine {
 	return machines[0]
 }
 
-// nestedFamilies supporting nested virtualization (docs/RESEARCH-gcp-pricing.md).
+// nestedFamilies supporting nested virtualization (MODEL.md).
 var nestedFamilies = map[string]bool{
 	"n1": true, "n2": true, "n4": true, "n4d": true, "c2": true,
 	"c3": true, "c4": true, "c4n": true, "a2": true, "g2": true,

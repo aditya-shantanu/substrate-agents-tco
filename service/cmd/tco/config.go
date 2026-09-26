@@ -30,6 +30,7 @@ type config struct {
 	duration  string
 	idle      string
 	price     string
+	peak      string
 	loadTest  bool
 	waveStart int
 	waveStep  int
@@ -47,8 +48,25 @@ func defaultConfig() config {
 		subsRepo: filepath.Join(home, "repos", "substrate"),
 		sandbox:  "gvisor", machine: "c3-standard-4", nodes: 2, workers: 10,
 		agents: 120, compress: 6, duration: "30m", idle: "2s", price: "cud3",
+		peak:     "×2 average",
 		loadTest: false, waveStart: 10, waveStep: 10, waveIntvl: "3m",
 	}
+}
+
+// peakParams parses the "Provision for peaks" choice into (model, value)
+// for the final report: mult+multiplier, or herd+fraction.
+func (c config) peakParams() (string, float64) {
+	if strings.HasPrefix(c.peak, "herd") {
+		var pct float64
+		fmt.Sscanf(c.peak, "herd %f%%", &pct)
+		return "herd", pct / 100
+	}
+	var mult float64
+	fmt.Sscanf(c.peak, "×%f average", &mult)
+	if mult == 0 {
+		mult = 2
+	}
+	return "mult", mult
 }
 
 func shellOut(cmd string) string {
@@ -97,6 +115,8 @@ func (c config) env() []string {
 		"DURATION=" + c.duration,
 		"IDLE_TIMEOUT=" + c.idle,
 		"PRICE_MODEL=" + c.price,
+		func() string { m, _ := c.peakParams(); return "PEAK_MODEL=" + m }(),
+		func() string { _, v := c.peakParams(); return fmt.Sprintf("PEAK_VALUE=%g", v) }(),
 		"LOAD_TEST=" + lt,
 		fmt.Sprintf("WAVE_START=%d", c.waveStart),
 		fmt.Sprintf("WAVE_STEP=%d", c.waveStep),
@@ -159,11 +179,17 @@ func (c config) loadScore() float64 {
 }
 
 // costPreview runs the Phase 1 model at REAL duty cycle with measured
-// switch estimates on the chosen machine.
+// switch estimates on the chosen machine, honoring the chosen peak lens.
 func (c config) costPreview() (perAgent, workerMo float64, agentsPerWorker float64) {
 	m := machineByName(c.machine)
 	occ := (wLiveSecDay + wActsPerDay*(10+estSuspend+estResume)) / 86400 // 10s real-world idle wait
-	n := 0.70 / (occ * 2)                                               // utilization 0.7, peak 2
+	model, v := c.peakParams()
+	var n float64
+	if model == "herd" {
+		n = 0.70 / (v + (1-v)*occ)
+	} else {
+		n = 0.70 / (occ * v) // utilization 0.7
+	}
 	wpn := float64(c.workers) / float64(c.nodes)
 	workerMo = m.hourly(c.price) * 730 / wpn
 	return workerMo/n + 0.001 + 0.05, workerMo, n
@@ -250,6 +276,10 @@ var fields = []field{
 		func(c *config, d int) { c.idle = cycleStr(c.idle, []string{"2s", "5s", "10s", "30s"}, d) }, nil, nil},
 	{"Pricing", func(c *config) string { return c.price },
 		func(c *config, d int) { c.price = cycleStr(c.price, priceModels, d) }, nil, nil},
+	{"Provision for peaks", func(c *config) string { return c.peak },
+		func(c *config, d int) {
+			c.peak = cycleStr(c.peak, []string{"×1.5 average", "×2 average", "×3 average", "herd 15%", "herd 25%", "herd 40%"}, d)
+		}, nil, nil},
 	{"Mode", func(c *config) string {
 		if c.loadTest {
 			return "load-test (waves until failure)"

@@ -42,7 +42,7 @@ variables (defaults in `experiment/lib.sh`).
 cd service && go run ./cmd/tco
 ```
 
-![The config screen: live cluster probe, machine dropdown with prices, load gauge](../docs/screenshots/config.svg)
+![The config screen: live cluster probe, machine dropdown with prices, load gauge](../assets/screenshots/config.svg)
 
 A full-screen terminal app (same visual language as substrate-gke's
 installer): a config screen with prefilled choices — machine type dropdown
@@ -72,9 +72,9 @@ cluster, `enter` run, `q`/`ctrl+c` quit. Artifacts land in
 `experiment/results/<timestamp>/` (run.log, occupancy.csv, metrics.txt,
 report.txt, ui.log).
 
-![The live test: worker occupancy, suspend/resume latency, throughput](../docs/screenshots/live.svg)
+![The live test: worker occupancy, suspend/resume latency, throughput](../assets/screenshots/live.svg)
 
-![The finale: measured cost per agent per month](../docs/screenshots/results.svg)
+![The finale: measured cost per agent per month](../assets/screenshots/results.svg)
 
 ## Headless: `experiment/run.sh`
 
@@ -137,7 +137,7 @@ almost all actors sitting in `suspended`. Two failure signatures to know:
   parking (≤5 s) and then getting 503s (they show up as `refusals` in the
   agentsim summary);
 - a red "⚠ N actor(s) wedged in SUSPENDING" line → the resume-during-suspend
-  race (see `docs/FINDINGS.md`): the suspend never commits and the worker
+  race (agent-substrate/substrate#1914): the suspend never commits and the worker
   stays pinned. The autosuspender's **medic** (`--unwedge-after`, default 3m)
   heals these automatically — delete + recreate from the template — and
   counts interventions in `autosuspend_unwedged_total`. If wedges keep
@@ -197,7 +197,7 @@ atespace.
 
 ## Gotchas (learned from always-on-agent and our own runs)
 
-- **Resume-during-suspend wedge** (found here, `docs/FINDINGS.md`): a request
+- **Resume-during-suspend wedge** (found here; filed as agent-substrate/substrate#1914): a request
   arriving while an actor is suspending can leave it in SUSPENDING forever,
   worker pinned; a few of these collapse a small pool. The medic works
   around it; the bug itself belongs upstream.

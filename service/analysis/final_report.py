@@ -14,7 +14,7 @@ import statistics
 import sys
 
 # $/hr per vCPU / GiB, us-central1, retrieved 2026-09-25
-# (docs/RESEARCH-gcp-pricing.md). cud multipliers apply to on-demand.
+# (MODEL.md price book). cud multipliers apply to on-demand.
 FAM = {
     "e2":  (0.021811, 0.002923), "n1": (0.031611, 0.004237),
     "n2":  (0.031611, 0.004237), "n2d": (0.027502, 0.003686),
@@ -80,7 +80,17 @@ def main():
     ap.add_argument("--idle-timeout-real", type=float, default=10,
                     help="idle wait a real deployment would use, seconds")
     ap.add_argument("--utilization", type=float, default=0.70)
-    ap.add_argument("--peak-ratio", type=float, default=2.0)
+    ap.add_argument("--peak-model", default="mult", choices=["mult", "herd"],
+                    help="mult: busiest-hour multiplier; herd: fraction waking simultaneously")
+    ap.add_argument("--peak-value", type=float, default=2.0,
+                    help="the multiplier (mult) or herd fraction 0-1 (herd)")
+    # per-phase CPU (GKE Agent Runtime Benchmark defaults) for the
+    # multi-actor projection; restore is the peak
+    ap.add_argument("--cpu-active", type=float, default=0.25)
+    ap.add_argument("--cpu-suspend", type=float, default=0.30)
+    ap.add_argument("--cpu-restore", type=float, default=1.22)
+    ap.add_argument("--active-mem-gib", type=float, default=1.0,
+                    help="RAM held per ACTIVE agent (suspended agents hold none)")
     a = ap.parse_args()
 
     sim = extract_sim_csv(a.run_log)
@@ -112,7 +122,13 @@ def main():
     A = a.sessions_per_day + a.wakes_per_day
     overhead = a.idle_timeout_real + t_s + t_r
     occ_real = (live + A * overhead) / 86400
-    n_real = a.utilization / (occ_real * a.peak_ratio)
+    if a.peak_model == "herd":
+        H = a.peak_value
+        n_real = a.utilization / (H + (1 - H) * occ_real)
+        peak_desc = f"{a.utilization:.2f} ÷ ({H:.0%} herd + rest × {occ_real*100:.2f}%) = {n_real:.1f}"
+    else:
+        n_real = a.utilization / (occ_real * a.peak_value)
+        peak_desc = f"{a.utilization:.2f} ÷ ({occ_real*100:.2f}% × {a.peak_value:.1f} peak) = {n_real:.1f}"
 
     node_hr = machine_hr(a.machine_type, a.price_model)
     wpn = a.pool_workers / a.pool_nodes
@@ -146,15 +162,33 @@ def main():
     one agent/day           {live / 60:.0f} min live over {A:.0f} wake-ups
     overhead per wake-up    {a.idle_timeout_real:.0f}s wait + {t_s:.1f}s suspend + {t_r:.1f}s resume = {overhead:.1f}s
     worker-time per agent   ({live:.0f}s + {A:.0f}×{overhead:.1f}s)/86400 = {occ_real * 100:.2f}%
-    agents per worker       {a.utilization:.2f} ÷ ({occ_real * 100:.2f}% × {a.peak_ratio:.1f} peak) = {n_real:.1f}
+    agents per worker       {peak_desc}
     worker cost             ${node_hr:.4f}/hr ÷ {wpn:.1f} per node × 730h = ${worker_mo:.2f}/mo ({a.price_model})
     compute {D}${worker_mo:.2f} ÷ {n_real:.1f}{R}   ${compute:.2f}
     snapshot at rest        ${storage:.3f}   ({a.snap_gib:.2f} GiB × ${GCS_GIB_MO}/GiB-mo)
     GCS ops                 ${ops:.3f}""")
+    # Multi-actor projection: pack by CPU (per-phase weights, restore is the
+    # peak); suspended agents hold no RAM. Roadmap upside, not today's price.
+    cpu_avg = (live * a.cpu_active + A * (t_s * a.cpu_suspend + t_r * a.cpu_restore)) / 86400
+    if a.peak_model == "herd":
+        blend_cpu = a.peak_value * a.cpu_restore + (1 - a.peak_value) * cpu_avg
+        active_frac = a.peak_value + (1 - a.peak_value) * occ_real
+    else:
+        blend_cpu = cpu_avg * a.peak_value
+        active_frac = occ_real * a.peak_value
+    fam, kind, cpus = a.machine_type.split("-")
+    gib_per_cpu = {"standard": 4, "highcpu": 2, "highmem": 8}.get(kind, 4)
+    alloc_cpu, alloc_mem = int(cpus) * 0.85, int(cpus) * gib_per_cpu * 0.85
+    ma_node = max(1, int(min(alloc_cpu / max(blend_cpu, 1e-9),
+                             alloc_mem / max(a.active_mem_gib * active_frac, 1e-9)) * a.utilization))
+    ma_cost = (node_hr * 730) / ma_node + storage + ops
+
     print(f"""  {B}╔{line}╗
   ║   COST PER AGENT PER MONTH  ≈  ${total:.2f}{' ' * (30 - len(f'{total:.2f}'))}║
   ╚{line}╝{R}
   {D}vs ${worker_mo:.2f}/mo for a dedicated always-on worker — {worker_mo / total:.0f}× cheaper.
+  Multi-actor workers (roadmap, CPU-packed): ≈{ma_node} agents/machine →
+  ≈${ma_cost:.2f}/agent/mo — a projection, not today's price.
   Excludes LLM tokens and amortized cluster fee/control plane (add
   ~$573/mo ÷ fleet size). Utilization/peak are assumptions; T_s, T_r,
   snapshot size and density above are measured.{R}
