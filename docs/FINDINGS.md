@@ -15,11 +15,19 @@ workflow never commits `SUSPENDED`. Every later resume fails with
 ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED)`. The worker stays
 assigned indefinitely (observed 70+ minutes).
 
-**Trigger.** A request arriving for the actor *while its suspend is in
-flight* (the router's implicit ResumeActor racing the suspend workflow).
-Memoryless arrivals guarantee some fraction of suspends race — at ~15
-suspends/min with a ~5s suspend window and per-agent arrival rates of a few
-per hour, a handful wedge per 10 minutes.
+**Mechanism (source-traced, corrected).** SUSPENDING is an absorbing state:
+the suspend workflow is an in-RPC step chain with no rollback, no retry and
+no reconciler; any failure between the MarkSuspending commit and the
+FinalizeSuspended commit leaves the actor wedged. Concurrent resumes do
+*not* corrupt the commit (workflows serialize on a per-actor lease) — the
+AssignWorker failures are the symptom proving the suspend already died. Two
+entry points hit us: (A) `runsc checkpoint: exit status 128` — the
+`-allow-connected-on-save` flag is passed on `runsc start` but NOT on
+`restore`, so previously-resumed actors fail checkpoints when traffic holds
+sockets open, and atelet deliberately doesn't crash-mark checkpoint
+failures; (B) post-checkpoint workflow death (caller ctx, atelet conn-LRU
+eviction, or the synchronous GCS DeletePrefix placed before the commit).
+Full trace + fix sketch: [UPSTREAM-BUG-suspending-wedge.md](UPSTREAM-BUG-suspending-wedge.md).
 
 **Blast radius.** Each wedge permanently pins one worker. On a 10-worker
 pool this cascades: fewer workers → refusals → client retries → more
@@ -38,12 +46,14 @@ template. Frees the worker at the cost of the actor's state; interventions
 are counted (`autosuspend_unwedged_total`) and surfaced in the dashboard
 and results so measurements stay honest.
 
-**Upstream note (to file).** Suspend workflow should either commit
-SUSPENDED once the checkpoint is durable regardless of concurrent resume
-attempts, or roll back to RUNNING; SUSPENDING must not be a terminal state.
-Related prior art: always-on-agent hit a *different* wedge (bucket IAM) with
-the same terminal-SUSPENDING signature and pinned release-0.1 (`c48b3a3c`),
-reporting reliable suspends there — this may be a main-branch regression.
+**Upstream status (surveyed).** The symptom family is tracked (#1665 stuck
+lifecycle states/no recovery, #1502 no reaper for stalled SUSPENDING, #1527
+same shape via snapshot-GC, #50 the old exit-128 report; PR #1444 fixes
+adjacent races in the same files; #372/#1778 are the maintainers' contract
+umbrella). **Untracked specifics worth filing:** the start-vs-restore
+`-allow-connected-on-save` inconsistency as the exit-128 root cause on
+previously-resumed actors, and the enumerated post-checkpoint death window.
+Filing-ready text: [UPSTREAM-BUG-suspending-wedge.md](UPSTREAM-BUG-suspending-wedge.md).
 
 ## 2. Time compression amplifies the switching tax exactly as modeled
 
