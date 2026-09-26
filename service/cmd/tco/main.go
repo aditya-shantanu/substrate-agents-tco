@@ -23,6 +23,7 @@ type screenID int
 
 const (
 	scrConfig screenID = iota
+	scrHelp
 	scrRun
 	scrDone
 )
@@ -217,7 +218,19 @@ func (a *App) onKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return a, tea.Quit
 		}
 	}
+	if a.scr == scrHelp {
+		switch k.String() {
+		case "?", "esc", "q", "enter":
+			a.scr = scrConfig
+		}
+		return a, nil
+	}
 	if a.scr != scrConfig {
+		return a, nil
+	}
+	// '?' opens the knob explainer (except while typing in a text field).
+	if k.String() == "?" && fields[a.cursor].text == nil {
+		a.scr = scrHelp
 		return a, nil
 	}
 	// Free-text fields (project, zone, …): type to edit, backspace to erase.
@@ -302,6 +315,8 @@ func (a *App) View() string {
 	switch a.scr {
 	case scrConfig:
 		return a.viewConfig()
+	case scrHelp:
+		return a.viewHelp()
 	case scrRun:
 		return a.viewRun()
 	default:

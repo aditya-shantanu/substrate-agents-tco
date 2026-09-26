@@ -56,6 +56,18 @@ func shellOut(cmd string) string {
 	return string(out)
 }
 
+// dayIn renders how long a simulated day lasts at compression k.
+func dayIn(k int) string {
+	if k <= 0 {
+		k = 1
+	}
+	h := 24.0 / float64(k)
+	if h >= 1 {
+		return fmt.Sprintf("%.0fh", h)
+	}
+	return fmt.Sprintf("%.0f min", h*60)
+}
+
 func regionOf(zone string) string {
 	if i := strings.LastIndex(zone, "-"); i > 0 {
 		return zone[:i]
@@ -211,10 +223,19 @@ var fields = []field{
 		func(c *config, d int) { c.workers = clampInt(c.workers+5*d, 5, 200) }, nil, nil},
 	{"Simulated agents", func(c *config) string { return fmt.Sprintf("%d", c.agents) },
 		func(c *config, d int) { c.agents = clampInt(c.agents+10*d, 10, 1000) }, nil, nil},
-	{"Time compression", func(c *config) string { return fmt.Sprintf("×%d", c.compress) },
+	{"Time compression", func(c *config) string {
+		return fmt.Sprintf("×%d — a day of agent-life every %s", c.compress, dayIn(c.compress))
+	},
 		func(c *config, d int) { c.compress = cycleInt(c.compress, []int{1, 3, 6, 12, 20, 60}, d) }, nil, nil},
-	{"Test length", func(c *config) string { return c.duration },
-		func(c *config, d int) { c.duration = cycleStr(c.duration, []string{"10m", "20m", "30m", "45m", "60m"}, d) }, nil, nil},
+	{"Test length", func(c *config) string {
+		if c.duration == "2m" || c.duration == "5m" {
+			return c.duration + " (smoke test — thin statistics)"
+		}
+		return c.duration
+	},
+		func(c *config, d int) {
+			c.duration = cycleStr(c.duration, []string{"2m", "5m", "10m", "20m", "30m", "45m", "60m"}, d)
+		}, nil, nil},
 	{"Idle wait before suspend", func(c *config) string { return c.idle },
 		func(c *config, d int) { c.idle = cycleStr(c.idle, []string{"2s", "5s", "10s", "30s"}, d) }, nil, nil},
 	{"Pricing", func(c *config) string { return c.price },
@@ -257,7 +278,7 @@ func (a *App) viewConfig() string {
 		val := f.get(&a.cfg)
 		switch {
 		case dim:
-			b.WriteString(sFaint.Render(label+"  "+val) + "\n")
+			b.WriteString(sFaint.Render(label+"  "+val) + sFaint.Render("  (enabled in load-test mode)") + "\n")
 		case i == a.cursor:
 			b.WriteString(sKey.Render("▸ ") + sSelected.Render(fmt.Sprintf("%-26s", f.label)) +
 				"  " + sSelected.Render("‹ "+val+" ›") + "\n")
@@ -284,7 +305,7 @@ func (a *App) viewConfig() string {
 		n, workerMo, per)
 
 	b.WriteString("\n" + sPanel.Render(feas+"\n"+sSubtle.Render(preview)) + "\n")
-	b.WriteString("\n" + hints([][2]string{{"↑/↓", "field"}, {"←/→", "change"}, {"r", "re-check cluster"}, {"enter", "run"}, {"q", "quit"}}))
+	b.WriteString("\n" + hints([][2]string{{"↑/↓", "field"}, {"←/→", "change"}, {"?", "what do these mean"}, {"r", "re-check cluster"}, {"enter", "run"}, {"q", "quit"}}))
 	return b.String()
 }
 
