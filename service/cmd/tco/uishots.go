@@ -75,7 +75,7 @@ func runUIShots(out string) {
 	done.scr = scrDone
 	done.curStage = len(done.stages)
 	done.outDir = "service/experiment/results/20260925-2036"
-	if card, err := os.ReadFile(filepath.Join("..", "docs", "runs", "2026-09-25-baseline-x6", "report.txt")); err == nil {
+	if card, err := os.ReadFile(filepath.Join("..", "assets", "runs", "2026-09-25-baseline-x6", "report.txt")); err == nil {
 		done.report = string(card)
 	} else {
 		done.report = "COST PER AGENT PER MONTH ≈ $1.21"

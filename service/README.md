@@ -121,7 +121,8 @@ changed knobs (it replaces the old one); `50-collect.sh` snapshots results
 (density deep-dive + cost card) into a timestamped folder.
 
 Feed the measured suspend/resume averages and achieved utilization back into
-`tool/index.html` to reconcile theory with practice.
+the calculator (`calculator.html` at the repo root) to reconcile theory
+with practice.
 
 ## What you'll see
 

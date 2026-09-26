@@ -92,7 +92,7 @@ func main() {
 	flag.StringVar(&c.atespace, "atespace", "agents-sim", "atespace for the simulated agents")
 	flag.StringVar(&c.tmplAtespace, "template-atespace", "benchmark-workloads", "atespace of the actor template")
 	flag.StringVar(&c.tmpl, "template", "glutton", "actor template name (deploy glutton via substrate/benchmarking/workloads)")
-	flag.IntVar(&c.agents, "agents", 50, "number of simulated agents")
+	flag.IntVar(&c.agents, "agents", 120, "number of simulated agents")
 	flag.Float64Var(&c.compress, "compress", 60, "time compression factor (60 = a day plays in 24 min)")
 	flag.Float64Var(&c.sessionsPerDay, "sessions-per-day", 3, "interactive sessions per agent-day")
 	flag.Float64Var(&c.sessionMin, "session-minutes", 8, "interactive session length, uncompressed minutes")

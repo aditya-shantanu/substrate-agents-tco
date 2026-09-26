@@ -142,8 +142,8 @@ func (c config) machineChoices() []machine {
 const (
 	wActsPerDay = 43.0   // 3 sessions + 40 check-ins (agentsim defaults)
 	wLiveSecDay = 2040.0 // 3×8min + 40×15s
-	estSuspend  = 2.7    // measured on this stack (glutton, gVisor)
-	estResume   = 1.5
+	estSuspend  = 2.46 // 2026-09-25 baseline run (MODEL.md Appendix B)
+	estResume   = 1.43
 )
 
 func parseSec(s string) float64 {
@@ -161,8 +161,9 @@ func parseSec(s string) float64 {
 
 // demand estimates mean busy workers during the compressed test.
 // demandCalibration anchors the estimate to reality: the 2026-09-25 baseline
-// (50 agents, ×6, 10 workers) measured mean 3.38 busy vs 2.33 predicted.
-const demandCalibration = 1.45
+// (50 agents, ×6, 10 workers) measured mean 3.38 busy vs 2.27 predicted with
+// the measured switch times (2.46s/1.43s).
+const demandCalibration = 1.49
 
 func (c config) demand() float64 {
 	arrivalPerSec := float64(c.agents) * wActsPerDay * float64(c.compress) / 86400

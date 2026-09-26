@@ -178,6 +178,9 @@ def main():
         active_frac = occ_real * a.peak_value
     fam, kind, cpus = a.machine_type.split("-")
     gib_per_cpu = {"standard": 4, "highcpu": 2, "highmem": 8}.get(kind, 4)
+    if fam == "c4" and kind == "standard":
+        gib_per_cpu = 3.75
+    # 0.85 mirrors the calculator's default node-allocatable fraction.
     alloc_cpu, alloc_mem = int(cpus) * 0.85, int(cpus) * gib_per_cpu * 0.85
     ma_node = max(1, int(min(alloc_cpu / max(blend_cpu, 1e-9),
                              alloc_mem / max(a.active_mem_gib * active_frac, 1e-9)) * a.utilization))

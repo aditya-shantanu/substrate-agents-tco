@@ -1,6 +1,6 @@
 # Theoretical cost model: agents on GKE via Substrate
 
-This document defines the math behind the interactive calculator in `tool/`.
+This document defines the math behind the interactive calculator in [`calculator.html`](calculator.html).
 Every symbol here maps 1:1 to a labeled input in the UI.
 
 ## 1. The core idea
@@ -107,9 +107,13 @@ activations per agent-day and a cap `C` cycles/worker/minute applied at the
 peak hour:
 
 ```
-N_churn = 1440·C / (A · P)
+N_churn = 1440·C / (A · peak_factor)
 N       = min(N_time, N_churn)
 ```
+
+where `peak_factor` is `P` in multiplier mode and `1` in herd mode — the
+herd burst is priced through occupancy, not churn, so the cap is compared
+to the average cycle rate.
 
 When `N_churn` binds, workers sit partly idle (below `U`) because they may
 not churn faster — density is capped by cycles, not by time, and cost per
@@ -148,14 +152,15 @@ platform's roadmap lever) turn density into CPU packing:
 cpu_avg      = (L_day·c_act + A·(T_s·c_sus + T_r·c_res)) / 86400   per agent
 cpu_weighted = herd:       H·c_res + (1−H)·cpu_avg
                multiplier: cpu_avg · P
-agents/node  = min( cpu_alloc / cpu_weighted,
-                    mem_alloc / (M_active · active_fraction) )
+agents/node  = floor( U · min( cpu_alloc / cpu_weighted,
+                             mem_alloc / (M_active · active_fraction) ) )
 ```
 
 where `active_fraction` is `H + (1−H)·d_eff` (herd) or `d_eff·P`
-(multiplier) — suspended agents hold no RAM. The tool reports this as the
-**multi-actor upside**, clearly labeled as a projection, never as today's
-price.
+(multiplier) — suspended agents hold no RAM. For microVM, `cpu_alloc`
+already carries the nested-virt CPU tax, exactly as in slot packing.
+The tool reports this as the **multi-actor upside**, clearly labeled as a
+projection, never as today's price.
 
 ## 4. Worker cost
 
@@ -276,12 +281,15 @@ virtualization (required by microVM); Autopilot does not support nested virt.
 | c4d | 0.032704 | 0.003753 | ~58% | no |
 | t2d | 0.027502 | 0.003686 | ~40% | no |
 
-Also nested-capable: c2, c4n, a2, g2, h3, m4, z3. GKE cluster fee
+Also nested-capable: n4d, c2, c4n, a2, g2, h3, m4, z3. GKE cluster fee
 $0.10/hr. GCS Standard $0.020/GiB-mo; ops $5.00/M writes, $0.40/M reads;
 VM↔GCS same region free. Nested virt: GKE Standard only,
 `--enable-nested-virtualization` at node-pool creation, ~10% CPU penalty.
 
 ## Appendix B: measured constants (live cluster, 2026-09-25)
+
+Canonical personal-agent profile used across the tools: 3 sessions × 8 min
++ 40 wakes × 15 s per day (A = 43 wake-ups, 2 040 s live, 2.36% duty).
 
 From a 30-min run of 50 personal-agent-profile actors (128Mi working sets,
 real paging + file I/O) on 10 gVisor workers / 2× c3-standard-4, GKE 1.36.4,
