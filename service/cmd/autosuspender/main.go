@@ -69,9 +69,10 @@ type server struct {
 	api      ateapipb.ControlClient
 	atespace string
 
-	idleTimeout time.Duration
-	maxRunning  time.Duration
-	maxParallel int
+	idleTimeout  time.Duration
+	maxRunning   time.Duration
+	maxParallel  int
+	unwedgeAfter time.Duration
 
 	mu       sync.Mutex
 	acts     map[string]*activity // actor name -> activity
@@ -80,6 +81,8 @@ type server struct {
 	suspends     atomic.Int64
 	suspendErrs  atomic.Int64
 	suspendNsSum atomic.Int64
+	wedged       atomic.Int64
+	unwedged     atomic.Int64 // medic delete+recreate interventions
 
 	samplesMu sync.Mutex
 	samples   []sample
@@ -100,6 +103,7 @@ func main() {
 		sampleEvery = flag.Duration("sample-interval", 5*time.Second, "worker occupancy sampling interval")
 		maxParallel = flag.Int("max-concurrent", 8, "max concurrent SuspendActor calls")
 		listen      = flag.String("listen", ":8080", "HTTP listen address (touch API, /metrics, /occupancy.csv)")
+		unwedge     = flag.Duration("unwedge-after", 3*time.Minute, "medic: delete+recreate an actor stuck in SUSPENDING longer than this, freeing its pinned worker (0 disables). Works around a substrate race where a resume arriving mid-suspend leaves the suspend workflow uncommitted; the actor loses its state (recreated from the golden template) and the event is counted in metrics")
 	)
 	flag.Parse()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
@@ -112,13 +116,14 @@ func main() {
 	defer conn.Close()
 
 	s := &server{
-		api:         api,
-		atespace:    *atespace,
-		idleTimeout: *idleTimeout,
-		maxRunning:  *maxRunning,
-		maxParallel: *maxParallel,
-		acts:        map[string]*activity{},
-		inFlight:    map[string]bool{},
+		api:          api,
+		atespace:     *atespace,
+		idleTimeout:  *idleTimeout,
+		maxRunning:   *maxRunning,
+		maxParallel:  *maxParallel,
+		unwedgeAfter: *unwedge,
+		acts:         map[string]*activity{},
+		inFlight:     map[string]bool{},
 	}
 	s.stateCounts.Store(map[ateapipb.ActorState]int{})
 
@@ -190,9 +195,31 @@ func (s *server) reconcileLoop(ctx context.Context, every time.Duration) {
 		}
 		counts := map[ateapipb.ActorState]int{}
 		now := time.Now()
+		wedged := 0
 		for _, a := range actors {
 			st := a.GetStatus().GetState()
 			counts[st]++
+			// A suspend whose final commit lost a race (e.g. a resume arriving
+			// mid-suspend) leaves the actor in SUSPENDING forever, pinning its
+			// worker. Surface these — they eat the pool — and, past
+			// --unwedge-after, medic them: delete any-state + recreate from
+			// the template (state is lost, the worker is freed).
+			if st == ateapipb.ActorState_ACTOR_STATE_SUSPENDING {
+				age := now.Sub(a.GetMetadata().GetUpdateTime().AsTime())
+				if age > 2*time.Minute {
+					wedged++
+					name := a.GetMetadata().GetName()
+					slog.Warn("actor wedged in SUSPENDING (worker pinned)",
+						"actor", name, "age", age.Round(time.Second).String())
+					s.mu.Lock()
+					busy := s.inFlight[name]
+					if !busy && s.unwedgeAfter > 0 && age > s.unwedgeAfter {
+						s.inFlight[name] = true
+						go s.medic(ctx, name, a.GetActorTemplate())
+					}
+					s.mu.Unlock()
+				}
+			}
 			if st != ateapipb.ActorState_ACTOR_STATE_RUNNING {
 				continue
 			}
@@ -236,7 +263,48 @@ func (s *server) reconcileLoop(ctx context.Context, every time.Duration) {
 		}
 		counts[ateapipb.ActorState_ACTOR_STATE_UNSPECIFIED] = len(actors) // total under key 0
 		s.stateCounts.Store(counts)
+		s.wedged.Store(int64(wedged))
 	}
+}
+
+// medic frees a worker pinned by a wedged suspend: force-delete the actor
+// and recreate it (empty, from its template's golden snapshot). The agent's
+// in-memory state is lost — acceptable for a benchmark harness, counted in
+// autosuspend_unwedged_total so results stay honest.
+func (s *server) medic(ctx context.Context, name string, tmpl *ateapipb.ObjectRef) {
+	defer func() {
+		s.mu.Lock()
+		delete(s.inFlight, name)
+		s.mu.Unlock()
+	}()
+	cctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	if _, err := s.api.DeleteActor(cctx, &ateapipb.DeleteActorRequest{
+		Actor: &ateapipb.ObjectRef{Atespace: s.atespace, Name: name}, AnyState: true,
+	}); err != nil {
+		slog.Warn("medic delete failed", "actor", name, "err", err)
+		return
+	}
+	// Deletion is a workflow; give it a moment before recreating the name.
+	time.Sleep(10 * time.Second)
+	for attempt := 0; attempt < 6; attempt++ {
+		_, err := s.api.CreateActor(cctx, &ateapipb.CreateActorRequest{Actor: &ateapipb.Actor{
+			Metadata:      &ateapipb.ResourceMetadata{Atespace: s.atespace, Name: name},
+			ActorTemplate: tmpl,
+		}})
+		if err == nil || status.Code(err) == codes.AlreadyExists {
+			s.unwedged.Add(1)
+			slog.Info("medic recreated wedged actor", "actor", name)
+			return
+		}
+		select {
+		case <-cctx.Done():
+			slog.Warn("medic recreate timed out", "actor", name)
+			return
+		case <-time.After(5 * time.Second):
+		}
+	}
+	slog.Warn("medic recreate gave up", "actor", name)
 }
 
 func (s *server) suspend(ctx context.Context, name string, forced bool) {
@@ -373,6 +441,8 @@ func (s *server) handleState(w http.ResponseWriter, _ *http.Request) {
 		"suspends":       s.suspends.Load(),
 		"suspend_errors": s.suspendErrs.Load(),
 		"suspend_avg_ms": avgMs,
+		"wedged":         s.wedged.Load(),
+		"unwedged":       s.unwedged.Load(),
 		"samples":        samples,
 	})
 }
@@ -384,6 +454,8 @@ func (s *server) handleMetrics(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprintf(w, "autosuspend_suspend_errors_total %d\n", s.suspendErrs.Load())
 	fmt.Fprintf(w, "autosuspend_suspend_seconds_sum %f\n", float64(s.suspendNsSum.Load())/1e9)
 	fmt.Fprintf(w, "autosuspend_suspend_seconds_count %d\n", s.suspends.Load())
+	fmt.Fprintf(w, "autosuspend_wedged_suspending %d\n", s.wedged.Load())
+	fmt.Fprintf(w, "autosuspend_unwedged_total %d\n", s.unwedged.Load())
 	for st, n := range c {
 		if st == ateapipb.ActorState_ACTOR_STATE_UNSPECIFIED {
 			fmt.Fprintf(w, "autosuspend_actors_total %d\n", n)

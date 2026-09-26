@@ -1,13 +1,32 @@
 #!/usr/bin/env bash
 # ONE COMMAND, WHOLE SHOW:
-#   ./run.sh                # cluster → substrate → workloads → live test → $$
-#   ./run.sh --skip-setup   # cluster already prepared: live test + report only
+#   ./run.sh                          # sets up whatever is missing, then runs
+#   ./run.sh --duration 10m           # shorter test (also --agents/--compress/--workers)
+#   ./run.sh --force                  # redo every setup stage even if present
 #
-# Stages print as banners; the test streams live stats (awake/asleep agents,
-# worker occupancy bar, suspend/resume latencies, throughput); the finale is
-# the results card with measured COST PER AGENT PER MONTH.
-# Knobs in env.sh: WORKER_COUNT, AGENTS, COMPRESS, DURATION, IDLE_TIMEOUT.
+# Setup stages self-detect: a running cluster, an installed control plane and
+# a ready worker pool are skipped with a checkmark instead of redone. The
+# test streams live stats (awake/asleep agents, worker occupancy bar,
+# suspend/resume latencies, throughput); the finale is the results card with
+# measured COST PER AGENT PER MONTH.
+# Defaults for the knobs live in env.sh: WORKER_COUNT, AGENTS, COMPRESS,
+# DURATION, IDLE_TIMEOUT, PRICE_MODEL.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+FORCE=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --duration)   DURATION="$2"; shift 2 ;;
+    --agents)     AGENTS="$2"; shift 2 ;;
+    --compress)   COMPRESS="$2"; shift 2 ;;
+    --workers)    WORKER_COUNT="$2"; shift 2 ;;
+    --load-test)  LOAD_TEST=true; shift ;;
+    --force)      FORCE=1; shift ;;
+    --skip-setup) shift ;;  # legacy no-op: stages now self-detect
+    *) echo "unknown flag: $1" >&2; exit 2 ;;
+  esac
+done
+export DURATION AGENTS COMPRESS WORKER_COUNT LOAD_TEST
 
 BOLD=$'\033[1m'; DIM=$'\033[2m'; CYAN=$'\033[36m'; GREEN=$'\033[32m'; RESET=$'\033[0m'
 RULE="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -27,17 +46,43 @@ run_quiet() { # indent child output, keep it visible but subordinate
   "$@" 2>&1 | sed "s/^/   ${DIM}/;s/$/${RESET}/"
 }
 
+stage_skip() { echo "${GREEN} ✓ already in place — skipped ${DIM}(--force redoes it)${RESET}"; }
+
+cluster_ready() {
+  [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --location "${CLUSTER_LOCATION}" \
+        --project "${PROJECT_ID}" --format='value(status)' 2>/dev/null)" == "RUNNING" ]] \
+    && kubectl get ns >/dev/null 2>&1
+}
+substrate_ready() {
+  [[ "$(kubectl -n ate-system get deploy ate-api-server -o jsonpath='{.status.readyReplicas}' 2>/dev/null)" -ge 1 ]] 2>/dev/null \
+    && [[ -n "$(kubectl -n ate-system get ds -o name 2>/dev/null | grep atelet)" ]]
+}
+workloads_ready() {
+  local ready
+  ready=$(kubectl -n benchmark-workloads get workerpool benchmark-ateom \
+          -o jsonpath='{.status.readyReplicas}' 2>/dev/null) || return 1
+  [[ "${ready:-0}" -eq "${WORKER_COUNT}" ]] || return 1
+  "${SUBSTRATE_REPO}/bin/kubectl-ate" get actor-templates -a benchmark-workloads 2>/dev/null \
+    | grep -q "glutton .*gs://" && return 0
+  # kubectl-ate may not be built; fall back to trusting the pool.
+  return 0
+}
+
 TOTAL=5
-if [[ "${1:-}" != "--skip-setup" ]]; then
-  stage 1 $TOTAL "Creating GKE cluster '${CLUSTER_NAME}' + snapshot bucket + IAM  ${DIM}(~10-15 min first time)${RESET}"
-  run_quiet "${EXP_DIR}/10-bootstrap.sh";        stage_done
-  stage 2 $TOTAL "Installing Substrate control plane  ${DIM}(ateapi · scheduler · router · atelet)${RESET}"
+stage 1 $TOTAL "GKE cluster '${CLUSTER_NAME}' + snapshot bucket + IAM  ${DIM}(~10-15 min first time)${RESET}"
+if [[ $FORCE == 0 ]] && cluster_ready; then stage_skip; else
+  run_quiet "${EXP_DIR}/10-bootstrap.sh"; stage_done
+fi
+stage 2 $TOTAL "Substrate control plane  ${DIM}(ateapi · scheduler · router · atelet)${RESET}"
+if [[ $FORCE == 0 ]] && substrate_ready; then stage_skip; else
   run_quiet "${EXP_DIR}/20-install-substrate.sh"; stage_done
-  stage 3 $TOTAL "Deploying sandbox workload (glutton) + ${WORKER_COUNT}-worker pool"
+fi
+stage 3 $TOTAL "Sandbox workload (glutton) + ${WORKER_COUNT}-worker pool"
+if [[ $FORCE == 0 ]] && workloads_ready; then stage_skip; else
   run_quiet "${EXP_DIR}/30-deploy-workloads.sh"; stage_done
 fi
 
-stage 4 $TOTAL "Deploying the experiment  ${DIM}(auto-suspender + ${AGENTS} simulated personal agents)${RESET}"
+stage 4 $TOTAL "Experiment services  ${DIM}(auto-suspender + ${AGENTS} simulated personal agents)${RESET}"
 run_quiet "${EXP_DIR}/40-deploy-experiment.sh"; stage_done
 
 OUT="${EXP_DIR}/results/$(date +%Y%m%d-%H%M%S)"

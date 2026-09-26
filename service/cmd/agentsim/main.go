@@ -51,6 +51,12 @@ type cfg struct {
 	diskBytes                            int
 	duration                             time.Duration
 	rampSec                              float64
+
+	// load-test mode: activate agents in waves until failure thresholds trip
+	loadTest                   bool
+	waveStart, waveStep        int
+	waveInterval               time.Duration
+	failRefusalPct, failErrPct float64
 }
 
 type result struct {
@@ -96,8 +102,14 @@ func main() {
 	flag.StringVar(&c.memRead, "mem-read", "all", "walk this much of the working set right after each activation's first request (demand-paging cost of the restore); 'all', a size like '64Mi', or empty to skip")
 	flag.StringVar(&c.memChurn, "mem-churn", "16Mi", "dirty this much RAM (rotate) on every turn, so snapshots change like a live app's; empty skips")
 	flag.IntVar(&c.diskBytes, "disk-bytes", 65536, "bytes written to the actor's filesystem on every turn (glutton WriteDisk) and digest-read back once per activation; 0 skips")
-	flag.DurationVar(&c.duration, "duration", 20*time.Minute, "wall-clock run length after setup")
+	flag.DurationVar(&c.duration, "duration", 20*time.Minute, "wall-clock run length after setup (load-test: upper bound)")
 	flag.Float64Var(&c.rampSec, "ramp-seconds", 60, "spread agent start offsets over this many wall-clock seconds")
+	flag.BoolVar(&c.loadTest, "load-test", false, "wave mode: activate agents in steps until failure thresholds trip; reports the last sustainable level")
+	flag.IntVar(&c.waveStart, "wave-start", 10, "load-test: agents active in the first wave")
+	flag.IntVar(&c.waveStep, "wave-step", 10, "load-test: agents added per wave")
+	flag.DurationVar(&c.waveInterval, "wave-interval", 3*time.Minute, "load-test: observation window per wave")
+	flag.Float64Var(&c.failRefusalPct, "fail-refusal-pct", 5, "load-test: stop when router refusals exceed this % of activations in a wave")
+	flag.Float64Var(&c.failErrPct, "fail-error-pct", 2, "load-test: stop when request errors exceed this % of activations in a wave")
 	flag.Parse()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
 
@@ -108,7 +120,15 @@ func main() {
 	}
 	defer conn.Close()
 
-	s := &sim{cfg: c, api: api, http: &http.Client{Timeout: 60 * time.Second}}
+	// Keep-alives are off on purpose: an idle TCP connection held open into
+	// the sandbox makes the next gVisor checkpoint fail ("runsc checkpoint:
+	// exit status 128"), wedging the actor in SUSPENDING and pinning its
+	// worker. Closing connections per request costs a handshake but keeps
+	// suspends clean.
+	s := &sim{cfg: c, api: api, http: &http.Client{
+		Timeout:   60 * time.Second,
+		Transport: &http.Transport{DisableKeepAlives: true},
+	}}
 	ctx := context.Background()
 
 	if err := s.setup(ctx); err != nil {
@@ -123,15 +143,19 @@ func main() {
 	deadline := time.Now().Add(c.duration)
 	progressCtx, stopProgress := context.WithCancel(ctx)
 	go s.progressLoop(progressCtx)
-	var wg sync.WaitGroup
-	for i := 0; i < c.agents; i++ {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
-			s.agentLoop(ctx, id, deadline)
-		}(i)
+	if c.loadTest {
+		s.runLoadTest(ctx, deadline)
+	} else {
+		var wg sync.WaitGroup
+		for i := 0; i < c.agents; i++ {
+			wg.Add(1)
+			go func(id int) {
+				defer wg.Done()
+				s.agentLoop(ctx, id, deadline)
+			}(i)
+		}
+		wg.Wait()
 	}
-	wg.Wait()
 	stopProgress()
 
 	s.report()
@@ -288,7 +312,17 @@ func (s *sim) activation(ctx context.Context, id int, name, kind string, rng *ra
 			}
 			t := time.Now()
 			if _, err := s.post(ctx, name, "/readram", readRAMBody("memload", sz)); err != nil {
-				r.errors++
+				// Missing key = the actor was recreated (e.g. medic'd after a
+				// wedged suspend) and lost its working set; restore it so the
+				// workload stays realistic instead of erroring forever.
+				if s.cfg.memTarget != "" {
+					if _, ferr := s.post(ctx, name, "/writeram",
+						writeRAMBody("memload", s.cfg.memTarget, writeModeTruncate)); ferr != nil {
+						r.errors++
+					}
+				} else {
+					r.errors++
+				}
 			} else {
 				r.readRAMMs = float64(time.Since(t).Microseconds()) / 1000
 			}
@@ -446,6 +480,95 @@ func appendVarint(b []byte, field int, v uint64) []byte {
 	}
 	b = append(b, byte(field<<3|0))
 	return binary.AppendUvarint(b, v)
+}
+
+// runLoadTest activates agent loops in waves and watches each wave's
+// refusal/error rates. When a wave trips the failure thresholds (or all
+// agents are active, or the deadline passes) it stops and logs the verdict:
+// the last level that stayed under the thresholds is the pool's sustainable
+// maximum for this workload.
+func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
+	type waveStat struct {
+		level, acts, refusals, errors int
+		wakeP50, wakeP99              float64
+	}
+	loopCtx, cancelLoops := context.WithCancel(ctx)
+	defer cancelLoops()
+	var wg sync.WaitGroup
+	active := 0
+	lastGood := 0
+	var waves []waveStat
+
+	activate := func(n int) {
+		for ; active < n && active < s.cfg.agents; active++ {
+			wg.Add(1)
+			go func(id int) {
+				defer wg.Done()
+				s.agentLoop(loopCtx, id, deadline)
+			}(active)
+		}
+	}
+
+	for level := s.cfg.waveStart; ; level += s.cfg.waveStep {
+		if level > s.cfg.agents {
+			level = s.cfg.agents
+		}
+		activate(level)
+		slog.Info("wave", "active_agents", active, "observing_for", s.cfg.waveInterval.String())
+		waveStartMs := time.Now().UnixMilli()
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(s.cfg.waveInterval):
+		}
+		// score the wave from results inside its window
+		s.mu.Lock()
+		st := waveStat{level: active}
+		var wakes []float64
+		for _, r := range s.results {
+			if r.unixMs < waveStartMs {
+				continue
+			}
+			st.acts++
+			st.refusals += r.refusals
+			st.errors += r.errors
+			if r.kind == "wake" {
+				wakes = append(wakes, r.firstReqMs)
+			}
+		}
+		s.mu.Unlock()
+		sort.Float64s(wakes)
+		st.wakeP50, st.wakeP99 = q(wakes, 0.5), q(wakes, 0.99)
+		waves = append(waves, st)
+		refPct, errPct := 0.0, 0.0
+		if st.acts > 0 {
+			refPct = 100 * float64(st.refusals) / float64(st.acts)
+			errPct = 100 * float64(st.errors) / float64(st.acts)
+		}
+		failed := refPct > s.cfg.failRefusalPct || errPct > s.cfg.failErrPct
+		slog.Info("wave result", "active_agents", st.level, "activations", st.acts,
+			"refusal_pct", fmt.Sprintf("%.1f", refPct), "error_pct", fmt.Sprintf("%.1f", errPct),
+			"wake_p50_ms", int(st.wakeP50), "wake_p99_ms", int(st.wakeP99), "failed", failed)
+		if failed || st.level >= s.cfg.agents || time.Now().After(deadline) {
+			cancelLoops()
+			fmt.Println("=== loadtest waves ===")
+			fmt.Println("active_agents,activations,refusals,errors,wake_p50_ms,wake_p99_ms")
+			for _, w := range waves {
+				fmt.Printf("%d,%d,%d,%d,%.0f,%.0f\n",
+					w.level, w.acts, w.refusals, w.errors, w.wakeP50, w.wakeP99)
+			}
+			fmt.Println("=== end loadtest ===")
+			if failed {
+				fmt.Printf("LOADTEST VERDICT: failure at %d active agents; last sustainable level = %d\n",
+					st.level, lastGood)
+			} else {
+				fmt.Printf("LOADTEST VERDICT: no failure up to %d active agents (raise --agents to push further)\n", st.level)
+			}
+			break
+		}
+		lastGood = st.level
+	}
+	wg.Wait()
 }
 
 // progressLoop logs a machine-readable progress line every 20s so a live

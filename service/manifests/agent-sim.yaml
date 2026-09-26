@@ -98,6 +98,12 @@ spec:
         - --mem-churn=16Mi        # dirty a rotating window every turn
         - --disk-bytes=65536      # file write every turn + digest read-back
         - --suspender-url=http://autosuspender.agent-sim.svc.cluster.local:8080
+        # Load-test mode: waves of agents until failure thresholds trip
+        # (no-op when false; agentsim defaults govern unset wave knobs).
+        - --load-test=${LOAD_TEST}
+        - --wave-start=${WAVE_START}
+        - --wave-step=${WAVE_STEP}
+        - --wave-interval=${WAVE_INTERVAL}
         volumeMounts:
         - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
         - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }

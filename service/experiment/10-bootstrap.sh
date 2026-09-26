@@ -33,4 +33,11 @@ for pool in $(gcloud container node-pools list --cluster "${CLUSTER_NAME}" \
     --project "${PROJECT_ID}" --no-enable-autoupgrade --quiet
 done
 
+# Optional: size the substrate node pool (empty NODE_COUNT leaves it alone).
+if [[ -n "${NODE_COUNT:-}" ]]; then
+  gcloud container clusters resize "${CLUSTER_NAME}" \
+    --node-pool substrate-node-pool --num-nodes "${NODE_COUNT}" \
+    --location "${CLUSTER_LOCATION}" --project "${PROJECT_ID}" --quiet
+fi
+
 kubectl get nodes

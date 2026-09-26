@@ -5,6 +5,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 sync_substrate_env
 
 cd "${SUBSTRATE_REPO}"
-./benchmarking/workloads/deploy.sh --deploy --worker-count "${WORKER_COUNT}"
+./benchmarking/workloads/deploy.sh --deploy --worker-count "${WORKER_COUNT}" \
+  --sandbox-class "${SANDBOX_CLASS:-gvisor}"
 
 kubectl get workerpools -A
