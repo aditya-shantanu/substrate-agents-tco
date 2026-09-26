@@ -1,0 +1,35 @@
+
+[1m┌──────────────────────────────────────────────────────────────────┐[0m
+[1m│  SUBSTRATE DENSITY RUN — RESULTS                                 │[0m
+[1m└──────────────────────────────────────────────────────────────────┘[0m
+
+  What ran
+    agents simulated        50   (personal-agent profile, time ×6)
+    worker pool             10 workers on 2 × c3-standard-4
+    window                  29.4 min wall = 2.9 h of agent-life
+    activations served      248  (5.0/agent; errors 10, router refusals 25)
+
+  What it measured
+    resume (wake p50/p99)   1,430 / 31,622 ms   ← T_r, user-visible wake-up
+    suspend (avg)           2,460 ms                ← T_s, from 235 suspends
+    RAM walk after resume   14 ms p50 (demand paging)
+    workers busy            mean 3.38 · p99 7 · peak 9 of 10
+    density (this run)      14.8:1 mean · 7.1:1 at p99 ← bankable
+
+  Real-world cost per agent (measured T_s/T_r plugged into the model)
+    one agent/day           34 min live over 43 wake-ups
+    overhead per wake-up    10s wait + 2.5s suspend + 1.4s resume = 13.9s
+    worker-time per agent   (2040s + 43×13.9s)/86400 = 3.05%
+    agents per worker       0.70 ÷ (3.05% × 2.0 peak) = 11.5
+    worker cost             $0.0907/hr ÷ 5.0 per node × 730h = $13.25/mo (cud3)
+    compute [2m$13.25 ÷ 11.5[0m   $1.16
+    snapshot at rest        $0.002   (0.12 GiB × $0.02/GiB-mo)
+    GCS ops                 $0.048
+  [1m╔──────────────────────────────────────────────────────────────────╗
+  ║   COST PER AGENT PER MONTH  ≈  $1.21                          ║
+  ╚──────────────────────────────────────────────────────────────────╝[0m
+  [2mvs $13.25/mo for a dedicated always-on worker — 11× cheaper.
+  Excludes LLM tokens and amortized cluster fee/control plane (add
+  ~$573/mo ÷ fleet size). Utilization/peak are assumptions; T_s, T_r,
+  snapshot size and density above are measured.[0m
+

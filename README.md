@@ -79,12 +79,29 @@ summary output, how to read each number): [`service/README.md`](service/README.m
 Analysis: `service/analysis/report.py` (reports density at mean/p99/peak —
 size on the peak, the mean is just your workload's idleness).
 
+## Measured result
+
+First live run (2026-09-25, GKE, 50 agents on 10 workers / 2× c3-standard-4):
+**$1.21/agent/month measured** — suspend 2.46s avg, resume 1.43s p50,
+0.116 GiB snapshots, density 14.8:1 mean / 7.1:1 at p99 — matching the
+calculator's prediction for the same config. Artifacts:
+[`docs/runs/2026-09-25-baseline-x6/`](docs/runs/2026-09-25-baseline-x6/report.txt).
+Surprises the harness caught along the way: [`docs/FINDINGS.md`](docs/FINDINGS.md)
+(including a resume-during-suspend race that wedges actors and pins workers).
+
 ## Repo map
 
 ```
-tool/index.html            interactive cost calculator (Phase 1)
-docs/MODEL.md              the math behind it
-docs/RESEARCH-*.md         sourced inputs: pricing, workloads, substrate, measured
-docs/PHASE2-DESIGN.md      density experiment design
-service/                   Go: autosuspender + agentsim + manifests + report
+tool/index.html              interactive cost calculator (Phase 1)
+docs/MODEL.md                the math behind it
+docs/RESEARCH-*.md           sourced inputs: pricing, workloads, substrate, measured
+docs/PHASE2-DESIGN.md        density experiment design
+docs/FINDINGS.md             what the live runs surfaced (incl. the wedge bug)
+docs/runs/                   archived artifacts of measured runs
+service/cmd/tco              the TUI: configure → stages → live test → $$/agent card
+service/cmd/autosuspender    suspend side of the loop + live web dashboard + medic
+service/cmd/agentsim         personal-agent workload simulator (+ load-test waves)
+service/experiment/          numbered scripts the TUI drives (also usable by hand)
+service/analysis/            report.py (density deep-dive) · final_report.py ($$ card)
+service/manifests/           k8s manifests for the experiment namespace
 ```
