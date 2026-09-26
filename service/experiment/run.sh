@@ -93,7 +93,7 @@ PF_PID=$!
 trap 'kill ${PF_PID} 2>/dev/null || true' EXIT
 sleep 3
 
-stage 5 $TOTAL "TEST RUNNING — ${AGENTS} agents · ${WORKER_COUNT} workers · ${DURATION} · time ×${COMPRESS}"
+stage 5 $TOTAL "TEST RUNNING — ${AGENTS} agents · ${WORKER_COUNT} workers · window ${DURATION} (wall ≈ prep + window + drain) · time ×${COMPRESS}"
 echo "   ${DIM}live dashboard: http://localhost:18080/   (kept open while this runs)${RESET}"
 echo
 

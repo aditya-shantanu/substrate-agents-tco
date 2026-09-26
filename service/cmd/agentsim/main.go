@@ -265,9 +265,9 @@ func (s *sim) agentLoop(ctx context.Context, id int, deadline time.Time) {
 		}
 		time.Sleep(gap)
 		if rng.Float64() < pSession {
-			s.activation(ctx, id, name, "session", rng)
+			s.activation(ctx, id, name, "session", rng, deadline)
 		} else {
-			s.activation(ctx, id, name, "wake", rng)
+			s.activation(ctx, id, name, "wake", rng, deadline)
 		}
 	}
 }
@@ -275,7 +275,7 @@ func (s *sim) agentLoop(ctx context.Context, id int, deadline time.Time) {
 // activation performs one wake or session: the first request implicitly
 // resumes a suspended actor (its latency is the activation cost), sessions
 // then keep pinging at the turn cadence for the session length.
-func (s *sim) activation(ctx context.Context, id int, name, kind string, rng *rand.Rand) {
+func (s *sim) activation(ctx context.Context, id int, name, kind string, rng *rand.Rand, deadline time.Time) {
 	r := result{unixMs: time.Now().UnixMilli(), agent: id, kind: kind}
 	s.touch(name, "begin")
 	// A saturated pool answers 503 (no free worker, request parked at most
@@ -334,6 +334,11 @@ func (s *sim) activation(ctx context.Context, id int, name, kind string, rng *ra
 		durSec := s.cfg.sessionMin * 60 / s.cfg.compress
 		pingEvery := s.cfg.sessionPingSec / s.cfg.compress
 		for elapsed := 0.0; elapsed < durSec; elapsed += pingEvery {
+			// Do not stretch wall time past the window: an in-flight session
+			// stops pinging at the deadline (its stats so far still count).
+			if time.Now().After(deadline) {
+				break
+			}
 			time.Sleep(time.Duration(pingEvery * float64(time.Second)))
 			if _, err := s.post(ctx, name, "/ping", nil); err != nil {
 				r.errors++

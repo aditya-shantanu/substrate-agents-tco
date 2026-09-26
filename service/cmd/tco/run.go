@@ -316,8 +316,24 @@ func (a *App) headerView() string {
 }
 
 func (a *App) liveView() string {
+	// The chosen test length is the MEASUREMENT window; wall time adds fleet
+	// prep before it and a short drain after. Say so, with the phase.
+	sel, _ := time.ParseDuration(a.cfg.duration)
+	phase := sSubtle.Render("phase: fleet prep — boot/fill/suspend every agent; the window starts when this finishes")
+	if !a.windowStart.IsZero() {
+		el := time.Since(a.windowStart).Round(time.Second)
+		switch {
+		case sel > 0 && el > sel:
+			phase = sWarn.Render(fmt.Sprintf("phase: draining — %s window done; in-flight activations finishing", a.cfg.duration))
+		default:
+			phase = sGood.Render(fmt.Sprintf("phase: measuring — ≈%s of the %s window", el, a.cfg.duration))
+		}
+	}
+	header := sSubtle.Render("test window ") + sBig.Render(a.cfg.duration) +
+		sFaint.Render("  (wall time ≈ prep + window + drain)") + "\n " + phase + "\n\n"
+
 	if len(a.live.Samples) == 0 {
-		return sSubtle.Render("waiting for first sample…")
+		return header + sSubtle.Render("waiting for first sample…")
 	}
 	l := a.live.Samples[len(a.live.Samples)-1]
 	awake := l.Running + l.Resuming + l.Suspending
@@ -358,6 +374,7 @@ func (a *App) liveView() string {
 	spark := sAccent.Render(sparkline(a.busyHist, l.WorkersTotal, 60))
 
 	var body strings.Builder
+	body.WriteString(header)
 	body.WriteString(tiles + "\n\n")
 	body.WriteString(" workers  " + bar + "\n")
 	body.WriteString(" history  " + spark + sFaint.Render("  (busy workers, last 2 min)") + "\n\n")

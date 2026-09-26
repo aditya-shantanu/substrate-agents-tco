@@ -54,6 +54,7 @@ type App struct {
 	verdict   string
 	simTick   int
 	liveErrs  int
+	windowStart time.Time
 
 	cluster   *clusterInfo
 	prefilled bool
@@ -205,6 +206,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case simMsg:
 		if m.line != "" {
 			a.simLine = m.line
+			if a.windowStart.IsZero() {
+				a.windowStart = time.Now()
+			}
 		}
 		if m.refusals > 0 {
 			a.noteAnomaly("refusals", fmt.Sprintf("%d router refusals (503/504)", m.refusals))
