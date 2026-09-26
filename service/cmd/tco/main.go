@@ -58,6 +58,10 @@ type App struct {
 	cluster   *clusterInfo
 	prefilled bool
 
+	anomalies   []string
+	anomalyIdx  map[string]int
+	captureDiag bool
+
 	report string
 	err    error
 }
@@ -79,6 +83,12 @@ func main() {
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
+	}
+	// The alt-screen owns the terminal while the TUI runs; the diagnostics
+	// bundle the user opted into prints only now, after teardown.
+	if a.captureDiag && len(a.anomalies) > 0 {
+		fmt.Fprintln(os.Stderr, "capturing diagnostics from the cluster…")
+		dumpDiagnostics(a)
 	}
 }
 
@@ -134,6 +144,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case stageEndMsg:
 		if m.err != nil {
 			a.stages[a.curStage].status = stFailed
+			a.noteAnomaly("stage-fail", "stage failed: "+a.stages[a.curStage].title)
 			a.err = fmt.Errorf("stage %q failed: %w (see %s/ui.log)", a.stages[a.curStage].title, m.err, a.outDir)
 			a.report = lastLines(a.outLines, 20)
 			a.scr = scrDone
@@ -156,6 +167,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.err == nil {
 			a.liveErrs = 0
 			a.live = m.st
+			if m.st.Wedged > 0 {
+				a.noteAnomaly("wedged", fmt.Sprintf("actors wedged in SUSPENDING (workers pinned; count %d)", m.st.Wedged))
+			}
+			if m.st.SuspendErrs > 0 {
+				a.noteAnomaly("suspend-errs", fmt.Sprintf("%d suspend RPC errors", m.st.SuspendErrs))
+			}
 			if n := len(m.st.Samples); n > 0 {
 				a.busyHist = append(a.busyHist, m.st.Samples[n-1].Assigned)
 				if len(a.busyHist) > 120 {
@@ -180,6 +197,15 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case simMsg:
 		if m.line != "" {
 			a.simLine = m.line
+		}
+		if m.refusals > 0 {
+			a.noteAnomaly("refusals", fmt.Sprintf("%d router refusals (503/504)", m.refusals))
+		}
+		if m.errors > 0 {
+			a.noteAnomaly("errors", fmt.Sprintf("%d request errors", m.errors))
+		}
+		if m.failed {
+			a.noteAnomaly("job-failed", "agentsim job failed")
 		}
 		a.waves = m.waves
 		if m.verdict != "" {
@@ -216,6 +242,11 @@ func (a *App) onKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// 'q' quits everywhere except mid-run and while typing in a text field.
 		if a.scr == scrDone || (a.scr == scrConfig && fields[a.cursor].text == nil) {
 			return a, tea.Quit
+		}
+	case "d":
+		if a.scr == scrDone && len(a.anomalies) > 0 {
+			a.captureDiag = !a.captureDiag
+			return a, nil
 		}
 	}
 	if a.scr == scrHelp {

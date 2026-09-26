@@ -137,11 +137,13 @@ type liveMsg struct {
 	err error
 }
 type simMsg struct {
-	line    string
-	waves   []string
-	verdict string
-	done    bool
-	failed  bool
+	line     string
+	waves    []string
+	verdict  string
+	refusals int
+	errors   int
+	done     bool
+	failed   bool
 }
 type tickMsg time.Time
 type reportMsg struct {
@@ -189,6 +191,7 @@ func (a *App) pollSim() tea.Msg {
 				m.line = fmt.Sprintf("activations %v · wake p50 %.1fs p99 %.1fs · turn p50 %vms · refusals %v · errors %v",
 					j["activations"], num(j["wake_p50_ms"])/1000, num(j["wake_p99_ms"])/1000,
 					j["session_p50_ms"], j["refusals"], j["errors"])
+				m.refusals, m.errors = int(num(j["refusals"])), int(num(j["errors"]))
 			}
 		case strings.Contains(l, `"msg":"wave result"`):
 			var j map[string]any
@@ -403,7 +406,20 @@ func (a *App) viewDone() string {
 	}
 	body := lipgloss.JoinHorizontal(lipgloss.Top,
 		lipgloss.NewStyle().Width(30).Render(a.railView()), card)
-	return a.headerView() + "\n" + body + "\n" +
+
+	extra := ""
+	hs := [][2]string{{"q", "quit"}}
+	if len(a.anomalies) > 0 {
+		state := sGood.Render("ON — logs print to your terminal when you quit")
+		if !a.captureDiag {
+			state = sFaint.Render("off")
+		}
+		extra = "\n" + sPanel.Render(
+			sWarn.Render("⚠ this run had issues: ")+sSubtle.Render(strings.Join(a.anomalies, " · "))+
+				"\n"+sSubtle.Render("capture relevant logs from the run/cluster on exit: ")+state) + "\n"
+		hs = [][2]string{{"d", "toggle diagnostics on exit"}, {"q", "quit"}}
+	}
+	return a.headerView() + "\n" + body + "\n" + extra +
 		sSubtle.Render(" artifacts: "+a.outDir) + "\n" +
-		hints([][2]string{{"q", "quit"}})
+		hints(hs)
 }
