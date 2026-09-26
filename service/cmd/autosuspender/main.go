@@ -138,6 +138,7 @@ func main() {
 	mux.HandleFunc("GET /metrics", s.handleMetrics)
 	mux.HandleFunc("GET /occupancy.csv", s.handleOccupancy)
 	mux.HandleFunc("GET /state.json", s.handleState)
+	mux.HandleFunc("POST /purge", s.handlePurge)
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(dashboardHTML)
@@ -265,6 +266,61 @@ func (s *server) reconcileLoop(ctx context.Context, every time.Duration) {
 		s.stateCounts.Store(counts)
 		s.wedged.Store(int64(wedged))
 	}
+}
+
+// handlePurge deletes every actor in the managed atespace (any state) —
+// the fast path for experiment/clean.sh: one in-cluster gRPC connection and
+// 8-way parallel deletes instead of one port-forward per CLI invocation.
+// Requires ?atespace=<ours> as a confirmation guard.
+func (s *server) handlePurge(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("atespace") != s.atespace {
+		http.Error(w, "pass ?atespace="+s.atespace+" to confirm", http.StatusBadRequest)
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Minute)
+	defer cancel()
+	var deleted atomic.Int64
+	for {
+		actors, err := s.listActors(ctx)
+		if err != nil {
+			http.Error(w, "ListActors: "+err.Error(), http.StatusBadGateway)
+			return
+		}
+		if len(actors) == 0 {
+			break
+		}
+		sem := make(chan struct{}, 8)
+		var wg sync.WaitGroup
+		for _, a := range actors {
+			name := a.GetMetadata().GetName()
+			// DELETING actors are already on their way out; don't re-delete.
+			if a.GetStatus().GetState() == ateapipb.ActorState_ACTOR_STATE_DELETING {
+				continue
+			}
+			wg.Add(1)
+			sem <- struct{}{}
+			go func(name string) {
+				defer func() { <-sem; wg.Done() }()
+				if _, err := s.api.DeleteActor(ctx, &ateapipb.DeleteActorRequest{
+					Actor:    &ateapipb.ObjectRef{Atespace: s.atespace, Name: name},
+					AnyState: true,
+				}); err == nil {
+					deleted.Add(1)
+				}
+			}(name)
+		}
+		wg.Wait()
+		// Wait for DELETING workflows to drain before re-listing.
+		select {
+		case <-ctx.Done():
+			remaining, _ := s.listActors(context.Background())
+			w.WriteHeader(http.StatusGatewayTimeout)
+			fmt.Fprintf(w, "{\"deleted\":%d,\"remaining\":%d}\n", deleted.Load(), len(remaining))
+			return
+		case <-time.After(3 * time.Second):
+		}
+	}
+	fmt.Fprintf(w, "{\"deleted\":%d,\"remaining\":0}\n", deleted.Load())
 }
 
 // medic frees a worker pinned by a wedged suspend: force-delete the actor
