@@ -319,17 +319,35 @@ func (a *App) liveView() string {
 		density = fmt.Sprintf("%.1f:1", float64(l.ActorsTotal)/float64(l.Assigned))
 	}
 
+	// A worker pinned by a wedged suspend is not real capacity: report
+	// busy/pool net of the wedged ones, and draw them as their own segment.
+	wedged := int(a.live.Wedged)
+	if wedged > l.Assigned {
+		wedged = l.Assigned
+	}
+	busyOK := l.Assigned - wedged
+	usable := l.WorkersTotal - wedged
+
+	workerNote := "1 live agent each"
+	if wedged > 0 {
+		workerNote = fmt.Sprintf("✗ %d pinned by stuck suspends", wedged)
+	}
 	tile := func(label, val, note string) string {
 		return sPanel.Render(sSubtle.Render(label) + "\n" + sBig.Render(val) + "\n" + sFaint.Render(note))
 	}
+	workerTile := sPanel.Render(sSubtle.Render("workers busy") + "\n" +
+		sBig.Render(fmt.Sprintf("%d / %d", busyOK, usable)) + "\n" +
+		map[bool]string{true: sBad.Render(workerNote), false: sFaint.Render(workerNote)}[wedged > 0])
 	tiles := lipgloss.JoinHorizontal(lipgloss.Top,
 		tile("agents awake", fmt.Sprintf("%d", awake), fmt.Sprintf("%d asleep", l.Suspended)),
-		tile("workers busy", fmt.Sprintf("%d / %d", l.Assigned, l.WorkersTotal), "1 live agent each"),
+		workerTile,
 		tile("suspends", fmt.Sprintf("%d", a.live.Suspends), fmt.Sprintf("avg %.1fs · %d errs", a.live.SuspendAvgMs/1000, a.live.SuspendErrs)),
 		tile("density now", density, "agents ÷ busy workers"),
 	)
 
-	bar := sAccent.Render(strings.Repeat("█", l.Assigned)) + sFaint.Render(strings.Repeat("░", max(l.WorkersTotal-l.Assigned, 0)))
+	bar := sAccent.Render(strings.Repeat("█", busyOK)) +
+		sBad.Render(strings.Repeat("✗", wedged)) +
+		sFaint.Render(strings.Repeat("░", max(l.WorkersTotal-l.Assigned, 0)))
 	spark := sAccent.Render(sparkline(a.busyHist, l.WorkersTotal, 60))
 
 	var body strings.Builder
@@ -340,7 +358,9 @@ func (a *App) liveView() string {
 		body.WriteString(" " + sSubtle.Render("sim  ") + sBig.Render(a.simLine) + "\n")
 	}
 	if a.live.Wedged > 0 {
-		body.WriteString(" " + sBad.Render(fmt.Sprintf("⚠ %d actor(s) wedged in SUSPENDING — workers pinned (runsc checkpoint failure)", a.live.Wedged)) + "\n")
+		body.WriteString(" " + sBad.Render(fmt.Sprintf(
+			"⚠ %d actor(s) wedged in SUSPENDING — their workers are pinned and excluded from the pool above; the medic deletes+recreates them after the unwedge threshold",
+			a.live.Wedged)) + "\n")
 	}
 	if len(a.waves) > 0 {
 		body.WriteString("\n " + sSubtle.Render("waves") + "\n")

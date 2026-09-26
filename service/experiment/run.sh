@@ -111,11 +111,15 @@ l = sm[-1]
 awake = l["running"] + l["resuming"] + l["suspending"]
 busy, total = l["assigned"], l["workers_total"]
 agents, asleep = l["actors_total"], l["suspended"]
+# workers pinned by wedged suspends are not capacity: report net of them
+wedged = min(s.get("wedged", 0), busy)
+busy_ok, usable = busy - wedged, total - wedged
 dens = "%.1f:1" % (agents / busy) if busy else "-"
-bar = "#" * busy + "." * max(total - busy, 0)
+bar = "#" * busy_ok + "X" * wedged + "." * max(total - busy, 0)
+warn = " | WEDGED %d (workers pinned)" % wedged if wedged else ""
 now = datetime.datetime.now().strftime("%H:%M:%S")
-print("[%s] agents: %2d awake / %3d asleep | workers [%s] %d/%d | %d suspends, avg %.1fs | density now %s"
-      % (now, awake, asleep, bar, busy, total, s.get("suspends", 0),
+print("[%s] agents: %2d awake / %3d asleep | workers [%s] %d/%d%s | %d suspends, avg %.1fs | density now %s"
+      % (now, awake, asleep, bar, busy_ok, usable, warn, s.get("suspends", 0),
          s.get("suspend_avg_ms", 0) / 1000, dens))' 2>/dev/null || true
 }
 

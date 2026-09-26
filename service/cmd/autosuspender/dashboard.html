@@ -223,7 +223,19 @@ function render(state) {
   $("k_agentsNote").textContent = `${fmt(last.suspended,0)} suspended, ${fmt(last.crashed,0)} crashed`;
   $("k_awake").textContent = fmt(awakeNow, 0);
   $("k_awakeNote").textContent = `${last.running} running · ${last.resuming} resuming · ${last.suspending} suspending`;
-  $("k_workers").textContent = `${last.assigned} / ${last.workers_total}`;
+  // Workers pinned by wedged suspends are not real capacity: report busy
+  // and pool size net of them, and call them out.
+  const wedged = Math.min(state.wedged || 0, last.assigned);
+  const busyOK = last.assigned - wedged, usable = last.workers_total - wedged;
+  $("k_workers").textContent = `${busyOK} / ${usable}`;
+  const wNote = $("k_workers").nextElementSibling;
+  if (wedged > 0) {
+    wNote.textContent = `✗ ${wedged} worker(s) pinned by stuck suspends (medic will recover them)`;
+    wNote.style.color = "var(--bad)";
+  } else {
+    wNote.textContent = "a worker is busy while it hosts an actor";
+    wNote.style.color = "";
+  }
   $("k_density").textContent = last.assigned > 0 ? fmt(last.actors_total/last.assigned,1)+":1" : "∞";
   $("k_suspends").textContent = fmt(state.suspends, 0);
 
