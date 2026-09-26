@@ -33,3 +33,4 @@ export AGENTS=50                # simulated personal agents
 export COMPRESS=60              # a day of behavior in 24 wall-clock minutes
 export DURATION=30m             # agentsim run length after setup
 export IDLE_TIMEOUT=10s         # autosuspender idle window (compressed time)
+export PRICE_MODEL=cud3            # od | cud1 | cud3 — pricing for the report

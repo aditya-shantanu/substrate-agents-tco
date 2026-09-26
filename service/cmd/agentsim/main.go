@@ -121,6 +121,8 @@ func main() {
 		fmt.Sprintf("%.2f%%", 100*(c.sessionsPerDay*c.sessionMin*60+c.wakesPerDay*15)/86400))
 
 	deadline := time.Now().Add(c.duration)
+	progressCtx, stopProgress := context.WithCancel(ctx)
+	go s.progressLoop(progressCtx)
 	var wg sync.WaitGroup
 	for i := 0; i < c.agents; i++ {
 		wg.Add(1)
@@ -130,6 +132,7 @@ func main() {
 		}(i)
 	}
 	wg.Wait()
+	stopProgress()
 
 	s.report()
 }
@@ -184,18 +187,39 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 		return fmt.Errorf("CreateActor %s: %w", name, err)
 	}
 	if created {
-		cctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		// The pool is (deliberately) much smaller than the fleet, and a booted
+		// actor holds its worker until suspended — so boots beyond the pool
+		// size see ResourceExhausted until earlier ones are suspended. Retry
+		// with backoff, and suspend explicitly after the fill instead of
+		// waiting for the autosuspender, so setup pipelines through the pool.
+		cctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 		defer cancel()
-		if _, err := s.api.ResumeActor(cctx, &ateapipb.ResumeActorRequest{Actor: ref, Boot: true}); err != nil {
-			return fmt.Errorf("boot %s: %w", name, err)
+		for {
+			_, err := s.api.ResumeActor(cctx, &ateapipb.ResumeActorRequest{Actor: ref, Boot: true})
+			if err == nil {
+				break
+			}
+			switch status.Code(err) {
+			case codes.ResourceExhausted, codes.Aborted, codes.Unavailable:
+				select {
+				case <-cctx.Done():
+					return fmt.Errorf("boot %s: %w", name, err)
+				case <-time.After(time.Duration(2000+rand.IntN(3000)) * time.Millisecond):
+				}
+			default:
+				return fmt.Errorf("boot %s: %w", name, err)
+			}
 		}
 		if s.cfg.memTarget != "" {
-			if _, err := s.post(ctx, name, "/writeram",
+			if _, err := s.post(cctx, name, "/writeram",
 				writeRAMBody("memload", s.cfg.memTarget, writeModeTruncate)); err != nil {
 				return fmt.Errorf("fill RAM %s: %w", name, err)
 			}
 		}
-		s.touch(name, "touch") // let the autosuspender put it to sleep after the idle window
+		if _, err := s.api.SuspendActor(cctx, &ateapipb.SuspendActorRequest{Actor: ref}); err != nil &&
+			status.Code(err) != codes.FailedPrecondition {
+			return fmt.Errorf("first suspend %s: %w", name, err)
+		}
 	}
 	return nil
 }
@@ -422,6 +446,47 @@ func appendVarint(b []byte, field int, v uint64) []byte {
 	}
 	b = append(b, byte(field<<3|0))
 	return binary.AppendUvarint(b, v)
+}
+
+// progressLoop logs a machine-readable progress line every 20s so a live
+// ticker (experiment/run.sh) can show latency and throughput mid-run.
+func (s *sim) progressLoop(ctx context.Context) {
+	tick := time.NewTicker(20 * time.Second)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+		}
+		s.mu.Lock()
+		var wake, sess []float64
+		errs, refs := 0, 0
+		for _, r := range s.results {
+			if r.kind == "wake" {
+				wake = append(wake, r.firstReqMs)
+			} else {
+				sess = append(sess, r.firstReqMs)
+			}
+			errs += r.errors
+			refs += r.refusals
+		}
+		s.mu.Unlock()
+		sort.Float64s(wake)
+		sort.Float64s(sess)
+		qi := func(v []float64, p float64) int {
+			if len(v) == 0 {
+				return 0
+			}
+			return int(q(v, p))
+		}
+		slog.Info("progress",
+			"activations", len(wake)+len(sess),
+			"wake_p50_ms", qi(wake, 0.5),
+			"wake_p99_ms", qi(wake, 0.99),
+			"session_p50_ms", qi(sess, 0.5),
+			"errors", errs, "refusals", refs)
+	}
 }
 
 /* ---------------- report ---------------- */
