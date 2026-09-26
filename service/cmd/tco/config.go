@@ -46,7 +46,7 @@ func defaultConfig() config {
 		project: proj, zone: "us-central1-c", cluster: "agents-tco",
 		subsRepo: filepath.Join(home, "repos", "substrate"),
 		sandbox:  "gvisor", machine: "c3-standard-4", nodes: 2, workers: 10,
-		agents: 50, compress: 6, duration: "30m", idle: "2s", price: "cud3",
+		agents: 120, compress: 6, duration: "30m", idle: "2s", price: "cud3",
 		loadTest: false, waveStart: 10, waveStep: 10, waveIntvl: "3m",
 	}
 }
@@ -140,12 +140,22 @@ func parseSec(s string) float64 {
 }
 
 // demand estimates mean busy workers during the compressed test.
+// demandCalibration anchors the estimate to reality: the 2026-09-25 baseline
+// (50 agents, ×6, 10 workers) measured mean 3.38 busy vs 2.33 predicted.
+const demandCalibration = 1.45
+
 func (c config) demand() float64 {
 	arrivalPerSec := float64(c.agents) * wActsPerDay * float64(c.compress) / 86400
 	holdSec := parseSec(c.idle) + estSuspend + estResume + 4 // +work per wake
 	sessShare := 3.0 / wActsPerDay
 	sessExtra := (8*60/float64(c.compress) - 4) * sessShare // sessions dwell longer
-	return arrivalPerSec * (holdSec + sessExtra)
+	return arrivalPerSec * (holdSec + sessExtra) * demandCalibration
+}
+
+// loadScore is the 0-10 "how hard will this run push the pool" number shown
+// on the config screen (10 = pool fully busy on average).
+func (c config) loadScore() float64 {
+	return c.demand() / float64(c.workers) * 10
 }
 
 // costPreview runs the Phase 1 model at REAL duty cycle with measured
@@ -291,15 +301,32 @@ func (a *App) viewConfig() string {
 		}
 	}
 
-	// live feasibility + model preview
+	// live load estimate + model preview
 	d := a.cfg.demand()
+	score := a.cfg.loadScore()
 	per, workerMo, n := a.cfg.costPreview()
-	feas := sGood.Render(fmt.Sprintf("fits: ~%.1f of %d workers busy on average", d, a.cfg.workers))
-	if d > 0.75*float64(a.cfg.workers) {
-		feas = sWarn.Render(fmt.Sprintf("tight: ~%.1f of %d workers busy — expect refusals (compression makes switch overhead loom large)", d, a.cfg.workers))
-	}
-	if d > float64(a.cfg.workers) {
-		feas = sBad.Render(fmt.Sprintf("overload: needs ~%.1f workers, pool has %d — this run WILL saturate", d, a.cfg.workers))
+	gauge := func() string {
+		filled := int(score + 0.5)
+		if filled > 10 {
+			filled = 10
+		}
+		if filled < 0 {
+			filled = 0
+		}
+		return strings.Repeat("▮", filled) + strings.Repeat("▯", 10-filled)
+	}()
+	head := fmt.Sprintf("estimated load %s %.1f/10  (~%.1f of %d workers busy on average)",
+		gauge, score, d, a.cfg.workers)
+	var feas string
+	switch {
+	case score < 6:
+		feas = sSubtle.Render(head) + "\n" + sSubtle.Render("light — the pool will be mostly idle; raise agents or compression for a fuller test")
+	case score < 9:
+		feas = sGood.Render(head) + "\n" + sGood.Render("good — busy pool with headroom for peaks")
+	case score <= 10.5:
+		feas = sWarn.Render(head) + "\n" + sWarn.Render("hot — peaks will queue; expect some refusals")
+	default:
+		feas = sBad.Render(head) + "\n" + sBad.Render("overload — this run WILL saturate the pool (switch overhead doesn't compress)")
 	}
 	preview := fmt.Sprintf("model preview @ real duty: %.1f agents/worker · worker $%.2f/mo → ≈ $%.2f/agent/mo",
 		n, workerMo, per)

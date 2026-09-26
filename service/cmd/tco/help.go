@@ -45,8 +45,8 @@ var helpSections = []helpSection{
 			"Finds the ceiling: start with 'wave start' agents, add 'wave step' more every 'wave window', until too many requests fail (refusals >5% or errors >2%). The last healthy wave is the most this pool can sustain. The wave fields only matter here — that's why they're dimmed in baseline mode."},
 	}},
 	{"The two panels under the form", []helpItem{
-		{"fits / tight / overload",
-			"Predicts how busy the pool will be during THIS compressed run."},
+		{"estimated load (x/10)",
+			"Predicts how busy the pool will be during THIS compressed run, calibrated against a measured baseline. 10 = fully busy on average. 6-9 is the sweet spot; above 10 the run will saturate and mostly measure queueing."},
 		{"model preview",
 			"Predicts the real-world $ per agent per month for your choices. The final card should land near it."},
 	}},

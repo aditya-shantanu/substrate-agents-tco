@@ -40,7 +40,7 @@ export PATH="$HOME/go/bin:$PATH"   # ko lives here if installed via `go install`
 # --- experiment knobs ---
 export SANDBOX_CLASS="${SANDBOX_CLASS:-gvisor}"   # gvisor | microvm
 export WORKER_COUNT="${WORKER_COUNT:-10}"
-export AGENTS="${AGENTS:-50}"
+export AGENTS="${AGENTS:-120}"
 export COMPRESS="${COMPRESS:-6}"                  # time compression; switch overhead does NOT compress
 export DURATION="${DURATION:-30m}"
 export IDLE_TIMEOUT="${IDLE_TIMEOUT:-2s}"

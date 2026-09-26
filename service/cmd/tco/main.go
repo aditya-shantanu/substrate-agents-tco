@@ -67,6 +67,14 @@ type App struct {
 }
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "screenshots" {
+		out := ""
+		if len(os.Args) > 2 {
+			out = os.Args[2]
+		}
+		runUIShots(out)
+		return
+	}
 	svcDir, err := findServiceDir()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

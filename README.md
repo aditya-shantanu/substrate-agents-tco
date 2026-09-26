@@ -66,6 +66,10 @@ workload, watch it live, end on the measured $/agent/month:
 cd service && go run ./cmd/tco
 ```
 
+![tco config screen](docs/screenshots/config.svg)
+
+![tco results screen](docs/screenshots/results.svg)
+
 A full-screen TUI (substrate-gke's visual language): config screen with
 prefilled choices — GCP project (auto-detected), **gVisor vs microVM** (the
 machine dropdown filters to nested-virt types for microVM, with live

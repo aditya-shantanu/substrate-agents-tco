@@ -42,6 +42,8 @@ variables (defaults in `experiment/lib.sh`).
 cd service && go run ./cmd/tco
 ```
 
+![The config screen: live cluster probe, machine dropdown with prices, load gauge](../docs/screenshots/config.svg)
+
 A full-screen terminal app (same visual language as substrate-gke's
 installer): a config screen with prefilled choices — machine type dropdown
 with live prices, node count, **gVisor vs microVM** (list filtered to
@@ -69,6 +71,10 @@ Keys: `↑/↓` field, `←/→` change, type into text fields, `r` re-check
 cluster, `enter` run, `q`/`ctrl+c` quit. Artifacts land in
 `experiment/results/<timestamp>/` (run.log, occupancy.csv, metrics.txt,
 report.txt, ui.log).
+
+![The live test: worker occupancy, suspend/resume latency, throughput](../docs/screenshots/live.svg)
+
+![The finale: measured cost per agent per month](../docs/screenshots/results.svg)
 
 ## Headless: `experiment/run.sh`
 
