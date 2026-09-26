@@ -59,25 +59,39 @@ always-on worker or VPS. LLM tokens are out of scope (and typically dominate
 
 ## Phase 2: measure it
 
-[`service/`](service/README.md) — two Go binaries (built against the sibling
-`substrate` checkout):
+One command runs the whole show — configure, build the cluster, run the real
+workload, watch it live, end on the measured $/agent/month:
 
+```bash
+cd service && go run ./cmd/tco
+```
+
+A full-screen TUI (substrate-gke's visual language): config screen with
+prefilled choices — GCP project (auto-detected), **gVisor vs microVM** (the
+machine dropdown filters to nested-virt types for microVM, with live
+prices), nodes/workers/fleet/compression/duration/pricing, **baseline or
+load-test** mode — a feasibility check and model cost preview, then
+self-skipping setup stages, a live view (awake/asleep agents, worker bar +
+sparkline, suspend/resume latency, throughput, wedge warnings, load-test
+wave table), and the cost card. Headless equivalent:
+`service/experiment/run.sh` (`--load-test`, `--duration`, `--agents`, …).
+
+Under the hood, three Go binaries built against the sibling `substrate`
+checkout:
+
+- **tco**: the TUI, driving the numbered scripts in `service/experiment/`.
 - **autosuspender**: the missing suspend side of the loop (resume-on-request
-  already exists in atenet). Activity-signal API + TTL fallback + worker
-  occupancy sampling, and a **built-in live dashboard** (`kubectl port-forward
-  svc/autosuspender 8080` → http://localhost:8080/) showing workers busy vs
-  actors awake as the fleet churns, current density, and suspend rate/latency.
-  A healthy run is a sawtooth under the dashed pool line; blue pinned at the
-  line means the pool is saturated.
+  already exists in atenet). Activity-signal API + TTL fallback + occupancy
+  sampling + a web dashboard at `/` + a **medic** that heals actors wedged
+  by the resume-during-suspend platform bug (`docs/FINDINGS.md`).
 - **agentsim**: N simulated personal agents against Glutton actors through
   the router — implicit resume, RAM working-set walk (demand paging), memory
-  churn and file I/O every turn, Poisson sessions/wakes, time compression.
+  churn and file I/O every turn, Poisson sessions/wakes, time compression,
+  and a wave-based load-test mode that finds the pool's ceiling.
 
-Design and experiment matrix: [`docs/PHASE2-DESIGN.md`](docs/PHASE2-DESIGN.md).
-**Runbook with a step-by-step "what you'll see"** (dashboard, log lines,
-summary output, how to read each number): [`service/README.md`](service/README.md).
-Analysis: `service/analysis/report.py` (reports density at mean/p99/peak —
-size on the peak, the mean is just your workload's idleness).
+Full instructions, knobs, "what you'll see" and gotchas:
+[`service/README.md`](service/README.md). Design and experiment matrix:
+[`docs/PHASE2-DESIGN.md`](docs/PHASE2-DESIGN.md).
 
 ## Measured result
 

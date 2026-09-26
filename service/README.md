@@ -1,7 +1,8 @@
 # Phase 2: auto-suspend service + density experiment
 
-Two small Go binaries that answer, empirically, "how much oversubscription do
-I actually get?" on a Substrate cluster:
+Three Go binaries that answer, empirically, "how much oversubscription do I
+actually get, and what does an agent cost per month?" on a Substrate cluster
+(`cmd/tco` is the front door; the other two run in-cluster):
 
 - **`cmd/autosuspender`** — the missing piece of the suspend/resume loop.
   Substrate resumes actors on demand (atenet router) but nothing suspends
@@ -18,14 +19,27 @@ I actually get?" on a Substrate cluster:
   cost), dirties a rotating window of memory each turn, and writes/reads
   files. Time compression (`--compress`) plays a day in minutes.
 
-Analysis: `analysis/report.py` joins the sim log with the occupancy samples
-and prints activation latency, achieved density (mean / p99 / peak — size on
-the peak), and a measured cost-per-agent line.
+Analysis lives in `analysis/`: `final_report.py` renders the results card
+ending in **measured cost per agent per month**; `report.py` is the density
+deep-dive (mean/p99/peak busy workers — size on the peak).
+
+## Prerequisites (once)
+
+- `gcloud` authenticated, **with ADC**: `gcloud auth application-default login`
+  (on corp-managed machines the CLI's own tokens are CBA-bound and GKE rejects
+  them; the bootstrap detects this and switches kubectl to ADC automatically)
+- `kubectl`, `envsubst`, Go, and `ko`: `go install github.com/google/ko@latest`
+- the substrate repo checked out next door (default `~/repos/substrate`)
+- a GCP project you can create clusters in
+
+There is **no config file** — the TUI pre-fills everything (project detected
+from gcloud) and you edit on screen; script users override via environment
+variables (defaults in `experiment/lib.sh`).
 
 ## The TUI — one command, whole show
 
 ```bash
-go run ./cmd/tco
+cd service && go run ./cmd/tco
 ```
 
 A full-screen terminal app (same visual language as substrate-gke's
@@ -43,12 +57,29 @@ Load-test mode activates agents in waves until refusals/errors cross
 thresholds and reports the last sustainable level — the pool's real maximum
 density for this workload.
 
-## Runbook — the `experiment/` scripts
+Keys: `↑/↓` field, `←/→` change, type into text fields, `enter` run,
+`q`/`ctrl+c` quit. Artifacts land in `experiment/results/<timestamp>/`
+(run.log, occupancy.csv, metrics.txt, report.txt, ui.log).
 
-Everything is scripted end-to-end in [`experiment/`](experiment/). Prereqs:
-`gcloud` (authed, with ADC: `gcloud auth application-default login`),
-`kubectl`, `ko` (`go install github.com/google/ko@latest`), `envsubst`, Go,
-and a checkout of the substrate repo next door.
+## Headless: `experiment/run.sh`
+
+The same show without the full-screen UI — staged banners, a live ticker,
+and the cost card at the end. Setup stages self-detect and skip what's
+already in place.
+
+```bash
+cd service/experiment
+./run.sh                                  # everything, with defaults
+./run.sh --duration 10m --agents 30       # quicker test on existing infra
+./run.sh --compress 12 --workers 20       # other knobs: see lib.sh
+./run.sh --load-test                      # waves until failure -> max density
+./run.sh --force                          # redo setup stages even if present
+AGENTS=100 IDLE_TIMEOUT=5s ./run.sh       # env overrides work too
+```
+
+## Step-by-step: the numbered scripts
+
+For debugging or partial reruns, each stage stands alone:
 
 ```bash
 cd service/experiment
@@ -66,10 +97,13 @@ kubectl -n agent-sim logs -f job/agentsim
 ./90-teardown.sh                # delete the cluster (add --bucket for the bucket)
 ```
 
-Experiment knobs (environment overrides, defaults in `lib.sh`): `WORKER_COUNT`, `AGENTS`, `COMPRESS`,
-`DURATION`, `IDLE_TIMEOUT`. Re-run `40-deploy-experiment.sh` to launch a new
-Job with changed knobs (it replaces the old one); `50-collect.sh` snapshots
-results into a timestamped folder.
+Experiment knobs (environment overrides, defaults in `lib.sh`):
+`SANDBOX_CLASS` (gvisor|microvm), `GVISOR_NODE_MACHINE_TYPE`, `NODE_COUNT`,
+`WORKER_COUNT`, `AGENTS`, `COMPRESS`, `DURATION`, `IDLE_TIMEOUT`,
+`PRICE_MODEL`, and for load-test `LOAD_TEST`/`WAVE_START`/`WAVE_STEP`/
+`WAVE_INTERVAL`. Re-run `40-deploy-experiment.sh` to launch a new Job with
+changed knobs (it replaces the old one); `50-collect.sh` snapshots results
+(density deep-dive + cost card) into a timestamped folder.
 
 Feed the measured suspend/resume averages and achieved utilization back into
 `tool/index.html` to reconcile theory with practice.
@@ -87,9 +121,13 @@ almost all actors sitting in `suspended`. Two failure signatures to know:
 - blue pinned at the dashed pool line → pool saturated; new wake-ups are
   parking (≤5 s) and then getting 503s (they show up as `refusals` in the
   agentsim summary);
-- `awake` climbing while `suspends` stalls and `errors` grows → suspends are
-  failing (check bucket IAM — the classic wedge is ate-api-server missing
-  `storage.objects.list`).
+- a red "⚠ N actor(s) wedged in SUSPENDING" line → the resume-during-suspend
+  race (see `docs/FINDINGS.md`): the suspend never commits and the worker
+  stays pinned. The autosuspender's **medic** (`--unwedge-after`, default 3m)
+  heals these automatically — delete + recreate from the template — and
+  counts interventions in `autosuspend_unwedged_total`. If wedges keep
+  climbing faster than the medic clears them, also check bucket IAM
+  (ate-api-server missing `storage.objects.list` causes the same signature).
 
 The "Density over the window" table gives mean/p50/p99/peak busy workers and
 the corresponding density — **the p99/peak line is the number to bank**.
@@ -142,7 +180,15 @@ agents-sim` (states flipping RUNNING↔SUSPENDED), `kubectl ate get workers`,
 or always-on-agent's `demo/watch-fleet.py` pointed at the `agents-sim`
 atespace.
 
-## Gotchas (learned from always-on-agent, they will bite here too)
+## Gotchas (learned from always-on-agent and our own runs)
+
+- **Resume-during-suspend wedge** (found here, `docs/FINDINGS.md`): a request
+  arriving while an actor is suspending can leave it in SUSPENDING forever,
+  worker pinned; a few of these collapse a small pool. The medic works
+  around it; the bug itself belongs upstream.
+- **Keep-alives wedge checkpoints**: if you point your own client at actors,
+  disable HTTP keep-alives — an idle connection held open into the sandbox
+  makes the next gVisor checkpoint fragile (agentsim does this already).
 
 - **Pre-warm every worker node**: the first resume on a cold node is far
   slower and can 504 permanently on some builds. `agentsim`'s setup phase
