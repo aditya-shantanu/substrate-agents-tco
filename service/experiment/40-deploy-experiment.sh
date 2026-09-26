@@ -4,6 +4,12 @@
 # agentsim Job (parameterized from the environment). Re-running replaces the Job.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# Every run starts from zero: purge previous actors/job/snapshots/counters.
+# (The TUI runs clean.sh as its own visible stage and sets SKIP_CLEAN=true.)
+if [[ "${SKIP_CLEAN:-}" != "true" ]]; then
+  "${EXP_DIR}/clean.sh"
+fi
+
 cd "${SERVICE_DIR}"
 export AUTOSUSPENDER_IMAGE=$(ko build --base-import-paths ./cmd/autosuspender)
 export AGENTSIM_IMAGE=$(ko build --base-import-paths ./cmd/agentsim)

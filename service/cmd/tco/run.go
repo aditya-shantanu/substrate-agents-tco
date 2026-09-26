@@ -52,6 +52,8 @@ func newStages() []stage {
 			skip: func(a *App) bool {
 				return a.shOK(`[ "$(kubectl -n benchmark-workloads get workerpool benchmark-ateom -o jsonpath='{.status.readyReplicas}' 2>/dev/null)" = "$WORKER_COUNT" ]`)
 			}},
+		{title: "Clear previous run artifacts", script: "clean.sh",
+			skip: func(a *App) bool { return false }},
 		{title: "Auto-suspender + agent fleet", script: "40-deploy-experiment.sh",
 			skip: func(a *App) bool { return false }},
 	}
@@ -82,7 +84,9 @@ func (a *App) startStage(i int) tea.Cmd {
 	script := filepath.Join(a.expDir, a.stages[i].script)
 	cmd := exec.Command("bash", script)
 	cmd.Dir = a.expDir
-	cmd.Env = append(os.Environ(), a.cfg.env()...)
+	// SKIP_CLEAN: the TUI runs clean.sh as its own visible stage, so
+	// 40-deploy-experiment.sh must not clean a second time.
+	cmd.Env = append(append(os.Environ(), a.cfg.env()...), "SKIP_CLEAN=true")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return func() tea.Msg { return stageEndMsg{err} }
