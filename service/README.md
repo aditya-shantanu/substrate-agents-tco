@@ -57,9 +57,18 @@ Load-test mode activates agents in waves until refusals/errors cross
 thresholds and reports the last sustainable level — the pool's real maximum
 density for this workload.
 
-Keys: `↑/↓` field, `←/→` change, type into text fields, `enter` run,
-`q`/`ctrl+c` quit. Artifacts land in `experiment/results/<timestamp>/`
-(run.log, occupancy.csv, metrics.txt, report.txt, ui.log).
+On startup the TUI **probes GCP for the named cluster** and shows what's
+really there — exists/not-found, GKE version, node count, and every node
+pool with its machine type, size and nested-virt capability — pre-filling
+the machine/node knobs from the discovered pool. Editing project/zone/
+cluster re-probes automatically; `r` re-checks on demand. Machine types
+found on the cluster but missing from the built-in catalog are added to the
+dropdown (priced when the family is known).
+
+Keys: `↑/↓` field, `←/→` change, type into text fields, `r` re-check
+cluster, `enter` run, `q`/`ctrl+c` quit. Artifacts land in
+`experiment/results/<timestamp>/` (run.log, occupancy.csv, metrics.txt,
+report.txt, ui.log).
 
 ## Headless: `experiment/run.sh`
 

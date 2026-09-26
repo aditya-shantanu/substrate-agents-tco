@@ -264,6 +264,10 @@ func (a *App) viewConfig() string {
 		default:
 			b.WriteString("  " + sSubtle.Render(fmt.Sprintf("%-26s", f.label)) + "  " + sBig.Render(val) + "\n")
 		}
+		// Right under the cluster-identity fields: what actually exists in GCP.
+		if f.label == "Substrate repo" {
+			b.WriteString("\n" + a.clusterPanel() + "\n\n")
+		}
 	}
 
 	// live feasibility + model preview
@@ -280,7 +284,7 @@ func (a *App) viewConfig() string {
 		n, workerMo, per)
 
 	b.WriteString("\n" + sPanel.Render(feas+"\n"+sSubtle.Render(preview)) + "\n")
-	b.WriteString("\n" + hints([][2]string{{"↑/↓", "field"}, {"←/→", "change"}, {"enter", "run"}, {"q", "quit"}}))
+	b.WriteString("\n" + hints([][2]string{{"↑/↓", "field"}, {"←/→", "change"}, {"r", "re-check cluster"}, {"enter", "run"}, {"q", "quit"}}))
 	return b.String()
 }
 

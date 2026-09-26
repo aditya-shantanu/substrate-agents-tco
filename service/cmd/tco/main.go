@@ -54,6 +54,9 @@ type App struct {
 	simTick   int
 	liveErrs  int
 
+	cluster   *clusterInfo
+	prefilled bool
+
 	report string
 	err    error
 }
@@ -91,7 +94,7 @@ func findServiceDir() (string, error) {
 	return "", fmt.Errorf("run from the repo root or service/ (experiment/run.sh not found)")
 }
 
-func (a *App) Init() tea.Cmd { return spinTick() }
+func (a *App) Init() tea.Cmd { return tea.Batch(spinTick(), probeCluster(a.cfg)) }
 
 type spinMsg struct{}
 
@@ -111,6 +114,14 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return a.onKey(m)
+
+	case clusterInfoMsg:
+		if m.probedKey == a.cfg.probeKey() { // drop stale probes
+			ci := clusterInfo(m)
+			a.cluster = &ci
+			a.prefillFromCluster(ci)
+		}
+		return a, nil
 
 	case lineMsg:
 		a.outLines = append(a.outLines, string(m))
@@ -223,7 +234,20 @@ func (a *App) onKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 	}
+	// Leaving one of the cluster-identity fields re-probes GCP; 'r' does it
+	// on demand.
+	reprobe := func() tea.Cmd {
+		if a.cluster == nil || a.cluster.probedKey != a.cfg.probeKey() {
+			return probeCluster(a.cfg)
+		}
+		return nil
+	}
 	switch k.String() {
+	case "r":
+		if fields[a.cursor].text == nil { // 'r' types into text fields
+			a.cluster = nil
+			return a, probeCluster(a.cfg)
+		}
 	case "up", "k":
 		for {
 			a.cursor = (a.cursor - 1 + len(fields)) % len(fields)
@@ -231,6 +255,7 @@ func (a *App) onKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
+		return a, reprobe()
 	case "down", "j", "tab":
 		for {
 			a.cursor = (a.cursor + 1) % len(fields)
@@ -238,6 +263,7 @@ func (a *App) onKey(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 				break
 			}
 		}
+		return a, reprobe()
 	case "left", "h":
 		fields[a.cursor].cycle(&a.cfg, -1)
 	case "right", "l", " ":
