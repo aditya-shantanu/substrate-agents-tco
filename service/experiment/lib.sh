@@ -47,6 +47,23 @@ export IDLE_TIMEOUT="${IDLE_TIMEOUT:-2s}"
 export PRICE_MODEL="${PRICE_MODEL:-cud3}"         # od | cud1 | cud3
 export PEAK_MODEL="${PEAK_MODEL:-mult}"          # mult | herd — peak lens for the report
 export PEAK_VALUE="${PEAK_VALUE:-2}"             # multiplier (mult) or fraction 0-1 (herd)
+# Per-agent memory footprint (glutton WriteRAM). 128Mi is a small tool
+# agent; an OpenClaw gateway sits at 512Mi requested / 1.5-2Gi limit, so
+# use MEM_TARGET=1Gi to put memory (not worker slots) on the critical path.
+export MEM_TARGET="${MEM_TARGET:-128Mi}"         # resident working set filled at boot
+export MEM_CHURN="${MEM_CHURN:-16Mi}"            # dirtied every turn (snapshots change like a live app)
+
+# --- worker pod shape (used by the Burstable patch; requests<limits) ---
+# Under kubelet LimitedSwap a pod may swap at most request/nodeRAM × swap,
+# so the memory REQUEST is also the per-worker swap allowance.
+export WORKER_REQ_CPU="${WORKER_REQ_CPU:-200m}"
+export WORKER_REQ_MEM="${WORKER_REQ_MEM:-512Mi}"
+export WORKER_LIM_CPU="${WORKER_LIM_CPU:-1}"
+export WORKER_LIM_MEM="${WORKER_LIM_MEM:-1Gi}"
+worker_resources_patch() {
+  printf '{"spec":{"template":{"resources":{"requests":{"cpu":"%s","memory":"%s"},"limits":{"cpu":"%s","memory":"%s"}}}}}' \
+    "${WORKER_REQ_CPU}" "${WORKER_REQ_MEM}" "${WORKER_LIM_CPU}" "${WORKER_LIM_MEM}"
+}
 
 # --- node swap (GKE native, >=1.34.1-gke.1341000; Standard only) ---
 # SWAP_GIB: "" = leave pool as-is; a number = enable boot-disk-backed swap of

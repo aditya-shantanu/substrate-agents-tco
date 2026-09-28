@@ -96,9 +96,9 @@ spec:
         - --session-minutes=8
         - --session-ping-seconds=30
         - --wakes-per-day=40
-        - --mem-target=128Mi      # working set filled at boot, snapshotted after
-        - --mem-read=all          # page the working set back in on every wake
-        - --mem-churn=16Mi        # dirty a rotating window every turn
+        - --mem-target=${MEM_TARGET}   # working set filled at boot, snapshotted after
+        - --mem-read=all               # page the working set back in on every wake
+        - --mem-churn=${MEM_CHURN}     # dirty a rotating window every turn
         - --disk-bytes=65536      # file write every turn + digest read-back
         - --suspender-url=http://autosuspender.agent-sim.svc.cluster.local:8080
         # Load-test mode: waves of agents until failure thresholds trip

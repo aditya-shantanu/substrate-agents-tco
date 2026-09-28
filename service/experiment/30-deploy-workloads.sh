@@ -11,9 +11,8 @@ cd "${SUBSTRATE_REPO}"
 # Swap applies only to Burstable pods: give workers requests<limits so the
 # kernel may actually swap their cold pages.
 if [[ "${WORKER_BURSTABLE:-false}" == "true" ]]; then
-  kubectl -n benchmark-workloads patch workerpool benchmark-ateom --type merge -p \
-    '{"spec":{"template":{"resources":{"requests":{"cpu":"200m","memory":"512Mi"},"limits":{"cpu":"1","memory":"1Gi"}}}}}'
-  echo "workerpool patched Burstable (200m/512Mi req, 1/1Gi lim)"
+  kubectl -n benchmark-workloads patch workerpool benchmark-ateom --type merge -p "$(worker_resources_patch)"
+  echo "workerpool patched Burstable (${WORKER_REQ_CPU}/${WORKER_REQ_MEM} req, ${WORKER_LIM_CPU}/${WORKER_LIM_MEM} lim)"
 fi
 
 kubectl get workerpools -A
