@@ -246,6 +246,17 @@
     <div style="overflow-x:auto"><table class="detail" id="billTable"></table></div>
   </div>
 
+  <div class="card chart-card">
+    <h3>Oversubscription — agents on fixed hardware</h3>
+    <p class="sub">Hold the machine constant and ask the other question: how many agents fit? Baseline 1× = one agent per worker (no suspend/resume). Log x-axis; dots mark your inputs.</p>
+    <p class="anchors" id="osLine"></p>
+    <div class="legend"><span><span class="key" style="border-color:var(--s1)"></span>gVisor</span><span><span class="key" style="border-color:var(--s2)"></span>microVM</span><span style="color:var(--muted)">dashed — 1× (dedicated workers, no sharing)</span></div>
+    <svg id="os_chart" width="100%" height="240" role="img" aria-label="Oversubscription ratio versus duty cycle"></svg>
+    <h3 style="margin-top:14px">Which knobs buy more agents (same machine)</h3>
+    <p class="sub">Each bar re-runs the model with one knob moved to its friendlier setting, everything else as configured. gVisor scenario, agents per <span id="osMachine"></span>.</p>
+    <svg id="lever_chart" width="100%" height="200" role="img" aria-label="Agents per machine by lever"></svg>
+  </div>
+
   <div class="card">
     <h3 style="font-size:13px;margin:0 0 2px">Roadmap upside: multi-actor workers</h3>
     <p class="subtitle">Substrate today runs one live agent per worker slot. Multi-actor workers (the platform's roadmap lever) would pack agents by CPU instead — suspended agents hold no RAM, and each phase is charged its measured CPU (restore is the peak). A projection, not today's price.</p>
@@ -514,6 +525,8 @@ function niceTicks(max, n=5) {
 
 /* ---------- line chart ---------- */
 function lineChart(svg, opts) {
+  const yFmt = opts.yFmt || fmt$;
+  const suffix = opts.labelSuffix !== undefined ? opts.labelSuffix : "/mo";
   svg.innerHTML = "";
   const W = svg.clientWidth || 900, H = +svg.getAttribute("height");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
@@ -530,7 +543,7 @@ function lineChart(svg, opts) {
   for (const tval of niceTicks(ymax)) {
     el("line", {x1:m.l, x2:W-m.r, y1:Y(tval), y2:Y(tval), stroke:css("--grid"), "stroke-width":1}, svg);
     const t = el("text", {x:m.l-8, y:Y(tval)+4, "text-anchor":"end"}, svg);
-    t.textContent = fmt$(tval);
+    t.textContent = yFmt(tval);
   }
   const xticks = opts.xLog ? opts.xTicks : niceTicks(xmax);
   for (const tv of xticks) {
@@ -548,9 +561,11 @@ function lineChart(svg, opts) {
     const pts = opts.xs.map((x,i)=>[X(x), Y(s.ys[i])]);
     el("path", {d:"M"+pts.map(p=>p.map(v=>v.toFixed(1)).join(",")).join("L"),
       fill:"none", stroke:s.color, "stroke-width":2, "stroke-linejoin":"round", "stroke-linecap":"round"}, svg);
-    const last = pts[pts.length-1];
-    const t = el("text", {x:last[0]+8, y:last[1]+4, class:"dlabel"}, svg);
-    t.textContent = s.name + " " + fmt$(s.ys[s.ys.length-1]) + "/mo";
+    if (opts.endLabels !== false) {
+      const last = pts[pts.length-1];
+      const t = el("text", {x:last[0]+8, y:last[1]+4, class:"dlabel"}, svg);
+      t.textContent = s.name + " " + yFmt(s.ys[s.ys.length-1]) + suffix;
+    }
   });
   if (opts.curX != null) {
     opts.series.forEach(s => {
@@ -571,7 +586,7 @@ function lineChart(svg, opts) {
     cross.setAttribute("x1", X(opts.xs[i])); cross.setAttribute("x2", X(opts.xs[i]));
     cross.setAttribute("opacity", 1);
     showTT(ttBox(opts.xFmt(opts.xs[i]) + opts.ttSuffix,
-      opts.series.map(s=>({color:s.color, name:s.name, val:fmt$(s.ys[i])+"/mo"}))),
+      opts.series.map(s=>({color:s.color, name:s.name, val:yFmt(s.ys[i])+suffix}))),
       ev.clientX, ev.clientY);
   });
   hit.addEventListener("pointerleave", () => { cross.setAttribute("opacity",0); hideTT(); });
@@ -641,15 +656,17 @@ function breakdownChart(svg, rows) {
 function sweepDuty(pG, pM) {
   const w0 = workload();
   const xs = [], g = [], mv = [];
+  const gN = [], mN = [];
   for (let e = Math.log10(0.002); e <= Math.log10(0.30)+1e-9; e += (Math.log10(0.30)-Math.log10(0.002))/60) {
     const target = Math.pow(10, e);
     const k = target/w0.duty;
     const w = {liveSec:w0.liveSec*k, acts:w0.acts*k, duty:target};
     xs.push(target*100);
-    g.push(scenario(pG, w).perAgent);
-    mv.push(scenario(pM, w).perAgent);
+    const sg = scenario(pG, w), sm = scenario(pM, w);
+    g.push(sg.perAgent); mv.push(sm.perAgent);
+    gN.push(sg.N);       mN.push(sm.N);
   }
-  return {xs, g, m:mv, cur:w0.duty*100};
+  return {xs, g, m:mv, gN, mN, cur:w0.duty*100};
 }
 function sweepSR(pG, pM) {
   const w = workload();
@@ -661,6 +678,68 @@ function sweepSR(pG, pM) {
     mv.push(scenario({...pM, ts:t*ratio(pM), tr:t*(1-ratio(pM))}, w).perAgent);
   }
   return {xs, g, m:mv};
+}
+
+/* ---------- levers: same machine, one knob improved ---------- */
+
+// withInputs temporarily sets input values, runs fn, restores. Lets the
+// lever bars reuse scenario() (which reads the DOM) without refactoring.
+function withInputs(changes, fn) {
+  const saved = {};
+  for (const id in changes) { saved[id] = $(id).value; $(id).value = changes[id]; }
+  try { return fn(); } finally {
+    for (const id in saved) $(id).value = saved[id];
+  }
+}
+
+// leverRows computes agents-per-machine for today's settings and for each
+// single-knob improvement (gVisor scenario).
+function leverRows(pG, w, G) {
+  const perMachine = s => s.N * s.wpn;
+  const rows = [{label: "Today, as configured", val: perMachine(G), proj: false}];
+  const add = (label, changes) => {
+    const v = withInputs(changes, () => perMachine(scenario(params("g"), w)));
+    if (Math.abs(v - rows[0].val) > 0.5) rows.push({label, val: v, proj: false});
+  };
+  if (num("tidle") > 2) add("Cut idle wait to 2s", {tidle: 2});
+  if (num("g_ts") > 0.5) add("Small-actor switch times (0.4s/0.25s)", {g_ts: 0.4, g_tr: 0.25});
+  if ($("peakModel").value === "mult" && num("peak") > 1) {
+    add("Autoscale the pool with the day (peak ×1)", {peak: 1});
+  } else if ($("peakModel").value === "herd" && num("herd") > 5) {
+    add("De-align the crons (herd 25% → 5%)", {herd: 5});
+  }
+  if (num("util") < 0.85) add("Run workers hotter (utilization 0.85)", {util: 0.85});
+  rows.push({label: "Multi-actor workers (roadmap projection)", val: G.maPerNode, proj: true});
+  return rows;
+}
+
+function leverChart(svg, rows) {
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 900;
+  const barH = 18, gap = 10, mL = 320, mR = 150;
+  const H = rows.length * (barH + gap) + 8;
+  svg.setAttribute("height", H);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const maxV = Math.max(...rows.map(r => r.val)) * 1.02;
+  const iw = W - mL - mR;
+  rows.forEach((r, i) => {
+    const y = 4 + i * (barH + gap);
+    const lab = el("text", {x: mL - 10, y: y + barH/2 + 4, "text-anchor": "end",
+      class: i === 0 ? "dlabel" : ""}, svg);
+    lab.textContent = r.label;
+    const wpx = Math.max(2, r.val / maxV * iw);
+    const rr = Math.min(4, wpx);
+    const bar = el("path", {d: `M${mL},${y} h${wpx - rr} a${rr},${rr} 0 0 1 ${rr},${rr} v${barH - 2*rr} a${rr},${rr} 0 0 1 ${-rr},${rr} h${-(wpx - rr)} z`,
+      fill: css("--s1"), opacity: r.proj ? 0.45 : (i === 0 ? 1 : 0.8)}, svg);
+    if (r.proj) bar.setAttribute("stroke-dasharray", "4 3");
+    const v = el("text", {x: mL + wpx + 8, y: y + barH/2 + 4, class: "dlabel"}, svg);
+    v.textContent = fmt(r.val, 0) + " agents" +
+      (i > 0 ? sPlus(r.val, rows[0].val) : "");
+  });
+}
+function sPlus(v, base) {
+  const d = v / Math.max(base, 1e-9);
+  return d >= 1 ? `  (+${fmt((d-1)*100,0)}%)` : `  (${fmt((d-1)*100,0)}%)`;
 }
 
 /* ---------- tables ---------- */
@@ -773,6 +852,24 @@ function recompute() {
   ]);
 
   const sd = sweepDuty(pG, pM);
+
+  // Oversubscription view: fixed hardware, how many agents fit.
+  $("osMachine").textContent = $("g_shape").value.split(" ")[0];
+  $("osLine").innerHTML =
+    `Right now one <b>${pG.shape}</b> runs <b>${fmt(G.N*G.wpn,0)} agents</b> on its ${G.wpn} workers —
+     <b>${fmt(G.N,1)}×</b> oversubscribed vs dedicated workers (gVisor) ·
+     microVM: <b>${fmt(M.N*M.wpn,0)} agents</b> on ${M.wpn} (<b>${fmt(M.N,1)}×</b>) ·
+     multi-actor projection: <b>${fmt(G.maPerNode,0)}</b>/machine (${fmt(G.maPerNode/Math.max(G.wpn,1),1)}×).`;
+  lineChart($("os_chart"), {
+    xs:sd.xs, xLog:true, xTicks:[0.3,1,3,10,30], curX:sd.cur,
+    xFmt:v=>fmt(v,1)+"%", ttSuffix:" of the day awake",
+    yFmt:v=>fmt(v,0)+"×", labelSuffix:"", endLabels:false,
+    series:[{name:"gVisor", color:css("--s1"), ys:sd.gN},
+            {name:"microVM", color:css("--s2"), ys:sd.mN}],
+    dashedY:[{y:1, color:css("--baseline"), label:"1× dedicated"}],
+  });
+  leverChart($("lever_chart"), leverRows(pG, w, G));
+
   lineChart($("duty_chart"), {
     xs:sd.xs, xLog:true, xTicks:[0.3,1,3,10,30], curX:sd.cur,
     xFmt:v=>fmt(v,1)+"%", ttSuffix:" of the day awake",
@@ -806,6 +903,7 @@ function recompute() {
     {cells:["Agents per worker — time-sharing limit", fmt(G.nTime,2), fmt(M.nTime,2)]},
     {cells:["Agents per worker — churn-cap limit", Number.isFinite(G.nChurn)?fmt(G.nChurn,2):"no cap", Number.isFinite(M.nChurn)?fmt(M.nChurn,2):"no cap"]},
     {cls: (G.capBinds||M.capBinds)?"em":"", cells:["Agents per worker (min of the two)", fmt(G.N,2), fmt(M.N,2)]},
+    {cells:["Agents per machine (slot-based)", fmt(G.N*G.wpn,0), fmt(M.N*M.wpn,0)]},
     {cells:["Workers needed", fmt(G.workers,0), fmt(M.workers,0)]},
     {cells:["Machines needed", fmt(G.nodes,0), fmt(M.nodes,0)]},
     {cells:["Multi-actor agents/machine (projection)", fmt(G.maPerNode,0)+(G.maMemBound?" (mem-bound)":""), fmt(M.maPerNode,0)+(M.maMemBound?" (mem-bound)":"")]},
