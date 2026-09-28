@@ -52,7 +52,16 @@ stage_skip() { echo "${GREEN} ✓ already in place — skipped ${DIM}(--force re
 cluster_ready() {
   [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --location "${CLUSTER_LOCATION}" \
         --project "${PROJECT_ID}" --format='value(status)' 2>/dev/null)" == "RUNNING" ]] \
-    && kubectl get ns >/dev/null 2>&1
+    && kubectl get ns >/dev/null 2>&1 || return 1
+  # A requested swap change means stage 1 must run (it applies swapConfig).
+  if [[ -n "${SWAP_GIB:-}" ]]; then
+    local cur
+    cur=$(gcloud beta container node-pools describe substrate-node-pool \
+      --cluster "${CLUSTER_NAME}" --location "${CLUSTER_LOCATION}" --project "${PROJECT_ID}" \
+      --format='value(config.linuxNodeConfig.swapConfig.bootDiskProfile.swapSizeGib)' 2>/dev/null)
+    [[ "${cur}" == "${SWAP_GIB}" ]] || return 1
+  fi
+  return 0
 }
 substrate_ready() {
   [[ "$(kubectl -n ate-system get deploy ate-api-server -o jsonpath='{.status.readyReplicas}' 2>/dev/null)" -ge 1 ]] 2>/dev/null \
