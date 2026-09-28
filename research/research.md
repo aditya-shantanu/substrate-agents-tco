@@ -221,3 +221,40 @@ Readings, honestly stated:
   and the node roll needs zone capacity — in a stocked-out zone, set the
   pool to delete-first upgrades (`--max-surge-upgrade=0
   --max-unavailable-upgrade=1`) so the roll recycles its own machines.
+
+### Does swap raise the ceiling? (load-test knees, 2026-09-28)
+
+The fixed-density A/B above cannot show an oversubscription gain by
+construction; the knee test (waves of agents until an SLO gate trips) can.
+
+**Knee 1 — swap 16 GiB, 10 workers, 128 MiB agents (the default profile):
+sustainable 120 active agents, failure at 140** (15% router refusals,
+wake p99 15 s). Host swap in use during the run: 23 MB of 16 GB; node PSI
+≈ 0. This knee is *slot-bound* (10 workers, 1 actor each) — memory never
+entered the picture, so swap could not have moved it. Lesson: with the
+default 128 MiB agent on a 4 GiB-per-vCPU machine, the ceiling is worker
+slots and checkpoint CPU, and swap is irrelevant. Swap can only add
+agents where memory binds first — i.e. memory-heavy agents (OpenClaw's
+gateway requests 512 MiB and is limited at 1.5 GiB) with enough worker
+slots that slots are not the limit.
+
+**Attempt at the memory-bound regime — 14 workers, 1 GiB agents: not
+runnable.** Every suspend wedged (0 completed, 0 snapshots in GCS, node
+idle). Cause, from the node's kernel log and runsc: `Memory cgroup out of
+memory: Killed process (gvisor_sentry)` followed by `checkpoint failed:
+containerManager.Checkpoint: EOF`. **gVisor's checkpoint transiently needs
+roughly 2× the sandbox's resident memory**, so a 1 GiB agent overruns a
+2 GiB worker limit mid-save; the sentry dies and Substrate leaves the actor
+in SUSPENDING (a second route into the #1914 absorbing state — a failed
+checkpoint is never propagated to a terminal state). Two consequences for
+the cost model: (1) worker memory limits must be sized at ≥2–3× the
+agent's resident set or suspend silently stops working; (2) T_s and the
+checkpoint's memory burst both scale with resident set, which is the
+strongest argument for *not* snapshotting warm-but-idle agents at all and
+letting swap park them instead (see §5.3).
+
+**Knee 2 (running) — swap on, 14 workers, 512 MiB agents**, then the same
+on a no-swap node (a second pool in us-central1-a; us-central1-c is
+stocked out). 14 busy agents ≈ 12 GiB resident + checkpoint transients on
+a node with ~10 GiB free, so memory is on the critical path while a
+single checkpoint still fits the 2 GiB limit.
