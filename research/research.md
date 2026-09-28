@@ -186,3 +186,38 @@ turn p99), a fixed-work CPU probe, RAM-walk paging latency, and node PSI
 oversubscription exactly when density climbs while those stay flat** — the
 A/B to run: baseline vs SWAP_GIB=16 with rising AGENTS, compare the
 load-test knee.
+
+### Measured A/B (2026-09-28, 120 agents · ×6 · 30 min window · 10 workers on 2× c3-standard-4)
+
+| | A: no swap | control: Burstable, no swap | B: swap 16 GiB (Burstable) |
+|---|---|---|---|
+| $/agent/mo | **$1.22** | $1.23 | **$1.24** |
+| wake p50 / p99 | 1.8 s / **31.9 s** | 1.9 s / 31.9 s | 1.7 s / **6.5 s** |
+| router refusals / errors | 339 / 59 | 391 / 154 | **15 / 4** |
+| suspend avg | 3.0 s | 3.4 s | 4.3 s |
+| wedge medic interventions | 37 | 34 | **4** |
+| CPU probe p50/p99 (fixed work) | 17 / 46 ms | 18 / 47 ms | 18 / 38 ms |
+| turn p99 · RAM-walk p99 | 26 ms · 43 ms | 28 ms · 49 ms | 29 ms · 36 ms |
+| PSI mem-full / io-some (10s avg mean) | 1.1% / 19% | 0.8% / 19% | 3.3% / 35% |
+
+Readings, honestly stated:
+- **Swap is safe at this load.** The starvation referee stayed flat or
+  improved: fixed-work CPU probe, turn p99 and post-resume RAM walk are
+  all within noise of no-swap. Memory/IO pressure is visibly higher
+  (mem-full 1.1→3.3%, io-some 19→35%) — the kernel *is* paging — but
+  none of it reached the workload's latency.
+- **Cost is unchanged at fixed density** ($1.22 → $1.24; the +2¢ is the
+  slower suspend, 3.0→4.3 s, feeding the overhead term). That's expected:
+  at the same agent count swap can't cut the bill — its payoff is
+  *headroom*, so the experiment that monetizes it is the load-test knee
+  (rising waves, swap vs not), still to run.
+- **The tail collapse (wake p99 32 s → 6.5 s, refusals 339 → 15,
+  wedges 37 → 4) is real but partly confounded**: the swap arm ran on
+  freshly recreated nodes with a clean reinstall, while A and the control
+  reused the aged pool. Attribute it to "fresh pool + swap", not swap
+  alone, until a repeat on an aged pool says otherwise.
+- Ops note for reproducers: `swapSizeGib` must be an int (a quoted
+  string is a 400), `enabled: true` is required alongside the profile,
+  and the node roll needs zone capacity — in a stocked-out zone, set the
+  pool to delete-first upgrades (`--max-surge-upgrade=0
+  --max-unavailable-upgrade=1`) so the roll recycles its own machines.
