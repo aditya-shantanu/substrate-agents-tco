@@ -15,10 +15,10 @@ cd "${SUBSTRATE_REPO}"
 # without atelet there is no credential-broker socket and workers can
 # never report capacity ("no free workers available" with a FREE pool).
 for ds in $(kubectl -n ate-system get ds -o name | grep atelet); do
-  desired=$(kubectl -n ate-system get "$ds" -o jsonpath='{.status.desiredNumberScheduled}')
-  if [[ "${desired:-0}" == "0" ]]; then
-    ver=$(kubectl -n ate-system get "$ds" -o jsonpath='{.spec.template.spec.nodeSelector.ate\.dev/substrate-version}')
-    echo "WARNING: $ds has desired 0 — relabeling nodes to ${ver}"
+  ver=$(kubectl -n ate-system get "$ds" -o jsonpath='{.spec.template.spec.nodeSelector.ate\.dev/substrate-version}')
+  unlabeled=$(kubectl get nodes -l "ate.dev/substrate-version!=${ver}" -o name | wc -l | tr -d ' ')
+  if [[ "${unlabeled}" != "0" ]]; then
+    echo "WARNING: ${unlabeled} node(s) not labeled for $ds — relabeling all nodes to ${ver}"
     kubectl label nodes --all "ate.dev/substrate-version=${ver}" --overwrite
     kubectl -n ate-system rollout status "$ds" --timeout=180s
   fi
