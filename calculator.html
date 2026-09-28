@@ -243,17 +243,6 @@
   </div>
 
   <div class="card chart-card">
-    <h3>Hardware oversubscription — promised ÷ physical</h3>
-    <p class="sub">Hold the machine constant. Oversubscription = resources promised to the scheduled agents (each one's worker limits) divided by the machine's physical resources — CPU and memory reported separately, since they differ whenever the worker shape doesn't match the machine shape. 1× = hardware committed exactly once (no overcommit). Chart shows CPU; memory is the same curve scaled by a constant. Log x-axis; dots mark your inputs.</p>
-    <p class="anchors" id="osLine"></p>
-    <div class="legend"><span><span class="key" style="border-color:var(--s1)"></span>gVisor</span><span><span class="key" style="border-color:var(--s2)"></span>microVM</span><span style="color:var(--muted)">dashed — 1× (no overcommit)</span></div>
-    <svg id="os_chart" width="100%" height="240" role="img" aria-label="CPU oversubscription versus duty cycle"></svg>
-    <h3 style="margin-top:14px">Which knobs buy more agents (same machine)</h3>
-    <p class="sub">Each bar re-runs the model with one knob moved to its friendlier setting, everything else as configured. gVisor scenario, agents per <span id="osMachine"></span>.</p>
-    <svg id="lever_chart" width="100%" height="200" role="img" aria-label="Agents per machine by lever"></svg>
-  </div>
-
-  <div class="card chart-card">
     <h3>Where the money goes (per agent per month)</h3>
     <div class="legend" id="bd_legend"></div>
     <svg id="bd_chart" width="100%" height="120" role="img" aria-label="Stacked cost breakdown bars"></svg>
@@ -641,17 +630,15 @@ function breakdownChart(svg, rows) {
 function sweepDuty(pG, pM) {
   const w0 = workload();
   const xs = [], g = [], mv = [];
-  const gCpu = [], mCpu = [];
   for (let e = Math.log10(0.002); e <= Math.log10(0.30)+1e-9; e += (Math.log10(0.30)-Math.log10(0.002))/60) {
     const target = Math.pow(10, e);
     const k = target/w0.duty;
     const w = {liveSec:w0.liveSec*k, acts:w0.acts*k, duty:target};
     xs.push(target*100);
-    const sg = scenario(pG, w), sm = scenario(pM, w);
-    g.push(sg.perAgent);   mv.push(sm.perAgent);
-    gCpu.push(sg.cpuOver); mCpu.push(sm.cpuOver);
+    g.push(scenario(pG, w).perAgent);
+    mv.push(scenario(pM, w).perAgent);
   }
-  return {xs, g, m:mv, gCpu, mCpu, cur:w0.duty*100};
+  return {xs, g, m:mv, cur:w0.duty*100};
 }
 function sweepSR(pG, pM) {
   const w = workload();
@@ -663,67 +650,6 @@ function sweepSR(pG, pM) {
     mv.push(scenario({...pM, ts:t*ratio(pM), tr:t*(1-ratio(pM))}, w).perAgent);
   }
   return {xs, g, m:mv};
-}
-
-/* ---------- levers: same machine, one knob improved ---------- */
-
-// withInputs temporarily sets input values, runs fn, restores. Lets the
-// lever bars reuse scenario() (which reads the DOM) without refactoring.
-function withInputs(changes, fn) {
-  const saved = {};
-  for (const id in changes) { saved[id] = $(id).value; $(id).value = changes[id]; }
-  try { return fn(); } finally {
-    for (const id in saved) $(id).value = saved[id];
-  }
-}
-
-// leverRows computes agents-per-machine for today's settings and for each
-// single-knob improvement (gVisor scenario).
-function leverRows(pG, w, G) {
-  const perMachine = s => s.N * s.wpn;
-  const rows = [{label: "Today, as configured", val: perMachine(G), proj: false}];
-  const add = (label, changes) => {
-    const v = withInputs(changes, () => perMachine(scenario(params("g"), w)));
-    if (Math.abs(v - rows[0].val) > 0.5) rows.push({label, val: v, proj: false});
-  };
-  if (num("tidle") > 2) add("Cut idle wait to 2s", {tidle: 2});
-  if (num("g_ts") > 0.5) add("Small-actor switch times (0.4s/0.25s)", {g_ts: 0.4, g_tr: 0.25});
-  if ($("peakModel").value === "mult" && num("peak") > 1) {
-    add("Autoscale the pool with the day (peak ×1)", {peak: 1});
-  } else if ($("peakModel").value === "herd" && num("herd") > 5) {
-    add("De-align the crons (herd 25% → 5%)", {herd: 5});
-  }
-  if (num("util") < 0.85) add("Run workers hotter (utilization 0.85)", {util: 0.85});
-  return rows;
-}
-
-function leverChart(svg, rows) {
-  svg.innerHTML = "";
-  const W = svg.clientWidth || 900;
-  const barH = 18, gap = 10, mL = 320, mR = 150;
-  const H = rows.length * (barH + gap) + 8;
-  svg.setAttribute("height", H);
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const maxV = Math.max(...rows.map(r => r.val)) * 1.02;
-  const iw = W - mL - mR;
-  rows.forEach((r, i) => {
-    const y = 4 + i * (barH + gap);
-    const lab = el("text", {x: mL - 10, y: y + barH/2 + 4, "text-anchor": "end",
-      class: i === 0 ? "dlabel" : ""}, svg);
-    lab.textContent = r.label;
-    const wpx = Math.max(2, r.val / maxV * iw);
-    const rr = Math.min(4, wpx);
-    const bar = el("path", {d: `M${mL},${y} h${wpx - rr} a${rr},${rr} 0 0 1 ${rr},${rr} v${barH - 2*rr} a${rr},${rr} 0 0 1 ${-rr},${rr} h${-(wpx - rr)} z`,
-      fill: css("--s1"), opacity: r.proj ? 0.45 : (i === 0 ? 1 : 0.8)}, svg);
-    if (r.proj) bar.setAttribute("stroke-dasharray", "4 3");
-    const v = el("text", {x: mL + wpx + 8, y: y + barH/2 + 4, class: "dlabel"}, svg);
-    v.textContent = fmt(r.val, 0) + " agents" +
-      (i > 0 ? sPlus(r.val, rows[0].val) : "");
-  });
-}
-function sPlus(v, base) {
-  const d = v / Math.max(base, 1e-9);
-  return d >= 1 ? `  (+${fmt((d-1)*100,0)}%)` : `  (${fmt((d-1)*100,0)}%)`;
 }
 
 /* ---------- tables ---------- */
@@ -831,23 +757,6 @@ function recompute() {
   ]);
 
   const sd = sweepDuty(pG, pM);
-
-  // Hardware oversubscription view: promised resources ÷ physical machine.
-  $("osMachine").textContent = $("g_shape").value.split(" ")[0];
-  $("osLine").innerHTML =
-    `One <b>${pG.shape}</b> (${G.machineCpu} vCPU · ${G.machineGib} GiB) carries <b>${fmt(G.agentsPerMachine,0)} agents</b>,
-     which are promised ${fmt(G.agentsPerMachine*pG.wcpu,0)} vCPU and ${fmt(G.agentsPerMachine*pG.wmem,0)} GiB —
-     <b>CPU ${fmt(G.cpuOver,1)}×</b> · <b>memory ${fmt(G.memOver,1)}×</b> oversubscribed (gVisor).
-     microVM: ${fmt(M.agentsPerMachine,0)} agents → <b>CPU ${fmt(M.cpuOver,1)}×</b> · <b>memory ${fmt(M.memOver,1)}×</b>.`;
-  lineChart($("os_chart"), {
-    xs:sd.xs, xLog:true, xTicks:[0.3,1,3,10,30], curX:sd.cur,
-    xFmt:v=>fmt(v,1)+"%", ttSuffix:" of the day awake · CPU oversub",
-    yFmt:v=>fmt(v,0)+"×", labelSuffix:"", endLabels:false,
-    series:[{name:"gVisor", color:css("--s1"), ys:sd.gCpu},
-            {name:"microVM", color:css("--s2"), ys:sd.mCpu}],
-    dashedY:[{y:1, color:css("--baseline"), label:"1× no overcommit"}],
-  });
-  leverChart($("lever_chart"), leverRows(pG, w, G));
 
   lineChart($("duty_chart"), {
     xs:sd.xs, xLog:true, xTicks:[0.3,1,3,10,30], curX:sd.cur,

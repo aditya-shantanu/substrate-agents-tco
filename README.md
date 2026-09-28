@@ -38,8 +38,7 @@ What the calculator shows:
   ceiling, with an optional churn cap.
 - **Hardware oversubscription**, top-level: promised resources ÷ physical
   machine, CPU and memory separately (they differ whenever the worker shape
-  doesn't match the machine shape), plus the ratio-vs-duty-cycle curve and
-  a levers chart showing how many MORE agents each knob buys.
+  doesn't match the machine shape).
 - **Two peak lenses** (pick one): busiest-hour multiplier for
   timezone-driven fleets, or a **herd %** for cron-aligned fleets — the herd
   is charged full occupancy during its burst.
