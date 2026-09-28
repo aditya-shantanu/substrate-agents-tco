@@ -248,6 +248,18 @@ function render(state) {
   $("k_suspendsNote").textContent =
     `${suspendRate != null ? fmt(suspendRate,1)+"/min · " : ""}avg ${fmt(state.suspend_avg_ms,0)} ms · ${state.suspend_errors} errors`;
 
+  // Node pressure (PSI, this pod's node) — starvation early-warning.
+  const psi = last.psi_cpu_some10 || 0, psiM = last.psi_mem_full10 || 0, psiIO = last.psi_io_some10 || 0;
+  const pn = state.psi_node ? ` (${state.psi_node})` : "";
+  let psiLine = document.getElementById("psiLine");
+  if (!psiLine) {
+    psiLine = document.createElement("div");
+    psiLine.id = "psiLine"; psiLine.className = "state-chips";
+    $("chips").parentNode.insertBefore(psiLine, $("chips"));
+  }
+  psiLine.textContent = `node pressure${pn}: cpu ${psi.toFixed(1)}% · mem ${psiM.toFixed(1)}% · io ${psiIO.toFixed(1)}% (PSI avg10)`;
+  psiLine.style.color = (psi > 20 || psiM > 5) ? "var(--bad)" : "";
+
   const chips = $("chips"); chips.innerHTML = "";
   for (const [k,v] of [["RUNNING",last.running],["RESUMING",last.resuming],
       ["SUSPENDING",last.suspending],["SUSPENDED",last.suspended],

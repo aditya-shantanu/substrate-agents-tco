@@ -42,7 +42,15 @@ func newStages() []stage {
 		{title: "GKE cluster + bucket + IAM", script: "10-bootstrap.sh",
 			skip: func(a *App) bool {
 				st := a.sh(`gcloud container clusters describe "$CLUSTER_NAME" --location "$CLUSTER_LOCATION" --project "$PROJECT_ID" --format='value(status)' 2>/dev/null`)
-				return strings.TrimSpace(st) == "RUNNING" && a.shOK(`kubectl get ns >/dev/null 2>&1`)
+				if strings.TrimSpace(st) != "RUNNING" || !a.shOK(`kubectl get ns >/dev/null 2>&1`) {
+					return false
+				}
+				// A requested swap change means stage 1 must run.
+				if a.cfg.swapGib != "" {
+					cur := a.sh(`gcloud beta container node-pools describe substrate-node-pool --cluster "$CLUSTER_NAME" --location "$CLUSTER_LOCATION" --project "$PROJECT_ID" --format='value(config.linuxNodeConfig.swapConfig.bootDiskProfile.swapSizeGib)' 2>/dev/null`)
+					return strings.TrimSpace(cur) == a.cfg.swapGib
+				}
+				return true
 			}},
 		{title: "Substrate control plane", script: "20-install-substrate.sh",
 			skip: func(a *App) bool {
@@ -122,6 +130,9 @@ type liveSample struct {
 	Suspending   int   `json:"suspending"`
 	Suspended    int   `json:"suspended"`
 	Crashed      int   `json:"crashed"`
+	PsiCPUSome   float64 `json:"psi_cpu_some10"`
+	PsiMemFull   float64 `json:"psi_mem_full10"`
+	PsiIOSome    float64 `json:"psi_io_some10"`
 }
 
 type liveState struct {
@@ -129,6 +140,7 @@ type liveState struct {
 	SuspendErrs  int64        `json:"suspend_errors"`
 	SuspendAvgMs float64      `json:"suspend_avg_ms"`
 	Wedged       int64        `json:"wedged"`
+	PsiNode      string       `json:"psi_node"`
 	Samples      []liveSample `json:"samples"`
 }
 
@@ -188,9 +200,9 @@ func (a *App) pollSim() tea.Msg {
 		case strings.Contains(l, `"msg":"progress"`):
 			var j map[string]any
 			if json.Unmarshal([]byte(l), &j) == nil {
-				m.line = fmt.Sprintf("activations %v · wake p50 %.1fs p99 %.1fs · turn p50 %vms · refusals %v · errors %v",
+				m.line = fmt.Sprintf("activations %v · wake p50 %.1fs p99 %.1fs · turn p99 %vms · CPU probe %vms · refusals %v · errors %v",
 					j["activations"], num(j["wake_p50_ms"])/1000, num(j["wake_p99_ms"])/1000,
-					j["session_p50_ms"], j["refusals"], j["errors"])
+					j["turn_p99_ms"], j["probe_p50_ms"], j["refusals"], j["errors"])
 				m.refusals, m.errors = int(num(j["refusals"])), int(num(j["errors"]))
 			}
 		case strings.Contains(l, `"msg":"wave result"`):
@@ -381,6 +393,15 @@ func (a *App) liveView() string {
 	body.WriteString(" history  " + spark + sFaint.Render("  (busy workers, last 2 min)") + "\n\n")
 	if a.simLine != "" {
 		body.WriteString(" " + sSubtle.Render("sim  ") + sBig.Render(a.simLine) + "\n")
+	}
+	if l.PsiCPUSome > 0.05 || l.PsiMemFull > 0.05 || l.PsiIOSome > 0.05 {
+		psiStyle := sFaint
+		if l.PsiCPUSome > 20 || l.PsiMemFull > 5 {
+			psiStyle = sBad
+		}
+		body.WriteString(" " + psiStyle.Render(fmt.Sprintf(
+			"node pressure (%s): cpu %.1f%% · mem %.1f%% · io %.1f%%  (PSI avg10 — starvation early-warning)",
+			a.live.PsiNode, l.PsiCPUSome, l.PsiMemFull, l.PsiIOSome)) + "\n")
 	}
 	if a.live.Wedged > 0 {
 		body.WriteString(" " + sBad.Render(fmt.Sprintf(

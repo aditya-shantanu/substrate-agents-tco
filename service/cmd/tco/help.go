@@ -40,6 +40,10 @@ var helpSections = []helpSection{
 		{"Provision for peaks",
 			"Two lenses on the same question — pick the one you can check. '×N average': the busiest hour has N times the average activity (timezone-driven fleets). 'herd N%': N% of agents can wake at the same instant because schedules align (cron-heavy fleets); herd members are charged a full worker during the burst."},
 	}},
+	{"Node swap", []helpItem{
+		{"Node swap (GKE-native)",
+			"Enables boot-disk-backed swap on the worker node pool (GKE >=1.34.1; changing it recreates the nodes, ~5-10 min). Swap only applies to Burstable pods, so turning it on also gives workers requests<limits. Watch the PSI pressure line and the RAM-walk/CPU-probe latencies during the run — swap is safe exactly when those stay flat while density climbs."},
+	}},
 	{"Mode", []helpItem{
 		{"baseline",
 			"The whole fleet runs for the whole test: one density and cost measurement."},

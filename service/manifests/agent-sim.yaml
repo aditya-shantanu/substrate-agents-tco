@@ -31,6 +31,9 @@ spec:
         - --poll=2s
         - --max-running=10m
         - --max-concurrent=8
+        env:
+        - name: NODE_NAME
+          valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
         ports:
         - { name: http, containerPort: 8080 }
         volumeMounts:

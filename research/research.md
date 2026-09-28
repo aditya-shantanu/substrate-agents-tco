@@ -164,3 +164,25 @@ provenance sharing for identical runtimes.
   workers** (removes slot quantization) and **node-cached, lazily-paged,
   provenance-shared golden restores** (makes wake-ups nearly free), with
   **skip/delta checkpoints** close behind. Everything else is tail-trimming.
+
+## Addendum (2026-09-28): swap on GKE — it's first-party now
+
+GKE ships native node swap (KEP-2400 semantics) for Standard clusters ≥
+**1.34.1-gke.1341000**: `linuxConfig.swapConfig` in the node-system-config
+file (`gcloud beta container node-pools update --system-config-from-file`),
+boot-disk-backed on any machine (≤50% of boot disk) or Local-SSD-backed on
+`-lssd` machine variants (plain c3 cannot attach Local SSD; n2 can via
+`--ephemeral-storage-local-ssd`). Constraints that matter: **changing it
+recreates the pool's nodes**; **only Burstable pods swap** (our benchmark
+workers were BestEffort — the harness now patches requests<limits when swap
+is on); Autopilot: no; zram/zswap DaemonSet hacks: skip (kubelet
+failSwapOn crash-loops on restart, and swapped pages blind the eviction
+signal — Bottlerocket #4903).
+
+The harness now has the knob (`SWAP_GIB=16 ./run.sh`, or the TUI's "Node
+swap" field) and, critically, the referee: per-wave SLO gates (wake p99,
+turn p99), a fixed-work CPU probe, RAM-walk paging latency, and node PSI
+(cpu/mem/io) in the occupancy CSV and dashboards. **Swap safely raises
+oversubscription exactly when density climbs while those stay flat** — the
+A/B to run: baseline vs SWAP_GIB=16 with rising AGENTS, compare the
+load-test knee.

@@ -46,6 +46,29 @@ type activity struct {
 	inflight  int
 }
 
+// readPSI parses /proc/pressure/<kind> and returns the avg10 value for the
+// given line prefix ("some" or "full"), in percent. PSI is host-global, so
+// this reflects the NODE the autosuspender runs on (one node of the pool —
+// a sample, not full coverage; the node name is reported alongside).
+func readPSI(kind, level string) float64 {
+	b, err := os.ReadFile("/proc/pressure/" + kind)
+	if err != nil {
+		return 0
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if strings.HasPrefix(line, level+" ") {
+			for _, f := range strings.Fields(line) {
+				if strings.HasPrefix(f, "avg10=") {
+					var v float64
+					fmt.Sscanf(f, "avg10=%f", &v)
+					return v
+				}
+			}
+		}
+	}
+	return 0
+}
+
 // sample is one occupancy observation; JSON field names are the dashboard's
 // contract (and the /occupancy.csv column order).
 type sample struct {
@@ -60,6 +83,11 @@ type sample struct {
 	Suspended    int   `json:"suspended"`
 	Paused       int   `json:"paused"`
 	Crashed      int   `json:"crashed"`
+	// Node pressure (PSI avg10 %, this pod's node only — a sample of the
+	// pool, not full coverage).
+	PsiCPUSome float64 `json:"psi_cpu_some10"`
+	PsiMemFull float64 `json:"psi_mem_full10"`
+	PsiIOSome  float64 `json:"psi_io_some10"`
 }
 
 // maxSamples bounds the in-memory window: 6h at the default 5s interval.
@@ -450,6 +478,9 @@ func (s *server) sampleLoop(ctx context.Context, every time.Duration) {
 			Suspended:    c[ateapipb.ActorState_ACTOR_STATE_SUSPENDED],
 			Paused:       c[ateapipb.ActorState_ACTOR_STATE_PAUSED],
 			Crashed:      c[ateapipb.ActorState_ACTOR_STATE_CRASHED],
+			PsiCPUSome:   readPSI("cpu", "some"),
+			PsiMemFull:   readPSI("memory", "full"),
+			PsiIOSome:    readPSI("io", "some"),
 		}
 		s.samplesMu.Lock()
 		s.samples = append(s.samples, smp)
@@ -470,11 +501,12 @@ func (s *server) snapshotSamples() []sample {
 
 func (s *server) handleOccupancy(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/csv")
-	fmt.Fprintln(w, "unix_ms,workers_total,workers_active,workers_assigned,actors_total,running,resuming,suspending,suspended,paused,crashed")
+	fmt.Fprintln(w, "unix_ms,workers_total,workers_active,workers_assigned,actors_total,running,resuming,suspending,suspended,paused,crashed,psi_cpu_some10,psi_mem_full10,psi_io_some10")
 	for _, r := range s.snapshotSamples() {
-		fmt.Fprintf(w, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+		fmt.Fprintf(w, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f\n",
 			r.T, r.WorkersTotal, r.WorkersActiv, r.Assigned, r.ActorsTotal,
-			r.Running, r.Resuming, r.Suspending, r.Suspended, r.Paused, r.Crashed)
+			r.Running, r.Resuming, r.Suspending, r.Suspended, r.Paused, r.Crashed,
+			r.PsiCPUSome, r.PsiMemFull, r.PsiIOSome)
 	}
 }
 
@@ -498,6 +530,7 @@ func (s *server) handleState(w http.ResponseWriter, _ *http.Request) {
 		"suspend_errors": s.suspendErrs.Load(),
 		"suspend_avg_ms": avgMs,
 		"wedged":         s.wedged.Load(),
+		"psi_node":       os.Getenv("NODE_NAME"),
 		"unwedged":       s.unwedged.Load(),
 		"samples":        samples,
 	})

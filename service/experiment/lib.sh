@@ -48,6 +48,15 @@ export PRICE_MODEL="${PRICE_MODEL:-cud3}"         # od | cud1 | cud3
 export PEAK_MODEL="${PEAK_MODEL:-mult}"          # mult | herd — peak lens for the report
 export PEAK_VALUE="${PEAK_VALUE:-2}"             # multiplier (mult) or fraction 0-1 (herd)
 
+# --- node swap (GKE native, >=1.34.1-gke.1341000; Standard only) ---
+# SWAP_GIB: "" = leave pool as-is; a number = enable boot-disk-backed swap of
+# that many GiB on the substrate node pool (NODE POOL IS RECREATED, ~5-10
+# min). Swap applies to Burstable pods only, so WORKER_BURSTABLE=true (the
+# default when swap is on) patches the benchmark WorkerPool with
+# requests<limits so workers can actually use it.
+export SWAP_GIB="${SWAP_GIB:-}"
+export WORKER_BURSTABLE="${WORKER_BURSTABLE:-$([[ -n "${SWAP_GIB}" ]] && echo true || echo false)}"
+
 # --- load-test mode (./run.sh --load-test) ---
 export LOAD_TEST="${LOAD_TEST:-false}"
 export WAVE_START="${WAVE_START:-10}"

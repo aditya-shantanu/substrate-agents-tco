@@ -57,6 +57,16 @@ type cfg struct {
 	waveStart, waveStep        int
 	waveInterval               time.Duration
 	failRefusalPct, failErrPct float64
+
+	// starvation SLO gates (load-test waves) and the fixed-work CPU probe
+	failWakeP99Ms, failTurnP99Ms float64
+	probeBytes                   int
+}
+
+// tsample is a timestamped latency sample (for windowed wave scoring).
+type tsample struct {
+	t  int64
+	ms float64
 }
 
 type result struct {
@@ -77,6 +87,8 @@ type sim struct {
 
 	mu      sync.Mutex
 	results []result
+	turns   []tsample // every in-session ping, timed (service under contention)
+	probes  []tsample // fixed-work CPU probe per activation (throttle detector)
 }
 
 func main() {
@@ -108,6 +120,9 @@ func main() {
 	flag.IntVar(&c.waveStart, "wave-start", 10, "load-test: agents active in the first wave")
 	flag.IntVar(&c.waveStep, "wave-step", 10, "load-test: agents added per wave")
 	flag.DurationVar(&c.waveInterval, "wave-interval", 3*time.Minute, "load-test: observation window per wave")
+	flag.Float64Var(&c.failWakeP99Ms, "fail-wake-p99-ms", 10000, "load-test: a wave fails if wake p99 exceeds this (0 disables) — soft-starvation gate")
+	flag.Float64Var(&c.failTurnP99Ms, "fail-turn-p99-ms", 2000, "load-test: a wave fails if in-session turn p99 exceeds this (0 disables)")
+	flag.IntVar(&c.probeBytes, "probe-bytes", 8<<20, "fixed-work CPU probe: sha256 over this many bytes once per activation; drift = CPU throttling (0 disables)")
 	flag.Float64Var(&c.failRefusalPct, "fail-refusal-pct", 5, "load-test: stop when router refusals exceed this % of activations in a wave")
 	flag.Float64Var(&c.failErrPct, "fail-error-pct", 2, "load-test: stop when request errors exceed this % of activations in a wave")
 	flag.Parse()
@@ -219,7 +234,10 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 		cctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 		defer cancel()
 		for {
-			_, err := s.api.ResumeActor(cctx, &ateapipb.ResumeActorRequest{Actor: ref, Boot: true})
+			// No boot flag: the glutton template has a golden snapshot, so a
+			// plain ResumeActor cold-starts a fresh actor from it on old and
+			// new control planes alike (Boot was removed from the API).
+			_, err := s.api.ResumeActor(cctx, &ateapipb.ResumeActorRequest{Actor: ref})
 			if err == nil {
 				break
 			}
@@ -238,6 +256,12 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 			if _, err := s.post(cctx, name, "/writeram",
 				writeRAMBody("memload", s.cfg.memTarget, writeModeTruncate)); err != nil {
 				return fmt.Errorf("fill RAM %s: %w", name, err)
+			}
+		}
+		if s.cfg.probeBytes > 0 {
+			if _, err := s.post(cctx, name, "/writedisk",
+				writeDiskBody("cpuprobe", s.cfg.probeBytes)); err != nil {
+				return fmt.Errorf("write CPU probe %s: %w", name, err)
 			}
 		}
 		if _, err := s.api.SuspendActor(cctx, &ateapipb.SuspendActorRequest{Actor: ref}); err != nil &&
@@ -328,6 +352,19 @@ func (s *sim) activation(ctx context.Context, id int, name, kind string, rng *ra
 			}
 		}
 		s.turnWork(ctx, name, &r) // first turn's memory churn + file write
+		// Fixed-work CPU probe: sha256 over probe-bytes of pagecache-warm
+		// file. Same work every time, so latency drift = CPU starvation.
+		if s.cfg.probeBytes > 0 {
+			t := time.Now()
+			if _, err := s.post(ctx, name, "/readdisk", readDiskBody("cpuprobe")); err != nil {
+				// Probe file lost (actor recreated by the medic): restore it.
+				_, _ = s.post(ctx, name, "/writedisk", writeDiskBody("cpuprobe", s.cfg.probeBytes))
+			} else {
+				s.mu.Lock()
+				s.probes = append(s.probes, tsample{time.Now().UnixMilli(), float64(time.Since(t).Microseconds()) / 1000})
+				s.mu.Unlock()
+			}
+		}
 	}
 
 	if kind == "session" {
@@ -340,8 +377,13 @@ func (s *sim) activation(ctx context.Context, id int, name, kind string, rng *ra
 				break
 			}
 			time.Sleep(time.Duration(pingEvery * float64(time.Second)))
+			tp := time.Now()
 			if _, err := s.post(ctx, name, "/ping", nil); err != nil {
 				r.errors++
+			} else {
+				s.mu.Lock()
+				s.turns = append(s.turns, tsample{time.Now().UnixMilli(), float64(time.Since(tp).Microseconds()) / 1000})
+				s.mu.Unlock()
 			}
 			r.pings++
 			s.turnWork(ctx, name, &r)
@@ -541,19 +583,50 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 				wakes = append(wakes, r.firstReqMs)
 			}
 		}
+		var turns, probes []float64
+		for _, t := range s.turns {
+			if t.t >= waveStartMs {
+				turns = append(turns, t.ms)
+			}
+		}
+		for _, t := range s.probes {
+			if t.t >= waveStartMs {
+				probes = append(probes, t.ms)
+			}
+		}
 		s.mu.Unlock()
 		sort.Float64s(wakes)
+		sort.Float64s(turns)
+		sort.Float64s(probes)
 		st.wakeP50, st.wakeP99 = q(wakes, 0.5), q(wakes, 0.99)
+		turnP99, probeP50 := q(turns, 0.99), q(probes, 0.5)
 		waves = append(waves, st)
 		refPct, errPct := 0.0, 0.0
 		if st.acts > 0 {
 			refPct = 100 * float64(st.refusals) / float64(st.acts)
 			errPct = 100 * float64(st.errors) / float64(st.acts)
 		}
-		failed := refPct > s.cfg.failRefusalPct || errPct > s.cfg.failErrPct
+		// The wave passes only if the workload is NOT starved: bounded
+		// refusals/errors AND latency SLOs held.
+		var reasons []string
+		if refPct > s.cfg.failRefusalPct {
+			reasons = append(reasons, "refusals")
+		}
+		if errPct > s.cfg.failErrPct {
+			reasons = append(reasons, "errors")
+		}
+		if s.cfg.failWakeP99Ms > 0 && len(wakes) > 0 && st.wakeP99 > s.cfg.failWakeP99Ms {
+			reasons = append(reasons, "wake-p99")
+		}
+		if s.cfg.failTurnP99Ms > 0 && len(turns) > 0 && turnP99 > s.cfg.failTurnP99Ms {
+			reasons = append(reasons, "turn-p99")
+		}
+		failed := len(reasons) > 0
 		slog.Info("wave result", "active_agents", st.level, "activations", st.acts,
 			"refusal_pct", fmt.Sprintf("%.1f", refPct), "error_pct", fmt.Sprintf("%.1f", errPct),
-			"wake_p50_ms", int(st.wakeP50), "wake_p99_ms", int(st.wakeP99), "failed", failed)
+			"wake_p50_ms", int(st.wakeP50), "wake_p99_ms", int(st.wakeP99),
+			"turn_p99_ms", int(turnP99), "probe_p50_ms", int(probeP50),
+			"failed", failed, "failed_on", strings.Join(reasons, "+"))
 		if failed || st.level >= s.cfg.agents || time.Now().After(deadline) {
 			cancelLoops()
 			fmt.Println("=== loadtest waves ===")
@@ -602,6 +675,17 @@ func (s *sim) progressLoop(ctx context.Context) {
 		s.mu.Unlock()
 		sort.Float64s(wake)
 		sort.Float64s(sess)
+		var turns, probes []float64
+		s.mu.Lock()
+		for _, t := range s.turns {
+			turns = append(turns, t.ms)
+		}
+		for _, t := range s.probes {
+			probes = append(probes, t.ms)
+		}
+		s.mu.Unlock()
+		sort.Float64s(turns)
+		sort.Float64s(probes)
 		qi := func(v []float64, p float64) int {
 			if len(v) == 0 {
 				return 0
@@ -613,6 +697,8 @@ func (s *sim) progressLoop(ctx context.Context) {
 			"wake_p50_ms", qi(wake, 0.5),
 			"wake_p99_ms", qi(wake, 0.99),
 			"session_p50_ms", qi(sess, 0.5),
+			"turn_p99_ms", qi(turns, 0.99),
+			"probe_p50_ms", qi(probes, 0.5),
 			"errors", errs, "refusals", refs)
 	}
 }
@@ -650,6 +736,25 @@ func (s *sim) report() {
 		sort.Float64s(walks)
 		fmt.Printf("post-resume RAM walk ms p50=%.0f p90=%.0f p99=%.0f (demand-paging cost)\n",
 			q(walks, 0.5), q(walks, 0.9), q(walks, 0.99))
+	}
+	s.mu.Lock()
+	var turnsAll, probesAll []float64
+	for _, t := range s.turns {
+		turnsAll = append(turnsAll, t.ms)
+	}
+	for _, t := range s.probes {
+		probesAll = append(probesAll, t.ms)
+	}
+	s.mu.Unlock()
+	if len(turnsAll) > 0 {
+		sort.Float64s(turnsAll)
+		fmt.Printf("in-session turn ms p50=%.0f p90=%.0f p99=%.0f (service under contention)\n",
+			q(turnsAll, 0.5), q(turnsAll, 0.9), q(turnsAll, 0.99))
+	}
+	if len(probesAll) > 0 {
+		sort.Float64s(probesAll)
+		fmt.Printf("CPU probe ms p50=%.0f p90=%.0f p99=%.0f (fixed work; drift = throttling)\n",
+			q(probesAll, 0.5), q(probesAll, 0.9), q(probesAll, 0.99))
 	}
 	fmt.Println("=== agentsim csv ===")
 	fmt.Println("unix_ms,agent,kind,first_req_ms,readram_ms,pings,errors,refusals")

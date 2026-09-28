@@ -40,4 +40,27 @@ if [[ -n "${NODE_COUNT:-}" ]]; then
     --location "${CLUSTER_LOCATION}" --project "${PROJECT_ID}" --quiet
 fi
 
+# Optional: GKE-native node swap (boot-disk profile; Burstable pods only).
+# Applying/changing it RECREATES the pool's nodes (~5-10 min).
+if [[ -n "${SWAP_GIB:-}" ]]; then
+  CUR=$(gcloud beta container node-pools describe substrate-node-pool \
+    --cluster "${CLUSTER_NAME}" --location "${CLUSTER_LOCATION}" --project "${PROJECT_ID}" \
+    --format='value(config.linuxNodeConfig.swapConfig.bootDiskProfile.swapSizeGib)' 2>/dev/null || true)
+  if [[ "${CUR}" != "${SWAP_GIB}" ]]; then
+    echo "enabling node swap: ${SWAP_GIB} GiB boot-disk-backed (node pool recreates)..."
+    cat > /tmp/gke-swap-config.yaml <<SWAPCFG
+linuxConfig:
+  swapConfig:
+    enabled: true
+    bootDiskProfile:
+      swapSizeGib: "${SWAP_GIB}"
+SWAPCFG
+    gcloud beta container node-pools update substrate-node-pool \
+      --cluster "${CLUSTER_NAME}" --location "${CLUSTER_LOCATION}" --project "${PROJECT_ID}" \
+      --system-config-from-file=/tmp/gke-swap-config.yaml --quiet
+  else
+    echo "node swap already at ${SWAP_GIB} GiB"
+  fi
+fi
+
 kubectl get nodes
