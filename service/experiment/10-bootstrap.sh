@@ -53,7 +53,7 @@ linuxConfig:
   swapConfig:
     enabled: true
     bootDiskProfile:
-      swapSizeGib: "${SWAP_GIB}"
+      swapSizeGib: ${SWAP_GIB}
 SWAPCFG
     gcloud beta container node-pools update substrate-node-pool \
       --cluster "${CLUSTER_NAME}" --location "${CLUSTER_LOCATION}" --project "${PROJECT_ID}" \
