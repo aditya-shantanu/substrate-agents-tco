@@ -247,11 +247,11 @@
   </div>
 
   <div class="card chart-card">
-    <h3>Oversubscription — agents on fixed hardware</h3>
-    <p class="sub">Hold the machine constant and ask the other question: how many agents fit? Baseline 1× = one agent per worker (no suspend/resume). Log x-axis; dots mark your inputs.</p>
+    <h3>Hardware oversubscription — promised ÷ physical</h3>
+    <p class="sub">Hold the machine constant. Oversubscription = resources promised to the scheduled agents (each one's worker limits) divided by the machine's physical resources — CPU and memory reported separately, since they differ whenever the worker shape doesn't match the machine shape. 1× = hardware committed exactly once (no overcommit). Chart shows CPU; memory is the same curve scaled by a constant. Log x-axis; dots mark your inputs.</p>
     <p class="anchors" id="osLine"></p>
-    <div class="legend"><span><span class="key" style="border-color:var(--s1)"></span>gVisor</span><span><span class="key" style="border-color:var(--s2)"></span>microVM</span><span style="color:var(--muted)">dashed — 1× (dedicated workers, no sharing)</span></div>
-    <svg id="os_chart" width="100%" height="240" role="img" aria-label="Oversubscription ratio versus duty cycle"></svg>
+    <div class="legend"><span><span class="key" style="border-color:var(--s1)"></span>gVisor</span><span><span class="key" style="border-color:var(--s2)"></span>microVM</span><span style="color:var(--muted)">dashed — 1× (no overcommit)</span></div>
+    <svg id="os_chart" width="100%" height="240" role="img" aria-label="CPU oversubscription versus duty cycle"></svg>
     <h3 style="margin-top:14px">Which knobs buy more agents (same machine)</h3>
     <p class="sub">Each bar re-runs the model with one knob moved to its friendlier setting, everything else as configured. gVisor scenario, agents per <span id="osMachine"></span>.</p>
     <svg id="lever_chart" width="100%" height="200" role="img" aria-label="Agents per machine by lever"></svg>
@@ -466,7 +466,16 @@ function scenario(p, w) {
   const maNodes = Math.ceil(fleet/maPerNode);
   const maPerAgent = (maNodes*nodeMo + snapshotsMo + opsMo + fixedMo)/fleet;
 
+  // Hardware oversubscription: resources PROMISED to the scheduled agents
+  // (each agent's worker limits) versus the machine's PHYSICAL resources.
+  // Slot-design-independent: multi-actor changes the agent count, not the
+  // definition.
+  const agentsPerMachine = N*wpn;
+  const cpuOver = agentsPerMachine*p.wcpu/s.cpu;
+  const memOver = agentsPerMachine*p.wmem/s.gib;
+
   return {dEff, N, nTime, nChurn, capBinds, herdMode, peakFactor, wpn, nodeHr, nodeMo, workerHr, workers, nodes,
+          agentsPerMachine, cpuOver, memOver, machineCpu: s.cpu, machineGib: s.gib,
           maPerNode, maMemBound, maPerAgent,
           machinesMo, snapshotsMo, opsMo, fixedMo, totalMo, perAgent,
           compute: machinesMo/fleet, storage: snapshotsMo/fleet,
@@ -656,17 +665,17 @@ function breakdownChart(svg, rows) {
 function sweepDuty(pG, pM) {
   const w0 = workload();
   const xs = [], g = [], mv = [];
-  const gN = [], mN = [];
+  const gCpu = [], mCpu = [];
   for (let e = Math.log10(0.002); e <= Math.log10(0.30)+1e-9; e += (Math.log10(0.30)-Math.log10(0.002))/60) {
     const target = Math.pow(10, e);
     const k = target/w0.duty;
     const w = {liveSec:w0.liveSec*k, acts:w0.acts*k, duty:target};
     xs.push(target*100);
     const sg = scenario(pG, w), sm = scenario(pM, w);
-    g.push(sg.perAgent); mv.push(sm.perAgent);
-    gN.push(sg.N);       mN.push(sm.N);
+    g.push(sg.perAgent);   mv.push(sm.perAgent);
+    gCpu.push(sg.cpuOver); mCpu.push(sm.cpuOver);
   }
-  return {xs, g, m:mv, gN, mN, cur:w0.duty*100};
+  return {xs, g, m:mv, gCpu, mCpu, cur:w0.duty*100};
 }
 function sweepSR(pG, pM) {
   const w = workload();
@@ -853,20 +862,21 @@ function recompute() {
 
   const sd = sweepDuty(pG, pM);
 
-  // Oversubscription view: fixed hardware, how many agents fit.
+  // Hardware oversubscription view: promised resources ÷ physical machine.
   $("osMachine").textContent = $("g_shape").value.split(" ")[0];
   $("osLine").innerHTML =
-    `Right now one <b>${pG.shape}</b> runs <b>${fmt(G.N*G.wpn,0)} agents</b> on its ${G.wpn} workers —
-     <b>${fmt(G.N,1)}×</b> oversubscribed vs dedicated workers (gVisor) ·
-     microVM: <b>${fmt(M.N*M.wpn,0)} agents</b> on ${M.wpn} (<b>${fmt(M.N,1)}×</b>) ·
-     multi-actor projection: <b>${fmt(G.maPerNode,0)}</b>/machine (${fmt(G.maPerNode/Math.max(G.wpn,1),1)}×).`;
+    `One <b>${pG.shape}</b> (${G.machineCpu} vCPU · ${G.machineGib} GiB) carries <b>${fmt(G.agentsPerMachine,0)} agents</b>,
+     which are promised ${fmt(G.agentsPerMachine*pG.wcpu,0)} vCPU and ${fmt(G.agentsPerMachine*pG.wmem,0)} GiB —
+     <b>CPU ${fmt(G.cpuOver,1)}×</b> · <b>memory ${fmt(G.memOver,1)}×</b> oversubscribed (gVisor).
+     microVM: ${fmt(M.agentsPerMachine,0)} agents → <b>CPU ${fmt(M.cpuOver,1)}×</b> · <b>memory ${fmt(M.memOver,1)}×</b>.
+     Multi-actor projection: ${fmt(G.maPerNode,0)} agents → CPU ${fmt(G.maPerNode*pG.wcpu/G.machineCpu,1)}× · memory ${fmt(G.maPerNode*pG.wmem/G.machineGib,1)}×.`;
   lineChart($("os_chart"), {
     xs:sd.xs, xLog:true, xTicks:[0.3,1,3,10,30], curX:sd.cur,
-    xFmt:v=>fmt(v,1)+"%", ttSuffix:" of the day awake",
+    xFmt:v=>fmt(v,1)+"%", ttSuffix:" of the day awake · CPU oversub",
     yFmt:v=>fmt(v,0)+"×", labelSuffix:"", endLabels:false,
-    series:[{name:"gVisor", color:css("--s1"), ys:sd.gN},
-            {name:"microVM", color:css("--s2"), ys:sd.mN}],
-    dashedY:[{y:1, color:css("--baseline"), label:"1× dedicated"}],
+    series:[{name:"gVisor", color:css("--s1"), ys:sd.gCpu},
+            {name:"microVM", color:css("--s2"), ys:sd.mCpu}],
+    dashedY:[{y:1, color:css("--baseline"), label:"1× no overcommit"}],
   });
   leverChart($("lever_chart"), leverRows(pG, w, G));
 
@@ -903,7 +913,9 @@ function recompute() {
     {cells:["Agents per worker — time-sharing limit", fmt(G.nTime,2), fmt(M.nTime,2)]},
     {cells:["Agents per worker — churn-cap limit", Number.isFinite(G.nChurn)?fmt(G.nChurn,2):"no cap", Number.isFinite(M.nChurn)?fmt(M.nChurn,2):"no cap"]},
     {cls: (G.capBinds||M.capBinds)?"em":"", cells:["Agents per worker (min of the two)", fmt(G.N,2), fmt(M.N,2)]},
-    {cells:["Agents per machine (slot-based)", fmt(G.N*G.wpn,0), fmt(M.N*M.wpn,0)]},
+    {cells:["Agents per machine (slot-based)", fmt(G.agentsPerMachine,0), fmt(M.agentsPerMachine,0)]},
+    {cells:["CPU oversubscription (promised ÷ physical)", fmt(G.cpuOver,1)+"×", fmt(M.cpuOver,1)+"×"]},
+    {cells:["Memory oversubscription (promised ÷ physical)", fmt(G.memOver,1)+"×", fmt(M.memOver,1)+"×"]},
     {cells:["Workers needed", fmt(G.workers,0), fmt(M.workers,0)]},
     {cells:["Machines needed", fmt(G.nodes,0), fmt(M.nodes,0)]},
     {cells:["Multi-actor agents/machine (projection)", fmt(G.maPerNode,0)+(G.maMemBound?" (mem-bound)":""), fmt(M.maPerNode,0)+(M.maMemBound?" (mem-bound)":"")]},

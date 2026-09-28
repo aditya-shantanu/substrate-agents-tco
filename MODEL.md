@@ -129,6 +129,22 @@ hold at most `M_worker / M_actor` *live* actors — with 1 actor per worker
 that. The tool reports the time-based `N` and flags when snapshot/restore
 bandwidth or memory would plausibly bind first.
 
+### 3a. Hardware oversubscription (the reported ratio)
+
+The design-independent measure of packing — unaffected by whether agents
+occupy one-per-worker slots today or CPU-pack under multi-actor later:
+
+```
+cpu_oversub = agents_on_machine · cpu_promised_per_agent / machine_vCPU
+mem_oversub = agents_on_machine · mem_promised_per_agent / machine_GiB
+```
+
+"Promised" = the worker limits an agent gets while live. The two ratios are
+reported separately because they differ whenever the worker shape doesn't
+match the machine shape (e.g. 0.5 vCPU/1 GiB workers on a 16 vCPU/64 GiB
+machine → CPU oversubscription is 2× the memory one). 1× = the hardware is
+committed exactly once.
+
 ### 3b. Per-phase CPU and the multi-actor (CPU-packed) projection
 
 Each lifecycle phase has a measured CPU intensity (defaults from the GKE

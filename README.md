@@ -36,10 +36,10 @@ What the calculator shows:
   (machines + snapshots + storage ops + cluster fee), and cost per agent =
   bill ÷ agents. Suspend/resume churn rates against each worker's physical
   ceiling, with an optional churn cap.
-- **An oversubscription view**: hold the machine constant and see how many
-  agents fit — the ratio vs duty cycle, plus a levers chart showing how many
-  MORE agents each knob buys (shorter idle wait, faster switches,
-  autoscaling the pool, hotter utilization, multi-actor workers).
+- **Hardware oversubscription**: promised resources ÷ physical machine,
+  reported for CPU and memory separately (they differ whenever the worker
+  shape doesn't match the machine shape), with the ratio-vs-duty-cycle
+  curve and a levers chart showing how many MORE agents each knob buys.
 - **Two peak lenses** (pick one): busiest-hour multiplier for
   timezone-driven fleets, or a **herd %** for cron-aligned fleets — the herd
   is charged full occupancy during its burst.
