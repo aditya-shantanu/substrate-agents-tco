@@ -1,0 +1,37 @@
+
+[1m┌──────────────────────────────────────────────────────────────────┐[0m
+[1m│  SUBSTRATE DENSITY RUN — RESULTS                                 │[0m
+[1m└──────────────────────────────────────────────────────────────────┘[0m
+
+  What ran
+    agents simulated        120   (personal-agent profile, time ×6)
+    worker pool             10 workers on 2 × c3-standard-4
+    window                  29.7 min wall = 3.0 h of agent-life
+    activations served      602  (5.0/agent; errors 59, router refusals 339)
+
+  What it measured
+    resume (wake p50/p99)   1,815 / 31,920 ms   ← T_r, user-visible wake-up
+    suspend (avg)           2,979 ms                ← T_s, from 531 suspends
+    RAM walk after resume   14 ms p50 (demand paging)
+    workers busy            mean 7.83 · p99 10 · peak 10 of 10
+    density (this run)      15.3:1 mean · 12.0:1 at p99 ← bankable
+
+  Real-world cost per agent (measured T_s/T_r plugged into the model)
+    one agent/day           34 min live over 43 wake-ups
+    overhead per wake-up    10s wait + 3.0s suspend + 1.8s resume = 14.8s
+    worker-time per agent   (2040s + 43×14.8s)/86400 = 3.10%
+    agents per worker       0.70 ÷ (3.10% × 2.0 peak) = 11.3
+    worker cost             $0.0907/hr ÷ 5.0 per node × 730h = $13.25/mo (cud3)
+    compute [2m$13.25 ÷ 11.3[0m   $1.17
+    snapshot at rest        $0.003   (0.12 GiB × $0.02/GiB-mo)
+    GCS ops                 $0.048
+  [1m╔──────────────────────────────────────────────────────────────────╗
+  ║   COST PER AGENT PER MONTH  ≈  $1.22                          ║
+  ╚──────────────────────────────────────────────────────────────────╝[0m
+  [2mvs $13.25/mo for a dedicated always-on worker — 11× cheaper.
+  Multi-actor workers (roadmap, CPU-packed): ≈153 agents/machine →
+  ≈$0.48/agent/mo — a projection, not today's price.
+  Excludes LLM tokens and amortized cluster fee/control plane (add
+  ~$573/mo ÷ fleet size). Utilization/peak are assumptions; T_s, T_r,
+  snapshot size and density above are measured.[0m
+
