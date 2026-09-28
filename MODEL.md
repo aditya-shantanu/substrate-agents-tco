@@ -175,8 +175,9 @@ agents/node  = floor( U · min( cpu_alloc / cpu_weighted,
 where `active_fraction` is `H + (1−H)·d_eff` (herd) or `d_eff·P`
 (multiplier) — suspended agents hold no RAM. For microVM, `cpu_alloc`
 already carries the nested-virt CPU tax, exactly as in slot packing.
-The tool reports this as the **multi-actor upside**, clearly labeled as a
-projection, never as today's price.
+The Phase 2 measured-run report prints this as a clearly-labeled
+projection line; the calculator intentionally does not (it shows only
+current-settings numbers).
 
 ## 4. Worker cost
 

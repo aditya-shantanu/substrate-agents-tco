@@ -36,27 +36,21 @@ What the calculator shows:
   (machines + snapshots + storage ops + cluster fee), and cost per agent =
   bill ÷ agents. Suspend/resume churn rates against each worker's physical
   ceiling, with an optional churn cap.
-- **Hardware oversubscription**: promised resources ÷ physical machine,
-  reported for CPU and memory separately (they differ whenever the worker
-  shape doesn't match the machine shape), with the ratio-vs-duty-cycle
-  curve and a levers chart showing how many MORE agents each knob buys.
+- **Hardware oversubscription**, top-level: promised resources ÷ physical
+  machine, CPU and memory separately (they differ whenever the worker shape
+  doesn't match the machine shape), plus the ratio-vs-duty-cycle curve and
+  a levers chart showing how many MORE agents each knob buys.
 - **Two peak lenses** (pick one): busiest-hour multiplier for
   timezone-driven fleets, or a **herd %** for cron-aligned fleets — the herd
   is charged full occupancy during its burst.
-- **Per-phase CPU weights** (active 0.25 / suspend 0.30 / **restore 1.22
-  vCPU** — restore is the most expensive thing an agent does) powering a
-  **multi-actor workers projection**: what the same fleet costs when agents
-  pack by CPU instead of one-per-worker slots (the platform's roadmap
-  lever), memory-bound-checked so it can't overclaim past RAM.
 - Suspend/resume defaults are **measured** (live cluster run + a real
   OpenClaw deployment), with a small-test-actor preset for the optimistic
   end. Sources and numbers: [`MODEL.md`](MODEL.md) appendices.
 
 Ballpark with defaults (10k agents, measured switch times, 10s idle wait,
 3y CUD, both scenarios on n2-standard-16): **≈$1.0/agent/month gVisor,
-≈$1.1 microVM**, versus ~$7–15 for a dedicated worker or VPS; the
-multi-actor projection lands well under $1. LLM tokens are out of scope
-(and typically dominate).
+≈$1.1 microVM**, versus ~$7–15 for a dedicated worker or VPS. LLM tokens
+are out of scope (and typically dominate).
 
 ## Phase 2: measure it
 
