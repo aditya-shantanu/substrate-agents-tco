@@ -10,6 +10,17 @@ if [[ "${SKIP_CLEAN:-}" != "true" ]]; then
   "${EXP_DIR}/clean.sh"
 fi
 
+# Stage 3 self-skips when the pool is already up, so the Burstable patch
+# (required for node swap to apply to workers) must also happen here.
+if [[ "${WORKER_BURSTABLE:-false}" == "true" ]]; then
+  if kubectl -n benchmark-workloads patch workerpool benchmark-ateom --type merge -p \
+      '{"spec":{"template":{"resources":{"requests":{"cpu":"200m","memory":"512Mi"},"limits":{"cpu":"1","memory":"1Gi"}}}}}'; then
+    echo "workerpool Burstable (200m/512Mi req, 1/1Gi lim); waiting for worker rollout..."
+    sleep 5
+    kubectl -n benchmark-workloads rollout status deploy/benchmark-ateom --timeout=240s || true
+  fi
+fi
+
 cd "${SERVICE_DIR}"
 export AUTOSUSPENDER_IMAGE=$(ko build --base-import-paths ./cmd/autosuspender)
 export AGENTSIM_IMAGE=$(ko build --base-import-paths ./cmd/agentsim)
