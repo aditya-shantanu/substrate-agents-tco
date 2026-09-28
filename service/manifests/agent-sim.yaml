@@ -28,6 +28,7 @@ spec:
         # Compressed-time policy: at --compress=60 in agentsim, 10s here plays
         # the role of a ~10min real-world idle window. Keep poll well under it.
         - --idle-timeout=${IDLE_TIMEOUT}
+        - --unwedge-after=${UNWEDGE_AFTER}  # must exceed the slowest honest checkpoint
         - --poll=2s
         - --max-running=10m
         - --max-concurrent=8

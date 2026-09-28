@@ -44,6 +44,11 @@ export AGENTS="${AGENTS:-120}"
 export COMPRESS="${COMPRESS:-6}"                  # time compression; switch overhead does NOT compress
 export DURATION="${DURATION:-30m}"
 export IDLE_TIMEOUT="${IDLE_TIMEOUT:-2s}"
+# Medic threshold: an actor in SUSPENDING longer than this is treated as
+# wedged (#1914) and recreated. A delete that lands mid-checkpoint hangs in
+# DELETING with its worker pinned, so keep this well above the slowest real
+# checkpoint (≈3 s at 128Mi agents; ≈90 s+ at 512Mi on a boot-disk-swap node).
+export UNWEDGE_AFTER="${UNWEDGE_AFTER:-3m}"
 export PRICE_MODEL="${PRICE_MODEL:-cud3}"         # od | cud1 | cud3
 export PEAK_MODEL="${PEAK_MODEL:-mult}"          # mult | herd — peak lens for the report
 export PEAK_VALUE="${PEAK_VALUE:-2}"             # multiplier (mult) or fraction 0-1 (herd)

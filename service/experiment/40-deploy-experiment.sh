@@ -29,7 +29,7 @@ echo "agentsim:      ${AGENTSIM_IMAGE}"
 # Jobs are immutable; drop a previous run before re-applying.
 kubectl -n agent-sim delete job agentsim --ignore-not-found
 
-export AGENTS COMPRESS DURATION IDLE_TIMEOUT LOAD_TEST WAVE_START WAVE_STEP WAVE_INTERVAL MEM_TARGET MEM_CHURN
+export AGENTS COMPRESS DURATION IDLE_TIMEOUT UNWEDGE_AFTER LOAD_TEST WAVE_START WAVE_STEP WAVE_INTERVAL MEM_TARGET MEM_CHURN
 envsubst < manifests/agent-sim.yaml | kubectl apply -f -
 
 kubectl -n agent-sim rollout status deploy/autosuspender --timeout=120s
