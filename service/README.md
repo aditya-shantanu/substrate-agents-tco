@@ -206,6 +206,13 @@ atespace.
   arriving while an actor is suspending can leave it in SUSPENDING forever,
   worker pinned; a few of these collapse a small pool. The medic works
   around it; the bug itself belongs upstream.
+- **Cross-version residue on reused nodes/clusters**: after installing a
+  different substrate version on the same cluster, nodes keep the old
+  `ate.dev/substrate-version` label (new atelet DaemonSet sits at desired 0
+  → no credential-broker socket → workers never report capacity → every
+  placement fails "no free workers available" with a FREE pool). The
+  install stage now detects and relabels automatically; for a truly clean
+  slate, recreate the node pool (hostPath state also survives pod wipes).
 - **Keep-alives wedge checkpoints**: if you point your own client at actors,
   disable HTTP keep-alives — an idle connection held open into the sandbox
   makes the next gVisor checkpoint fragile (agentsim does this already).
