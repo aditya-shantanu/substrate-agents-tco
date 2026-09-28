@@ -64,8 +64,16 @@ cluster_ready() {
   return 0
 }
 substrate_ready() {
-  [[ "$(kubectl -n ate-system get deploy ate-api-server -o jsonpath='{.status.readyReplicas}' 2>/dev/null)" -ge 1 ]] 2>/dev/null \
-    && [[ -n "$(kubectl -n ate-system get ds -o name 2>/dev/null | grep atelet)" ]]
+  [[ "$(kubectl -n ate-system get deploy ate-api-server -o jsonpath='{.status.readyReplicas}' 2>/dev/null)" -ge 1 ]] 2>/dev/null || return 1
+  # Recreated nodes lose the ate.dev/substrate-version label, leaving the
+  # atelet DS with desired 0 (and workers with no credential broker). Only
+  # a scheduled-and-ready atelet counts — otherwise stage 2 must rerun so
+  # its relabel guard can fix the nodes.
+  local ds ready
+  ds=$(kubectl -n ate-system get ds -o name 2>/dev/null | grep atelet | head -1) || return 1
+  [[ -n "$ds" ]] || return 1
+  ready=$(kubectl -n ate-system get "$ds" -o jsonpath='{.status.numberReady}' 2>/dev/null)
+  [[ "${ready:-0}" -ge 1 ]]
 }
 workloads_ready() {
   local ready
