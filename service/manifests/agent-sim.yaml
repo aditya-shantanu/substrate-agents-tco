@@ -111,7 +111,9 @@ spec:
         - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
         - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }
         resources:
-          requests: { cpu: 250m, memory: 256Mi }
+          # Reservation only; the client is light. Keep it small so it still
+          # schedules on a node whose CPU is reserved by a dense worker pool.
+          requests: { cpu: 50m, memory: 256Mi }
           limits: { cpu: "2", memory: 1Gi }
       volumes:
       - name: servicedns-ca
