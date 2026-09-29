@@ -1,0 +1,276 @@
+{"time":"2026-09-29T18:40:03.795446446Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0012: /writeram: HTTP 421: misdirected request"}
+{"time":"2026-09-29T18:40:03.795603452Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0025: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-9jsf7\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795608477Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0026: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-m6fst\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795611769Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0027: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-r7v8m\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.7956142Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0028: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-q6kd6\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.79561648Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0029: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-wh4s6\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795618955Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0030: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-mnpfh\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795621095Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0031: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-zwdvt\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.79562322Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0032: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-stjz9\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795625475Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0033: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-zj5sb\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795627788Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0034: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-fczs5\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795630065Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0035: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-4b5vd\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795633462Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0036: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-c5qmm\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795635764Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0037: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-dfgkw\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795638132Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0038: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-gtqbk\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795640421Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0039: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-xwvjx\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795642621Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0016: /writeram: HTTP 421: misdirected request"}
+{"time":"2026-09-29T18:40:03.795644988Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0041: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-56j4g\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795647077Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0040: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-c5rzd\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795649532Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0042: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-2xdbp\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795658405Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0043: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-hw7zv\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795664453Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0044: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-5nsv4\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795668497Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0046: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-jgkw5\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795672415Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0047: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-95nlj\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795676854Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0048: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-bk2n7\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795680272Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0049: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-tfgtv\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795683435Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0045: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-gtmxt\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795686507Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0051: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-wpm76\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795689746Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0050: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-4mksq\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795693743Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0053: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-d4h2s\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795697033Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0052: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-4wsvv\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795700184Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0055: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-vh85r\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795703679Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0056: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-dq6s9\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795707176Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0054: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-6z88q\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795710885Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0057: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-cn9mv\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795714983Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0059: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-kwxt2\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795718872Z","level":"WARN","msg":"agent setup failed","err":"boot sim-0058: rpc error: code = Internal desc = internal server error: workflow failed at step CallAteletRestore: for worker pod \"benchmark-workloads/benchmark-ateom-59f74bc8c8-lsxpp\": selected atelet \"ate-system/atelet-v0-1-0-7-ge3a041bc-7bnbc\" has no assigned IPs"}
+{"time":"2026-09-29T18:40:03.795722749Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0021: /writeram: HTTP 421: misdirected request"}
+{"time":"2026-09-29T18:40:03.795726329Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0019: /writeram: HTTP 503: upstream connect error or disconnect/reset before headers. reset reason: connection timeout"}
+{"time":"2026-09-29T18:40:03.79573033Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0018: /writeram: HTTP 421: misdirected request"}
+{"time":"2026-09-29T18:40:03.795733746Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0022: /writeram: HTTP 421: misdirected request"}
+{"time":"2026-09-29T18:40:03.79573716Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0023: /writeram: HTTP 421: misdirected request"}
+{"time":"2026-09-29T18:40:03.795740775Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0024: /writeram: HTTP 421: misdirected request"}
+{"time":"2026-09-29T18:40:08.938243856Z","level":"WARN","msg":"agent dead after placement","actor":"sim-0007","err":"/ping: HTTP 503: upstream connect error or disconnect/reset before headers. reset reason: connection timeout"}
+{"time":"2026-09-29T18:40:13.951417439Z","level":"WARN","msg":"agent dead after placement","actor":"sim-0008","err":"/ping: HTTP 503: upstream connect error or disconnect/reset before headers. reset reason: connection timeout"}
+{"time":"2026-09-29T18:40:14.104853533Z","level":"INFO","msg":"setup complete","agents":15,"failed":45,"resident":true}
+{"time":"2026-09-29T18:40:14.104905666Z","level":"INFO","msg":"starting load","agents":60,"duration":"30m0s","compress":6,"duty_cycle_uncompressed":"2.36%"}
+{"time":"2026-09-29T18:40:14.105027916Z","level":"INFO","msg":"wave","active_agents":10,"observing_for":"3m0s"}
+{"time":"2026-09-29T18:40:34.111027076Z","level":"INFO","msg":"progress","activations":0,"wake_p50_ms":0,"wake_p99_ms":0,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":0,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:40:54.108052734Z","level":"INFO","msg":"progress","activations":0,"wake_p50_ms":0,"wake_p99_ms":0,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":0,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:41:14.113018721Z","level":"INFO","msg":"progress","activations":0,"wake_p50_ms":0,"wake_p99_ms":0,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":0,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:41:34.114434696Z","level":"INFO","msg":"progress","activations":1,"wake_p50_ms":37,"wake_p99_ms":37,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:41:54.105190583Z","level":"INFO","msg":"progress","activations":1,"wake_p50_ms":37,"wake_p99_ms":37,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:42:14.105263117Z","level":"INFO","msg":"progress","activations":1,"wake_p50_ms":37,"wake_p99_ms":37,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:42:34.116068566Z","level":"INFO","msg":"progress","activations":2,"wake_p50_ms":37,"wake_p99_ms":37,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:42:54.106109279Z","level":"INFO","msg":"progress","activations":3,"wake_p50_ms":37,"wake_p99_ms":41,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:43:14.115066665Z","level":"INFO","msg":"wave result","active_agents":10,"activations":4,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":37,"wake_p99_ms":41,"turn_p99_ms":-9223372036854775808,"probe_p50_ms":47,"failed":false,"failed_on":""}
+{"time":"2026-09-29T18:43:14.115109341Z","level":"INFO","msg":"progress","activations":4,"wake_p50_ms":37,"wake_p99_ms":41,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:43:14.115118115Z","level":"INFO","msg":"wave","active_agents":15,"observing_for":"3m0s"}
+{"time":"2026-09-29T18:43:34.108721841Z","level":"INFO","msg":"progress","activations":4,"wake_p50_ms":37,"wake_p99_ms":41,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:43:54.106021564Z","level":"INFO","msg":"progress","activations":5,"wake_p50_ms":37,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":47,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:44:14.1051487Z","level":"INFO","msg":"progress","activations":9,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":48,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:44:34.120056674Z","level":"INFO","msg":"progress","activations":9,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":48,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:44:54.114827176Z","level":"INFO","msg":"progress","activations":9,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":48,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:45:14.105177102Z","level":"INFO","msg":"progress","activations":10,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:45:34.120032884Z","level":"INFO","msg":"progress","activations":10,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:45:54.12417448Z","level":"INFO","msg":"progress","activations":10,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:46:14.106021074Z","level":"INFO","msg":"progress","activations":12,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":0,"refusals":0}
+{"time":"2026-09-29T18:46:14.11624412Z","level":"INFO","msg":"wave result","active_agents":15,"activations":8,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":15,"wake_p99_ms":44,"turn_p99_ms":-9223372036854775808,"probe_p50_ms":51,"failed":false,"failed_on":""}
+=== loadtest waves ===
+active_agents,activations,refusals,errors,wake_p50_ms,wake_p99_ms
+10,4,0,0,38,42
+15,8,0,0,16,45
+=== end loadtest ===
+LOADTEST VERDICT: no failure up to 15 active agents (raise --agents to push further)
+{"time":"2026-09-29T18:46:23.526214944Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:46:34.109014442Z","level":"INFO","msg":"progress","activations":13,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":2,"refusals":0}
+{"time":"2026-09-29T18:46:34.752125357Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:46:35.950184205Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:46:54.109125048Z","level":"INFO","msg":"progress","activations":14,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":4,"refusals":0}
+{"time":"2026-09-29T18:47:14.105175761Z","level":"INFO","msg":"progress","activations":14,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":4,"refusals":0}
+{"time":"2026-09-29T18:47:34.105195122Z","level":"INFO","msg":"progress","activations":14,"wake_p50_ms":20,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":4,"refusals":0}
+{"time":"2026-09-29T18:47:50.657189384Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:47:54.107056436Z","level":"INFO","msg":"progress","activations":15,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":6,"refusals":0}
+{"time":"2026-09-29T18:47:59.039917728Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:48:06.815756535Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:48:14.106052917Z","level":"INFO","msg":"progress","activations":18,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":60,"refusals":0}
+{"time":"2026-09-29T18:48:34.124030352Z","level":"INFO","msg":"progress","activations":18,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":60,"refusals":0}
+{"time":"2026-09-29T18:48:54.122822286Z","level":"INFO","msg":"progress","activations":18,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":60,"refusals":0}
+{"time":"2026-09-29T18:49:13.156191581Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:49:14.106031562Z","level":"INFO","msg":"progress","activations":19,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":62,"refusals":0}
+{"time":"2026-09-29T18:49:19.499612581Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:49:34.114235007Z","level":"INFO","msg":"progress","activations":20,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":64,"refusals":0}
+{"time":"2026-09-29T18:49:54.124446182Z","level":"INFO","msg":"progress","activations":20,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":64,"refusals":0}
+{"time":"2026-09-29T18:50:08.88087833Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:50:14.105623642Z","level":"INFO","msg":"progress","activations":21,"wake_p50_ms":15,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":66,"refusals":0}
+{"time":"2026-09-29T18:50:33.607426226Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:50:34.106119108Z","level":"INFO","msg":"progress","activations":22,"wake_p50_ms":14,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":68,"refusals":0}
+{"time":"2026-09-29T18:50:36.365239783Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:50:48.628120339Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:50:54.105167619Z","level":"INFO","msg":"progress","activations":24,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":72,"refusals":0}
+{"time":"2026-09-29T18:50:56.388099407Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:50:56.431881727Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:51:05.756935116Z","level":"WARN","msg":"activation first request failed","actor":"sim-0014","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:51:14.107124002Z","level":"INFO","msg":"progress","activations":27,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":78,"refusals":0}
+{"time":"2026-09-29T18:51:34.10537554Z","level":"INFO","msg":"progress","activations":27,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":78,"refusals":0}
+{"time":"2026-09-29T18:51:54.1052214Z","level":"INFO","msg":"progress","activations":27,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":78,"refusals":0}
+{"time":"2026-09-29T18:52:14.119661862Z","level":"INFO","msg":"progress","activations":27,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":78,"refusals":0}
+{"time":"2026-09-29T18:52:34.124746242Z","level":"INFO","msg":"progress","activations":27,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":78,"refusals":0}
+{"time":"2026-09-29T18:52:52.174647364Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:52:54.106065266Z","level":"INFO","msg":"progress","activations":28,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":80,"refusals":0}
+{"time":"2026-09-29T18:52:57.207775081Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:53:14.116062163Z","level":"INFO","msg":"progress","activations":29,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":82,"refusals":0}
+{"time":"2026-09-29T18:53:34.115638165Z","level":"INFO","msg":"progress","activations":29,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":82,"refusals":0}
+{"time":"2026-09-29T18:53:49.703700454Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:53:52.653489147Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:53:54.106048152Z","level":"INFO","msg":"progress","activations":31,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":86,"refusals":0}
+{"time":"2026-09-29T18:54:00.414019364Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:54:14.113841767Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":88,"refusals":0}
+{"time":"2026-09-29T18:54:34.124044684Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":88,"refusals":0}
+{"time":"2026-09-29T18:54:54.122048817Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":88,"refusals":0}
+{"time":"2026-09-29T18:55:14.117066097Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":88,"refusals":0}
+{"time":"2026-09-29T18:55:34.124023221Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":88,"refusals":0}
+{"time":"2026-09-29T18:55:42.005186878Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:55:54.106053833Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":88,"refusals":0}
+{"time":"2026-09-29T18:56:14.106044776Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":88,"refusals":0}
+{"time":"2026-09-29T18:56:18.005217445Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:56:34.106043783Z","level":"INFO","msg":"progress","activations":33,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":90,"refusals":0}
+{"time":"2026-09-29T18:56:54.106054965Z","level":"INFO","msg":"progress","activations":33,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":90,"refusals":0}
+{"time":"2026-09-29T18:57:03.935973133Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:57:08.039582543Z","level":"WARN","msg":"activation first request failed","actor":"sim-0014","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:57:12.674610779Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:57:14.105187695Z","level":"INFO","msg":"progress","activations":37,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":146,"refusals":0}
+{"time":"2026-09-29T18:57:29.38613984Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:57:34.109024914Z","level":"INFO","msg":"progress","activations":38,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":148,"refusals":0}
+{"time":"2026-09-29T18:57:49.691654941Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:57:51.553683076Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:57:51.79420621Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:57:54.10602186Z","level":"INFO","msg":"progress","activations":41,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":154,"refusals":0}
+{"time":"2026-09-29T18:58:14.122407318Z","level":"INFO","msg":"progress","activations":41,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":154,"refusals":0}
+{"time":"2026-09-29T18:58:34.115060033Z","level":"INFO","msg":"progress","activations":41,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":154,"refusals":0}
+{"time":"2026-09-29T18:58:54.124173002Z","level":"INFO","msg":"progress","activations":41,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":154,"refusals":0}
+{"time":"2026-09-29T18:59:14.124318018Z","level":"INFO","msg":"progress","activations":41,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":154,"refusals":0}
+{"time":"2026-09-29T18:59:20.71656406Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:59:34.112074698Z","level":"INFO","msg":"progress","activations":42,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":156,"refusals":0}
+{"time":"2026-09-29T18:59:41.627570824Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T18:59:54.105444191Z","level":"INFO","msg":"progress","activations":43,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":158,"refusals":0}
+{"time":"2026-09-29T19:00:12.972853565Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:00:14.106144173Z","level":"INFO","msg":"progress","activations":44,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":160,"refusals":0}
+{"time":"2026-09-29T19:00:30.637694656Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:00:34.108038169Z","level":"INFO","msg":"progress","activations":45,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":162,"refusals":0}
+{"time":"2026-09-29T19:00:40.345209931Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:00:51.085554754Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:00:54.107066289Z","level":"INFO","msg":"progress","activations":47,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":166,"refusals":0}
+{"time":"2026-09-29T19:01:04.316150942Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:01:14.109063296Z","level":"INFO","msg":"progress","activations":48,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":168,"refusals":0}
+{"time":"2026-09-29T19:01:34.122189509Z","level":"INFO","msg":"progress","activations":48,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":168,"refusals":0}
+{"time":"2026-09-29T19:01:40.35268317Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:01:54.107310392Z","level":"INFO","msg":"progress","activations":49,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":170,"refusals":0}
+{"time":"2026-09-29T19:02:08.790715843Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:02:09.072497522Z","level":"WARN","msg":"activation first request failed","actor":"sim-0011","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:02:14.10544247Z","level":"INFO","msg":"progress","activations":51,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":174,"refusals":0}
+{"time":"2026-09-29T19:02:30.249928965Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:02:31.273593946Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:02:34.107472359Z","level":"INFO","msg":"progress","activations":53,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":178,"refusals":0}
+{"time":"2026-09-29T19:02:40.929410222Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:02:54.1130792Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":180,"refusals":0}
+{"time":"2026-09-29T19:03:14.124068764Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":180,"refusals":0}
+{"time":"2026-09-29T19:03:34.124021126Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":180,"refusals":0}
+{"time":"2026-09-29T19:03:54.115554781Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":180,"refusals":0}
+{"time":"2026-09-29T19:04:14.105237552Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":180,"refusals":0}
+{"time":"2026-09-29T19:04:34.124029466Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":180,"refusals":0}
+{"time":"2026-09-29T19:04:39.656030723Z","level":"WARN","msg":"activation first request failed","actor":"sim-0011","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:04:54.114043277Z","level":"INFO","msg":"progress","activations":55,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":182,"refusals":0}
+{"time":"2026-09-29T19:05:14.124377032Z","level":"INFO","msg":"progress","activations":55,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":182,"refusals":0}
+{"time":"2026-09-29T19:05:31.943591334Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:05:32.165165188Z","level":"WARN","msg":"activation first request failed","actor":"sim-0017","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:05:34.106402759Z","level":"INFO","msg":"progress","activations":56,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":184,"refusals":0}
+{"time":"2026-09-29T19:05:48.622165859Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:05:50.814108261Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:05:54.10603823Z","level":"INFO","msg":"progress","activations":58,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":188,"refusals":0}
+{"time":"2026-09-29T19:06:14.105204589Z","level":"INFO","msg":"progress","activations":58,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":188,"refusals":0}
+{"time":"2026-09-29T19:06:34.106056987Z","level":"INFO","msg":"progress","activations":58,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":188,"refusals":0}
+{"time":"2026-09-29T19:06:54.10560791Z","level":"INFO","msg":"progress","activations":59,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":238,"refusals":0}
+{"time":"2026-09-29T19:06:55.251927516Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:07:14.118078721Z","level":"INFO","msg":"progress","activations":60,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":240,"refusals":0}
+{"time":"2026-09-29T19:07:34.123200614Z","level":"INFO","msg":"progress","activations":60,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":240,"refusals":0}
+{"time":"2026-09-29T19:07:54.124339088Z","level":"INFO","msg":"progress","activations":60,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":240,"refusals":0}
+{"time":"2026-09-29T19:08:04.14202361Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:08:14.110074831Z","level":"INFO","msg":"progress","activations":61,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":242,"refusals":0}
+{"time":"2026-09-29T19:08:28.121111641Z","level":"WARN","msg":"activation first request failed","actor":"sim-0017","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:08:34.106087592Z","level":"INFO","msg":"progress","activations":62,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":244,"refusals":0}
+{"time":"2026-09-29T19:08:54.107082532Z","level":"INFO","msg":"progress","activations":62,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":244,"refusals":0}
+{"time":"2026-09-29T19:08:54.783499512Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:09:03.878976192Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:09:10.191795846Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:09:14.108039766Z","level":"INFO","msg":"progress","activations":64,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":248,"refusals":0}
+{"time":"2026-09-29T19:09:34.1090199Z","level":"INFO","msg":"progress","activations":64,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":248,"refusals":0}
+{"time":"2026-09-29T19:09:54.108035899Z","level":"INFO","msg":"progress","activations":64,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":248,"refusals":0}
+{"time":"2026-09-29T19:10:04.170743335Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T19:10:14.108037257Z","level":"INFO","msg":"progress","activations":65,"wake_p50_ms":0,"wake_p99_ms":51,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":50,"errors":250,"refusals":0}
+=== agentsim summary ===
+agents=60 activations=66 pings=130 errors=300 refusals_503_504=0 compress=6
+wake     n=62    first-request ms p50=0 p90=20 p99=52 max=67
+session  n=4     first-request ms p50=0 p90=0 p99=0 max=0
+post-resume RAM walk ms p50=38 p90=55 p99=56 (demand-paging cost)
+CPU probe ms p50=50 p90=58 p99=62 (fixed work; drift = throttling)
+=== agentsim csv ===
+unix_ms,agent,kind,first_req_ms,readram_ms,pings,errors,refusals
+1790707278693,6,wake,37.9,55.0,1,0,0
+1790707336450,0,wake,41.6,44.5,1,0,0
+1790707368349,11,wake,52.0,48.2,1,0,0
+1790707375203,0,wake,20.7,22.4,1,0,0
+1790707427497,14,wake,66.7,94.9,1,0,0
+1790707436982,4,wake,14.5,37.7,1,0,0
+1790707443290,3,wake,15.8,44.9,1,0,0
+1790707446988,15,wake,15.7,56.0,1,0,0
+1790707452852,13,wake,20.1,37.6,1,0,0
+1790707513190,6,wake,44.6,30.8,1,0,0
+1790707565730,6,wake,40.0,17.6,1,0,0
+1790707571278,3,wake,15.5,19.6,1,0,0
+1790707583517,13,wake,0.0,0.0,1,2,0
+1790707595920,10,wake,0.1,0.0,1,2,0
+1790707670653,9,wake,0.0,0.0,1,2,0
+1790707594741,15,session,0.0,0.0,17,50,0
+1790707679035,2,wake,0.0,0.0,1,2,0
+1790707686807,5,wake,0.0,0.0,1,2,0
+1790707753116,1,wake,0.0,0.0,1,2,0
+1790707759491,3,wake,0.1,0.0,1,2,0
+1790707808850,1,wake,0.0,0.0,1,2,0
+1790707833598,0,wake,0.0,0.0,1,2,0
+1790707836361,13,wake,0.2,0.0,1,2,0
+1790707848606,9,wake,0.0,0.0,1,2,0
+1790707856379,10,wake,0.0,0.0,1,2,0
+1790707856427,0,wake,0.1,0.0,1,2,0
+1790707865749,14,wake,0.0,0.0,1,2,0
+1790707972139,10,wake,0.1,0.0,1,2,0
+1790707977200,10,wake,0.1,0.0,1,2,0
+1790708029663,6,wake,0.0,0.0,1,2,0
+1790708032648,0,wake,0.0,0.0,1,2,0
+1790708040405,9,wake,0.0,0.0,1,2,0
+1790708178000,15,wake,0.0,0.0,1,2,0
+1790708141971,1,session,0.0,0.0,17,50,0
+1790708223931,1,wake,0.0,0.0,1,2,0
+1790708228028,14,wake,0.0,0.0,1,2,0
+1790708232644,3,wake,0.0,0.0,1,2,0
+1790708249379,5,wake,0.0,0.0,1,2,0
+1790708269655,13,wake,0.0,0.0,1,2,0
+1790708271549,20,wake,0.0,0.0,1,2,0
+1790708271789,13,wake,0.0,0.0,1,2,0
+1790708360684,0,wake,0.0,0.0,1,2,0
+1790708381619,10,wake,0.1,0.0,1,2,0
+1790708412941,4,wake,0.0,0.0,1,2,0
+1790708430629,20,wake,0.0,0.0,1,2,0
+1790708440336,4,wake,0.0,0.0,1,2,0
+1790708451049,6,wake,0.0,0.0,1,2,0
+1790708464307,3,wake,0.0,0.0,1,2,0
+1790708500307,10,wake,0.0,0.0,1,2,0
+1790708528781,9,wake,0.0,0.0,1,2,0
+1790708529068,11,wake,0.0,0.0,1,2,0
+1790708550210,1,wake,0.1,0.0,1,2,0
+1790708551269,13,wake,0.0,0.0,1,2,0
+1790708560920,4,wake,0.0,0.0,1,2,0
+1790708679616,11,wake,0.0,0.0,1,2,0
+1790708731916,10,wake,0.1,0.0,1,2,0
+1790708748618,2,wake,0.0,0.0,1,2,0
+1790708750810,9,wake,0.1,0.0,1,2,0
+1790708732160,17,session,0.0,0.0,17,50,0
+1790708815247,4,wake,0.0,0.0,1,2,0
+1790708884115,4,wake,0.0,0.0,1,2,0
+1790708908113,17,wake,0.0,0.0,1,2,0
+1790708943874,3,wake,0.0,0.0,1,2,0
+1790708950187,13,wake,0.0,0.0,1,2,0
+1790709004164,4,wake,0.7,0.0,1,2,0
+1790708934749,15,session,0.1,0.0,17,50,0
+=== end csv ===
