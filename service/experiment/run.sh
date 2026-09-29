@@ -21,7 +21,6 @@ while [[ $# -gt 0 ]]; do
     --compress)   COMPRESS="$2"; shift 2 ;;
     --workers)    WORKER_COUNT="$2"; shift 2 ;;
     --load-test)  LOAD_TEST=true; shift ;;
-    --swap)       SWAP_GIB="$2"; shift 2 ;;
     --force)      FORCE=1; shift ;;
     --skip-setup) shift ;;  # legacy no-op: stages now self-detect
     *) echo "unknown flag: $1" >&2; exit 2 ;;

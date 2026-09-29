@@ -115,8 +115,7 @@ kubectl -n agent-sim logs -f job/agentsim
 Experiment knobs (environment overrides, defaults in `lib.sh`):
 `SANDBOX_CLASS` (gvisor|microvm), `GVISOR_NODE_MACHINE_TYPE`, `NODE_COUNT`,
 `WORKER_COUNT`, `AGENTS`, `COMPRESS`, `DURATION`, `IDLE_TIMEOUT`,
-`PRICE_MODEL`, `SWAP_GIB` (GKE-native node swap; recreates nodes, makes
-workers Burstable), `PEAK_MODEL`/`PEAK_VALUE`, and for load-test
+`PRICE_MODEL`, `PEAK_MODEL`/`PEAK_VALUE`, and for load-test
 `LOAD_TEST`/`WAVE_START`/`WAVE_STEP`/`WAVE_INTERVAL` plus starvation gates
 `--fail-wake-p99-ms`/`--fail-turn-p99-ms`. Every run reports the
 not-starved evidence: wake/turn latencies, a fixed-work CPU probe, RAM-walk

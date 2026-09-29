@@ -81,12 +81,14 @@ worker_resources_patch() {
     "${WORKER_REQ_CPU}" "${WORKER_REQ_MEM}" "${WORKER_LIM_CPU}" "${WORKER_LIM_MEM}"
 }
 
-# --- node swap (GKE native, >=1.34.1-gke.1341000; Standard only) ---
-# SWAP_GIB: "" = leave pool as-is; a number = enable boot-disk-backed swap of
-# that many GiB on the substrate node pool (NODE POOL IS RECREATED, ~5-10
-# min). Swap applies to Burstable pods only, so WORKER_BURSTABLE=true (the
-# default when swap is on) patches the benchmark WorkerPool with
-# requests<limits so workers can actually use it.
+# --- node swap: RESEARCH-ONLY, not exposed in the TUI and not part of the
+# cost model. The 2026-09-28/29 A/B (research/research.md, "Swap on GKE")
+# found swap parks more idle agents but yields no sustainable density.
+# SWAP_GIB: "" = leave the pool as-is (default); a number = enable
+# boot-disk-backed swap of that many GiB on the substrate node pool (NODE
+# POOL IS RECREATED). Swap applies to Burstable pods only, so
+# WORKER_BURSTABLE=true (the default when swap is on) patches the benchmark
+# WorkerPool with requests<limits.
 export SWAP_GIB="${SWAP_GIB:-}"
 export WORKER_BURSTABLE="${WORKER_BURSTABLE:-$([[ -n "${SWAP_GIB}" ]] && echo true || echo false)}"
 

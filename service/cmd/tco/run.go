@@ -42,15 +42,7 @@ func newStages() []stage {
 		{title: "GKE cluster + bucket + IAM", script: "10-bootstrap.sh",
 			skip: func(a *App) bool {
 				st := a.sh(`gcloud container clusters describe "$CLUSTER_NAME" --location "$CLUSTER_LOCATION" --project "$PROJECT_ID" --format='value(status)' 2>/dev/null`)
-				if strings.TrimSpace(st) != "RUNNING" || !a.shOK(`kubectl get ns >/dev/null 2>&1`) {
-					return false
-				}
-				// A requested swap change means stage 1 must run.
-				if a.cfg.swapGib != "" {
-					cur := a.sh(`gcloud beta container node-pools describe substrate-node-pool --cluster "$CLUSTER_NAME" --location "$CLUSTER_LOCATION" --project "$PROJECT_ID" --format='value(config.linuxNodeConfig.swapConfig.bootDiskProfile.swapSizeGib)' 2>/dev/null`)
-					return strings.TrimSpace(cur) == a.cfg.swapGib
-				}
-				return true
+				return strings.TrimSpace(st) == "RUNNING" && a.shOK(`kubectl get ns >/dev/null 2>&1`)
 			}},
 		{title: "Substrate control plane", script: "20-install-substrate.sh",
 			skip: func(a *App) bool {

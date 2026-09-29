@@ -31,7 +31,6 @@ type config struct {
 	idle      string
 	price     string
 	peak      string
-	swapGib   string // "" = off; GKE-native boot-disk node swap (GiB)
 	loadTest  bool
 	waveStart int
 	waveStep  int
@@ -50,7 +49,6 @@ func defaultConfig() config {
 		sandbox:  "gvisor", machine: "c3-standard-4", nodes: 2, workers: 10,
 		agents: 120, compress: 6, duration: "30m", idle: "2s", price: "cud3",
 		peak:     "×2 average",
-		swapGib:  "",
 		loadTest: false, waveStart: 10, waveStep: 10, waveIntvl: "3m",
 	}
 }
@@ -117,7 +115,6 @@ func (c config) env() []string {
 		"DURATION=" + c.duration,
 		"IDLE_TIMEOUT=" + c.idle,
 		"PRICE_MODEL=" + c.price,
-		"SWAP_GIB=" + c.swapGib,
 		func() string { m, _ := c.peakParams(); return "PEAK_MODEL=" + m }(),
 		func() string { _, v := c.peakParams(); return fmt.Sprintf("PEAK_VALUE=%g", v) }(),
 		"LOAD_TEST=" + lt,
@@ -280,15 +277,6 @@ var fields = []field{
 		func(c *config, d int) { c.idle = cycleStr(c.idle, []string{"2s", "5s", "10s", "30s"}, d) }, nil, nil},
 	{"Pricing", func(c *config) string { return c.price },
 		func(c *config, d int) { c.price = cycleStr(c.price, priceModels, d) }, nil, nil},
-	{"Node swap (GKE-native)", func(c *config) string {
-		if c.swapGib == "" {
-			return "off"
-		}
-		return c.swapGib + " GiB boot-disk (workers become Burstable)"
-	},
-		func(c *config, d int) {
-			c.swapGib = cycleStr(c.swapGib, []string{"", "8", "16", "32"}, d)
-		}, nil, nil},
 	{"Provision for peaks", func(c *config) string { return c.peak },
 		func(c *config, d int) {
 			c.peak = cycleStr(c.peak, []string{"×1.5 average", "×2 average", "×3 average", "herd 15%", "herd 25%", "herd 40%"}, d)
