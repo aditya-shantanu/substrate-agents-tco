@@ -6,7 +6,7 @@ sync_substrate_env
 
 cd "${SUBSTRATE_REPO}"
 ./benchmarking/workloads/deploy.sh --deploy --worker-count "${WORKER_COUNT}" \
-  --sandbox-class "${SANDBOX_CLASS:-gvisor}"
+  --sandbox-class "${SANDBOX_CLASS:-gvisor}" --actor-memory "${ACTOR_MEMORY}"
 
 # Swap applies only to Burstable pods: give workers requests<limits so the
 # kernel may actually swap their cold pages.

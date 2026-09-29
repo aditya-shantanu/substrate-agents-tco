@@ -238,23 +238,38 @@ agents where memory binds first — i.e. memory-heavy agents (OpenClaw's
 gateway requests 512 MiB and is limited at 1.5 GiB) with enough worker
 slots that slots are not the limit.
 
-**Attempt at the memory-bound regime — 14 workers, 1 GiB agents: not
-runnable.** Every suspend wedged (0 completed, 0 snapshots in GCS, node
-idle). Cause, from the node's kernel log and runsc: `Memory cgroup out of
-memory: Killed process (gvisor_sentry)` followed by `checkpoint failed:
-containerManager.Checkpoint: EOF`. **gVisor's checkpoint transiently needs
-roughly 2× the sandbox's resident memory**, so a 1 GiB agent overruns a
-2 GiB worker limit mid-save; the sentry dies and Substrate leaves the actor
-in SUSPENDING (a second route into the #1914 absorbing state — a failed
-checkpoint is never propagated to a terminal state). Two consequences for
-the cost model: (1) worker memory limits must be sized at ≥2–3× the
-agent's resident set or suspend silently stops working; (2) T_s and the
-checkpoint's memory burst both scale with resident set, which is the
-strongest argument for *not* snapshotting warm-but-idle agents at all and
-letting swap park them instead (see §5.3).
+**Attempts at the memory-bound regime with bigger agents (1 GiB, then
+512 MiB) kept failing — and the failure was ours, not the platform's.**
+Every suspend wedged (`Memory cgroup out of memory: Killed process
+(gvisor_sentry)` → `checkpoint failed: EOF` → actor stuck in SUSPENDING).
+An earlier draft of this note blamed checkpoint memory amplification; the
+OOM records refute that: the killed sentries had ~20 MiB anon RSS and
+~225 MiB of **shmem** (gVisor's memfd-backed sandbox memory) inside a
+cgroup limit of **256 MiB — the benchmark ActorTemplate's default
+`--actor-memory`**, a per-*sandbox* limit separate from the worker pod's
+2 GiB. A 512 MiB working set can never fit in it; the harness now passes
+`ACTOR_MEMORY` through (`lib.sh`, default unchanged) and redeploys the
+template when it changes.
 
-**Knee 2 (running) — swap on, 14 workers, 512 MiB agents**, then the same
-on a no-swap node (a second pool in us-central1-a; us-central1-c is
-stocked out). 14 busy agents ≈ 12 GiB resident + checkpoint transients on
-a node with ~10 GiB free, so memory is on the critical path while a
-single checkpoint still fits the 2 GiB limit.
+The part that matters for swap: on the swap node the same 512 MiB agents
+*appeared* to work. shmem is swappable and swapped pages do not count
+against the cgroup, so each sandbox lived with ~256 MiB resident and the
+rest in swap — then every checkpoint paged it all back through the same
+saturated boot disk (suspends 3 s → ~90 s, IO PSI 80 %, node collapse).
+**Node swap can silently mask an undersized memory limit and convert it
+into pathological checkpoint latency.** Node memory was never the binding
+constraint in those runs; the 256 MiB cgroup was.
+
+Two further platform facts surfaced on the way: a failed checkpoint or
+restore is never propagated to a terminal actor state (SUSPENDING /
+RESUMING become absorbing, worker pinned — the #1914 family); and gVisor
+pins each snapshot to the CPU **FeatureSet** it was taken on (`incompatible
+FeatureSet: missing features: map[vmx:{}]`), so snapshots taken on a
+nested-virtualization pool cannot restore on a pool without it — node
+pools serving one fleet must expose identical CPU features.
+
+**Knee 2 (running) — three identical `c3-standard-4-lssd` nodes (nested
+virt on), 22 workers, 512 MiB agents, actor limit 2 GiB, 150 agents,
+waves 30/+10; arms: no swap · 16 GiB boot-disk swap · 16 GiB Local-SSD
+swap.** 22 busy agents ≈ 15 GiB resident on a 13.6 GiB node, so the node
+is the only memory constraint and the arms differ in swap alone.

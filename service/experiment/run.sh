@@ -80,10 +80,17 @@ workloads_ready() {
   ready=$(kubectl -n benchmark-workloads get workerpool benchmark-ateom \
           -o jsonpath='{.status.readyReplicas}' 2>/dev/null) || return 1
   [[ "${ready:-0}" -eq "${WORKER_COUNT}" ]] || return 1
-  "${SUBSTRATE_REPO}/bin/kubectl-ate" get actor-templates -a benchmark-workloads 2>/dev/null \
-    | grep -q "glutton .*gs://" && return 0
-  # kubectl-ate may not be built; fall back to trusting the pool.
-  return 0
+  local ate="${SUBSTRATE_REPO}/bin/kubectl-ate"
+  [[ -x "$ate" ]] || ate=$(command -v kubectl-ate 2>/dev/null || true)
+  [[ -n "$ate" ]] || return 0   # CLI not built; trust the pool
+  "$ate" get actor-templates -a benchmark-workloads 2>/dev/null | grep -q "glutton .*gs://" || return 1
+  # The per-actor memory limit lives in the template: redeploy if it changed.
+  local cur
+  cur=$("$ate" get actor-template glutton -a benchmark-workloads -o json 2>/dev/null \
+    | python3 -c 'import json,sys
+t=json.load(sys.stdin); t=t["actorTemplates"][0] if "actorTemplates" in t else t
+print(next((l.get("quantity","") for l in (t.get("resources",{}).get("limits") or []) if l.get("name")=="memory"), ""))' 2>/dev/null)
+  [[ -z "$cur" || "$cur" == "${ACTOR_MEMORY}" ]]
 }
 
 TOTAL=5

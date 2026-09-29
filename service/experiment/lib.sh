@@ -57,6 +57,12 @@ export PEAK_VALUE="${PEAK_VALUE:-2}"             # multiplier (mult) or fraction
 # use MEM_TARGET=1Gi to put memory (not worker slots) on the critical path.
 export MEM_TARGET="${MEM_TARGET:-128Mi}"         # resident working set filled at boot
 export MEM_CHURN="${MEM_CHURN:-16Mi}"            # dirtied every turn (snapshots change like a live app)
+# Per-ACTOR memory limit (ActorTemplate spec.resources.limits.memory, a
+# cgroup on the sandbox — separate from the worker pod's limit). Must exceed
+# MEM_TARGET + churn + ~100Mi sentry overhead, or the sandbox is OOM-killed
+# (silently, mid-checkpoint → stuck SUSPENDING). With node swap the sandbox's
+# shmem pages can page out and mask an undersized limit — badly.
+export ACTOR_MEMORY="${ACTOR_MEMORY:-256Mi}"
 
 # --- worker pod shape (used by the Burstable patch; requests<limits) ---
 # Under kubelet LimitedSwap a pod may swap at most request/nodeRAM × swap,
