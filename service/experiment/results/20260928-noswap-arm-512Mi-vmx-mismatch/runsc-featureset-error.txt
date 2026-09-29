@@ -1,0 +1,6 @@
+Worker benchmark-ateom-56dd968dbd-2hw4v on node gke-agents-tco-substrate-node-pool-no-1a019d56-8g48 (pool created WITHOUT nested virtualization), 2026-09-28T23:00:00Z, restoring actor sim-0005 from the glutton golden snapshot (taken on substrate-node-pool, nested virtualization ON):
+
+W0928 23:00:00.622207 87 util.go:107] FATAL ERROR: starting container: starting sub-container [/ko-app/glutton --grpc-listen-addr=:80 --metrics-listen-addr=:9090 --data-dir=/tmp/glutton --mode=http]: failed to load kernel: incompatible FeatureSet: missing features: map[vmx:{}]
+
+RestoreWorkload RPC error: while restoring "glutton" application container: while running `runsc restore`: exit status 128
+Actor left in ACTOR_STATE_RESUMING indefinitely (worker pinned). 14/14 workers pinned -> setup stalled -> "100/100 agents failed setup".

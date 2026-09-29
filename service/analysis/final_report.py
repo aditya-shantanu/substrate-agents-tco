@@ -27,15 +27,25 @@ GCS_GIB_MO = 0.020
 OPS_WRITE, OPS_READ = 5.0e-6, 4.0e-7  # $ per op, class A / B
 
 
+LOCAL_SSD_HR = 0.08 * 375 / 730  # one 375 GB local NVMe, $0.08/GB-mo
+
+
 def machine_hr(mtype, model):
-    # e.g. c3-standard-4, e2-standard-16, c4-highcpu-16
-    fam, kind, cpus = mtype.split("-")
+    # e.g. c3-standard-4, e2-standard-16, c4-highcpu-16, c3-standard-4-lssd
+    parts = mtype.split("-")
+    lssd = parts[-1] == "lssd"
+    if lssd:
+        parts = parts[:-1]
+    fam, kind, cpus = parts
     cpus = int(cpus)
     gib_per_cpu = {"standard": 4, "highcpu": 2, "highmem": 8}[kind]
     if fam == "c4" and kind == "standard":
         gib_per_cpu = 3.75
     cpu_rate, gib_rate = FAM[fam]
-    return (cpus * cpu_rate + cpus * gib_per_cpu * gib_rate) * PRICE_MODEL[model]
+    hr = cpus * cpu_rate + cpus * gib_per_cpu * gib_rate
+    if lssd:
+        hr += LOCAL_SSD_HR
+    return hr * PRICE_MODEL[model]
 
 
 def pct(sorted_vals, p):
