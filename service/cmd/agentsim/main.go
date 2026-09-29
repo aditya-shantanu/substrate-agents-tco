@@ -218,6 +218,25 @@ func (s *sim) setup(ctx context.Context) error {
 		s.ready = append(s.ready, o.id)
 	}
 	sort.Ints(s.ready)
+	if !s.setupSuspend() {
+		// Parking design: placement can OOM-kill a sandbox after setup
+		// succeeded, and the platform keeps reporting the actor RUNNING.
+		// Waves must measure live residents only — ping each one and keep
+		// the survivors; that count is the node's resident capacity.
+		var live []int
+		for _, id := range s.ready {
+			pctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+			_, err := s.post(pctx, actorName(id), "/ping", nil)
+			cancel()
+			if err == nil {
+				live = append(live, id)
+			} else {
+				failed++
+				slog.Warn("agent dead after placement", "actor", actorName(id), "err", err)
+			}
+		}
+		s.ready = live
+	}
 	// Snapshot design: setup failures are noise, so more than 10% is a
 	// broken run. Parking design: how many agents the node can hold resident
 	// IS the measurement — run with whoever fit.
