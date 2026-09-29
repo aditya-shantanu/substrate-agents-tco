@@ -90,6 +90,7 @@ type sim struct {
 	results []result
 	turns   []tsample // every in-session ping, timed (service under contention)
 	probes  []tsample // fixed-work CPU probe per activation (throttle detector)
+	ready   []int     // agent ids that completed setup; only these run/are activated
 }
 
 func main() {
@@ -164,12 +165,12 @@ func main() {
 		s.runLoadTest(ctx, deadline)
 	} else {
 		var wg sync.WaitGroup
-		for i := 0; i < c.agents; i++ {
+		for _, id := range s.ready {
 			wg.Add(1)
 			go func(id int) {
 				defer wg.Done()
 				s.agentLoop(ctx, id, deadline)
-			}(i)
+			}(id)
 		}
 		wg.Wait()
 	}
@@ -189,32 +190,48 @@ func (s *sim) setup(ctx context.Context) error {
 	if err != nil && status.Code(err) != codes.AlreadyExists {
 		return fmt.Errorf("CreateAtespace: %w", err)
 	}
+	type outcome struct {
+		id  int
+		err error
+	}
 	sem := make(chan struct{}, 8)
-	errCh := make(chan error, s.cfg.agents)
+	outCh := make(chan outcome, s.cfg.agents)
 	var wg sync.WaitGroup
 	for i := 0; i < s.cfg.agents; i++ {
 		wg.Add(1)
 		sem <- struct{}{}
 		go func(id int) {
 			defer func() { <-sem; wg.Done() }()
-			errCh <- s.setupOne(ctx, id)
+			outCh <- outcome{id, s.setupOne(ctx, id)}
 		}(i)
 	}
 	wg.Wait()
-	close(errCh)
+	close(outCh)
 	failed := 0
-	for e := range errCh {
-		if e != nil {
+	s.ready = s.ready[:0]
+	for o := range outCh {
+		if o.err != nil {
 			failed++
-			slog.Warn("agent setup failed", "err", e)
+			slog.Warn("agent setup failed", "err", o.err)
+			continue
 		}
+		s.ready = append(s.ready, o.id)
 	}
-	if failed > s.cfg.agents/10 {
+	sort.Ints(s.ready)
+	// Snapshot design: setup failures are noise, so more than 10% is a
+	// broken run. Parking design: how many agents the node can hold resident
+	// IS the measurement — run with whoever fit.
+	if s.setupSuspend() && failed > s.cfg.agents/10 {
 		return fmt.Errorf("%d/%d agents failed setup", failed, s.cfg.agents)
 	}
-	slog.Info("setup complete", "agents", s.cfg.agents-failed, "failed", failed)
+	if len(s.ready) == 0 {
+		return fmt.Errorf("no agent completed setup (%d failed)", failed)
+	}
+	slog.Info("setup complete", "agents", len(s.ready), "failed", failed, "resident", !s.setupSuspend())
 	return nil
 }
+
+func (s *sim) setupSuspend() bool { return s.cfg.setupSuspend }
 
 func (s *sim) setupOne(ctx context.Context, id int) error {
 	name := actorName(id)
@@ -590,18 +607,18 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 	var waves []waveStat
 
 	activate := func(n int) {
-		for ; active < n && active < s.cfg.agents; active++ {
+		for ; active < n && active < len(s.ready); active++ {
 			wg.Add(1)
 			go func(id int) {
 				defer wg.Done()
 				s.agentLoop(loopCtx, id, deadline)
-			}(active)
+			}(s.ready[active])
 		}
 	}
 
 	for level := s.cfg.waveStart; ; level += s.cfg.waveStep {
-		if level > s.cfg.agents {
-			level = s.cfg.agents
+		if level > len(s.ready) {
+			level = len(s.ready)
 		}
 		activate(level)
 		slog.Info("wave", "active_agents", active, "observing_for", s.cfg.waveInterval.String())
@@ -670,7 +687,7 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 			"wake_p50_ms", int(st.wakeP50), "wake_p99_ms", int(st.wakeP99),
 			"turn_p99_ms", int(turnP99), "probe_p50_ms", int(probeP50),
 			"failed", failed, "failed_on", strings.Join(reasons, "+"))
-		if failed || st.level >= s.cfg.agents || time.Now().After(deadline) {
+		if failed || st.level >= len(s.ready) || time.Now().After(deadline) {
 			cancelLoops()
 			fmt.Println("=== loadtest waves ===")
 			fmt.Println("active_agents,activations,refusals,errors,wake_p50_ms,wake_p99_ms")

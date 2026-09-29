@@ -12,8 +12,11 @@ if [[ "${WORKER_BURSTABLE:-false}" == "true" ]]; then
   kubectl -n benchmark-workloads patch workerpool benchmark-ateom --type merge \
     -p "$(worker_resources_patch)" 2>/dev/null || true
 fi
-./benchmarking/workloads/deploy.sh --deploy --worker-count "${WORKER_COUNT}" \
-  --sandbox-class "${SANDBOX_CLASS:-gvisor}" --actor-memory "${ACTOR_MEMORY}"
+# deploy.sh waits for the pool rollout and the golden snapshots; a 60-worker
+# rollout needs more than its 300s default (upstream reads WAIT_TIMEOUT_SECS
+# from the environment in our pinned worktree).
+WAIT_TIMEOUT_SECS="${DEPLOY_WAIT_SECS:-900}" ./benchmarking/workloads/deploy.sh --deploy \
+  --worker-count "${WORKER_COUNT}" --sandbox-class "${SANDBOX_CLASS:-gvisor}" --actor-memory "${ACTOR_MEMORY}"
 
 # Swap applies only to Burstable pods: give workers requests<limits so the
 # kernel may actually swap their cold pages.
