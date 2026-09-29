@@ -30,7 +30,7 @@ spec:
         - --idle-timeout=${IDLE_TIMEOUT}
         - --unwedge-after=${UNWEDGE_AFTER}  # must exceed the slowest honest checkpoint
         - --poll=2s
-        - --max-running=10m
+        - --max-running=${MAX_RUNNING}
         - --max-concurrent=8
         env:
         - name: NODE_NAME
@@ -101,6 +101,7 @@ spec:
         - --mem-read=all               # page the working set back in on every wake
         - --mem-churn=${MEM_CHURN}     # dirty a rotating window every turn
         - --disk-bytes=65536      # file write every turn + digest read-back
+        - --setup-suspend=${SETUP_SUSPEND}  # false = resident-parking design
         - --suspender-url=http://autosuspender.agent-sim.svc.cluster.local:8080
         # Load-test mode: waves of agents until failure thresholds trip
         # (no-op when false; agentsim defaults govern unset wave knobs).

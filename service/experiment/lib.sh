@@ -49,6 +49,11 @@ export IDLE_TIMEOUT="${IDLE_TIMEOUT:-2s}"
 # DELETING with its worker pinned, so keep this well above the slowest real
 # checkpoint (≈3 s at 128Mi agents; ≈90 s+ at 512Mi on a boot-disk-swap node).
 export UNWEDGE_AFTER="${UNWEDGE_AFTER:-3m}"
+export MAX_RUNNING="${MAX_RUNNING:-10m}"         # autosuspender: force-suspend actors running longer than this
+# Resident-parking design: SETUP_SUSPEND=false keeps every agent on its
+# worker (WORKER_COUNT >= AGENTS, IDLE_TIMEOUT/MAX_RUNNING longer than the
+# window). Density then comes from RAM + swap, and a wake is a page-in.
+export SETUP_SUSPEND="${SETUP_SUSPEND:-true}"
 export PRICE_MODEL="${PRICE_MODEL:-cud3}"         # od | cud1 | cud3
 export PEAK_MODEL="${PEAK_MODEL:-mult}"          # mult | herd — peak lens for the report
 export PEAK_VALUE="${PEAK_VALUE:-2}"             # multiplier (mult) or fraction 0-1 (herd)

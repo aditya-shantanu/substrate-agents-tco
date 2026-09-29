@@ -61,6 +61,7 @@ type cfg struct {
 	// starvation SLO gates (load-test waves) and the fixed-work CPU probe
 	failWakeP99Ms, failTurnP99Ms float64
 	probeBytes                   int
+	setupSuspend                 bool
 }
 
 // tsample is a timestamped latency sample (for windowed wave scoring).
@@ -123,6 +124,7 @@ func main() {
 	flag.Float64Var(&c.failWakeP99Ms, "fail-wake-p99-ms", 10000, "load-test: a wave fails if wake p99 exceeds this (0 disables) — soft-starvation gate")
 	flag.Float64Var(&c.failTurnP99Ms, "fail-turn-p99-ms", 2000, "load-test: a wave fails if in-session turn p99 exceeds this (0 disables)")
 	flag.IntVar(&c.probeBytes, "probe-bytes", 8<<20, "fixed-work CPU probe: sha256 over this many bytes once per activation; drift = CPU throttling (0 disables)")
+	flag.BoolVar(&c.setupSuspend, "setup-suspend", true, "suspend each agent right after setup (snapshot design); false keeps agents resident on their workers (parking design: workers >= agents, long idle timeout)")
 	flag.Float64Var(&c.failRefusalPct, "fail-refusal-pct", 5, "load-test: stop when router refusals exceed this % of activations in a wave")
 	flag.Float64Var(&c.failErrPct, "fail-error-pct", 2, "load-test: stop when request errors exceed this % of activations in a wave")
 	flag.Parse()
@@ -266,6 +268,11 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 				writeDiskBody("cpuprobe", s.cfg.probeBytes)); err != nil {
 				return fmt.Errorf("write CPU probe %s: %w", name, err)
 			}
+		}
+		if !s.cfg.setupSuspend {
+			// Resident-parking mode: the agent stays on its worker; the kernel
+			// (swap) decides what stays in RAM. Wake = page-in, not restore.
+			return nil
 		}
 		for attempt := 0; ; attempt++ {
 			_, err := s.api.SuspendActor(cctx, &ateapipb.SuspendActorRequest{Actor: ref})
