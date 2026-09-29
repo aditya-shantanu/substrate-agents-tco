@@ -252,21 +252,34 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 				return fmt.Errorf("boot %s: %w", name, err)
 			}
 		}
+		// Setup is not the measurement: a router 502/503/504 while a big
+		// working set is being written (upstream timeout, "another operation
+		// is in progress") must not cost the run an agent. Retry with backoff.
 		if s.cfg.memTarget != "" {
-			if _, err := s.post(cctx, name, "/writeram",
+			if err := s.setupPost(cctx, name, "/writeram",
 				writeRAMBody("memload", s.cfg.memTarget, writeModeTruncate)); err != nil {
 				return fmt.Errorf("fill RAM %s: %w", name, err)
 			}
 		}
 		if s.cfg.probeBytes > 0 {
-			if _, err := s.post(cctx, name, "/writedisk",
+			if err := s.setupPost(cctx, name, "/writedisk",
 				writeDiskBody("cpuprobe", s.cfg.probeBytes)); err != nil {
 				return fmt.Errorf("write CPU probe %s: %w", name, err)
 			}
 		}
-		if _, err := s.api.SuspendActor(cctx, &ateapipb.SuspendActorRequest{Actor: ref}); err != nil &&
-			status.Code(err) != codes.FailedPrecondition {
-			return fmt.Errorf("first suspend %s: %w", name, err)
+		for attempt := 0; ; attempt++ {
+			_, err := s.api.SuspendActor(cctx, &ateapipb.SuspendActorRequest{Actor: ref})
+			if err == nil || status.Code(err) == codes.FailedPrecondition {
+				break
+			}
+			if code := status.Code(err); (code != codes.Aborted && code != codes.Unavailable) || attempt >= 8 {
+				return fmt.Errorf("first suspend %s: %w", name, err)
+			}
+			select {
+			case <-cctx.Done():
+				return fmt.Errorf("first suspend %s: %w", name, err)
+			case <-time.After(time.Duration(3000+rand.IntN(4000)) * time.Millisecond):
+			}
 		}
 	}
 	return nil
@@ -433,6 +446,29 @@ func (s *sim) post(ctx context.Context, actor, path string, body []byte) ([]byte
 		return nil, fmt.Errorf("%s: HTTP %d: %s", path, resp.StatusCode, bytes.TrimSpace(b))
 	}
 	return b, nil
+}
+
+// setupPost is post with retries on transient 5xx, for setup-time writes only
+// (in-window requests are measured and must not be retried).
+func (s *sim) setupPost(ctx context.Context, actor, path string, body []byte) error {
+	var err error
+	for attempt := 0; attempt < 10; attempt++ {
+		_, err = s.post(ctx, actor, path, body)
+		if err == nil {
+			return nil
+		}
+		msg := err.Error()
+		if !strings.Contains(msg, "HTTP 502") && !strings.Contains(msg, "HTTP 503") &&
+			!strings.Contains(msg, "HTTP 504") {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return err
+		case <-time.After(time.Duration(3000+rand.IntN(5000)) * time.Millisecond):
+		}
+	}
+	return err
 }
 
 func isRefusal(err error) bool {
