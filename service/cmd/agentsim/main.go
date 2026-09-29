@@ -482,8 +482,10 @@ func (s *sim) setupPost(ctx context.Context, actor, path string, body []byte) er
 			return nil
 		}
 		msg := err.Error()
+		// 421 (misdirected) also shows up from envoy while a sandbox is
+		// unresponsive under paging pressure; transient in this setting.
 		if !strings.Contains(msg, "HTTP 502") && !strings.Contains(msg, "HTTP 503") &&
-			!strings.Contains(msg, "HTTP 504") {
+			!strings.Contains(msg, "HTTP 504") && !strings.Contains(msg, "HTTP 421") {
 			return err
 		}
 		select {
