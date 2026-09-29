@@ -165,111 +165,101 @@ provenance sharing for identical runtimes.
   provenance-shared golden restores** (makes wake-ups nearly free), with
   **skip/delta checkpoints** close behind. Everything else is tail-trimming.
 
-## Addendum (2026-09-28): swap on GKE — it's first-party now
+## Swap on GKE as an oversubscription lever — final state (2026-09-28/29)
 
-GKE ships native node swap (KEP-2400 semantics) for Standard clusters ≥
-**1.34.1-gke.1341000**: `linuxConfig.swapConfig` in the node-system-config
-file (`gcloud beta container node-pools update --system-config-from-file`),
-boot-disk-backed on any machine (≤50% of boot disk) or Local-SSD-backed on
-`-lssd` machine variants (plain c3 cannot attach Local SSD; n2 can via
-`--ephemeral-storage-local-ssd`). Constraints that matter: **changing it
-recreates the pool's nodes**; **only Burstable pods swap** (our benchmark
-workers were BestEffort — the harness now patches requests<limits when swap
-is on); Autopilot: no; zram/zswap DaemonSet hacks: skip (kubelet
-failSwapOn crash-loops on restart, and swapped pages blind the eviction
-signal — Bottlerocket #4903).
+**Question.** Can GKE node swap raise agents-per-node (and so cut $/agent)
+for mostly-idle personal agents on Substrate? **Answer: not with this
+stack. Swap lets a node *park* ~3× more idle agents than RAM allows, but
+nothing useful survives activity — active agents are evicted or OOM-killed,
+and memory-touching requests time out — so the sustainable density does
+not move and $/agent does not improve.** Details, evidence and the
+mechanisms below; per-run artifacts are under `service/experiment/results/`
+and `assets/runs/2026-09-29-swap-parking/`.
 
-The harness now has the knob (`SWAP_GIB=16 ./run.sh`, or the TUI's "Node
-swap" field) and, critically, the referee: per-wave SLO gates (wake p99,
-turn p99), a fixed-work CPU probe, RAM-walk paging latency, and node PSI
-(cpu/mem/io) in the occupancy CSV and dashboards. **Swap safely raises
-oversubscription exactly when density climbs while those stay flat** — the
-A/B to run: baseline vs SWAP_GIB=16 with rising AGENTS, compare the
-load-test knee.
+### What was measured
 
-### Measured A/B (2026-09-28, 120 agents · ×6 · 30 min window · 10 workers on 2× c3-standard-4)
+Same cluster, same control plane, one node per arm; the only difference
+between arms is swap. All swap is GKE-native (`linuxConfig.swapConfig`,
+kubelet `LimitedSwap`, Burstable workers).
 
-| | A: no swap | control: Burstable, no swap | B: swap 16 GiB (Burstable) |
-|---|---|---|---|
-| $/agent/mo | **$1.22** | $1.23 | **$1.24** |
-| wake p50 / p99 | 1.8 s / **31.9 s** | 1.9 s / 31.9 s | 1.7 s / **6.5 s** |
-| router refusals / errors | 339 / 59 | 391 / 154 | **15 / 4** |
-| suspend avg | 3.0 s | 3.4 s | 4.3 s |
-| wedge medic interventions | 37 | 34 | **4** |
-| CPU probe p50/p99 (fixed work) | 17 / 46 ms | 18 / 47 ms | 18 / 38 ms |
-| turn p99 · RAM-walk p99 | 26 ms · 43 ms | 28 ms · 49 ms | 29 ms · 36 ms |
-| PSI mem-full / io-some (10s avg mean) | 1.1% / 19% | 0.8% / 19% | 3.3% / 35% |
+| Design | Agent | Node | No swap | Boot-disk swap | Local-SSD swap |
+|---|---|---|---|---|---|
+| **A. Snapshot-suspend (production path)**, 10 workers, 120 agents ×6 | 128 MiB | c3-standard-4 | **$1.22/agent/mo**, knee 120 sustained / 140 fail (slot-bound) | $1.24, same knee; 23 MB of swap touched | — |
+| **B. Snapshot-suspend**, 22 workers, 150 agents | 512 MiB | c3-standard-4-lssd | wave 1 (30 active) **fails**: wake p50 5.6 s, p99 12.7 s | same (5.9 s / 12.2 s), 0 B swap used | — |
+| **C. Resident parking** (no suspends, 60 workers = 60 agents) | 512 MiB | c3-standard-4-lssd, 64 GiB swap | **20 resident** (RAM-bound), 20 active OK: wake 10 ms p50 / 30 ms p99, turn p99 31 ms; then kubelet eviction under sustained activity | **60 parked** (17 GB swapped), 32 live; wave 1 (10 active) fails on `504 UT` timeouts, 19 sandboxes OOM-killed, 9 workers evicted | **60 parked** (16 GB swapped), 42 live; wave 1 fails on timeouts, 10 OOM kills, 5 evictions; node did not hang on re-run (first attempt: node hung, auto-repaired) |
 
-Readings, honestly stated:
-- **Swap is safe at this load.** The starvation referee stayed flat or
-  improved: fixed-work CPU probe, turn p99 and post-resume RAM walk are
-  all within noise of no-swap. Memory/IO pressure is visibly higher
-  (mem-full 1.1→3.3%, io-some 19→35%) — the kernel *is* paging — but
-  none of it reached the workload's latency.
-- **Cost is unchanged at fixed density** ($1.22 → $1.24; the +2¢ is the
-  slower suspend, 3.0→4.3 s, feeding the overhead term). That's expected:
-  at the same agent count swap can't cut the bill — its payoff is
-  *headroom*, so the experiment that monetizes it is the load-test knee
-  (rising waves, swap vs not), still to run.
-- **The tail collapse (wake p99 32 s → 6.5 s, refusals 339 → 15,
-  wedges 37 → 4) is real but partly confounded**: the swap arm ran on
-  freshly recreated nodes with a clean reinstall, while A and the control
-  reused the aged pool. Attribute it to "fresh pool + swap", not swap
-  alone, until a repeat on an aged pool says otherwise.
-- Ops note for reproducers: `swapSizeGib` must be an int (a quoted
-  string is a 400), `enabled: true` is required alongside the profile,
-  and the node roll needs zone capacity — in a stocked-out zone, set the
-  pool to delete-first upgrades (`--max-surge-upgrade=0
-  --max-unavailable-upgrade=1`) so the roll recycles its own machines.
+Cost per agent at the densities that actually survived (3-year CUD,
+c3-standard-4-lssd $79.7/mo; plain c3-standard-4 $66.2/mo):
 
-### Does swap raise the ceiling? (load-test knees, 2026-09-28)
+- Snapshot design, 128 MiB agents: **$1.22** measured (model-consistent); swap neutral.
+- Snapshot design, 512 MiB agents: a 545 MiB FULL snapshot restores in ~6 s p50 from GCS — **cannot meet a 10 s wake SLO at any density**, with or without swap.
+- Parking design, 512 MiB agents, no swap: 20/node → **$3.99** (wake 10 ms). With swap: parked capacity 60/node would be $1.33 — but only 0 sustainably *active* under the SLO gates, so the number is not bankable.
 
-The fixed-density A/B above cannot show an oversubscription gain by
-construction; the knee test (waves of agents until an SLO gate trips) can.
+### Why swap does not convert parked capacity into density
 
-**Knee 1 — swap 16 GiB, 10 workers, 128 MiB agents (the default profile):
-sustainable 120 active agents, failure at 140** (15% router refusals,
-wake p99 15 s). Host swap in use during the run: 23 MB of 16 GB; node PSI
-≈ 0. This knee is *slot-bound* (10 workers, 1 actor each) — memory never
-entered the picture, so swap could not have moved it. Lesson: with the
-default 128 MiB agent on a 4 GiB-per-vCPU machine, the ceiling is worker
-slots and checkpoint CPU, and swap is irrelevant. Swap can only add
-agents where memory binds first — i.e. memory-heavy agents (OpenClaw's
-gateway requests 512 MiB and is limited at 1.5 GiB) with enough worker
-slots that slots are not the limit.
+1. **Kubelet eviction ignores swap.** `memory.available` counts RAM only. A
+   node parking 60 agents with 16 GB in swap sits at the 100 Mi hard
+   threshold; as soon as a few agents become active, kubelet logs
+   `NodeHasInsufficientMemory` and evicts Burstable workers ("container
+   ateom was using 1.1–2.0 GiB, request 128 Mi"). Swap raises what a node
+   can *hold*, not what it can *run*.
+2. **Active agents are much bigger than their working set.** A 512 MiB
+   agent doing turns (64 MiB churn, reads, file writes) grows to 1.5–2 GiB
+   RSS in gVisor and hits the 2 GiB actor limit (19 OOM kills in one arm).
+   Sizing requests to that peak removes the oversubscription; not sizing
+   them invites eviction.
+3. **Memory writes at capacity stall in reclaim.** With RAM full, every new
+   page needs a page-out first; `/writeram` requests exceed the router's
+   10 s upstream timeout (`504 UT`) on both swap backings — on the boot
+   disk (≈140 MB/s) and on the local NVMe. The device is not the bottleneck;
+   direct reclaim on a 4-vCPU node hosting 60 sentries is.
+4. **Dead sandboxes stay RUNNING.** OOM-killed or evicted sandboxes keep
+   their `ACTOR_STATE_RUNNING`; requests to them 503 after the 5 s parking
+   budget. 20 of 54 assigned workers on the Local-SSD node were such husks.
+   The simulator now pings placed agents before measuring; the platform
+   should surface the failure (same family as #1914's absorbing states).
+5. **LimitedSwap couples swap to requests.** A pod may swap at most
+   `request × swap/RAM`. Dense packing needs small requests, generous
+   paging needs big ones — you cannot have both; 64 GiB swap on a 16 GiB
+   node was needed just to let 128 Mi-request pods page out ~512 MiB.
 
-**Attempts at the memory-bound regime with bigger agents (1 GiB, then
-512 MiB) kept failing — and the failure was ours, not the platform's.**
-Every suspend wedged (`Memory cgroup out of memory: Killed process
-(gvisor_sentry)` → `checkpoint failed: EOF` → actor stuck in SUSPENDING).
-An earlier draft of this note blamed checkpoint memory amplification; the
-OOM records refute that: the killed sentries had ~20 MiB anon RSS and
-~225 MiB of **shmem** (gVisor's memfd-backed sandbox memory) inside a
-cgroup limit of **256 MiB — the benchmark ActorTemplate's default
-`--actor-memory`**, a per-*sandbox* limit separate from the worker pod's
-2 GiB. A 512 MiB working set can never fit in it; the harness now passes
-`ACTOR_MEMORY` through (`lib.sh`, default unchanged) and redeploys the
-template when it changes.
+Direct probe on the idle Local-SSD node after the run (16 GB in swap): a
+live paged-out agent answers its first request in 5–6 s and is then fast
+(512 MiB `readram` in ~35 ms); a fully resident agent shows the same ~6 s
+first contact — so that delay is the router/tunnel wake-up for a long-idle
+actor, not paging. NVMe page-in itself was never the limiting factor.
 
-The part that matters for swap: on the swap node the same 512 MiB agents
-*appeared* to work. shmem is swappable and swapped pages do not count
-against the cgroup, so each sandbox lived with ~256 MiB resident and the
-rest in swap — then every checkpoint paged it all back through the same
-saturated boot disk (suspends 3 s → ~90 s, IO PSI 80 %, node collapse).
-**Node swap can silently mask an undersized memory limit and convert it
-into pathological checkpoint latency.** Node memory was never the binding
-constraint in those runs; the 256 MiB cgroup was.
+### Learnings worth keeping (beyond swap)
 
-Two further platform facts surfaced on the way: a failed checkpoint or
-restore is never propagated to a terminal actor state (SUSPENDING /
-RESUMING become absorbing, worker pinned — the #1914 family); and gVisor
-pins each snapshot to the CPU **FeatureSet** it was taken on (`incompatible
-FeatureSet: missing features: map[vmx:{}]`), so snapshots taken on a
-nested-virtualization pool cannot restore on a pool without it — node
-pools serving one fleet must expose identical CPU features.
+- **Snapshot-suspend is the density lever, and it is size-bound.** Restore
+  time and checkpoint cost scale with resident set (128 MiB: 1.7 s wake,
+  $1.22; 512 MiB: 6 s wake, SLO-infeasible). For memory-heavy agents the
+  fix is smaller snapshots (DATA scope + golden delta, lazy restore, #690
+  node cache), not swap.
+- **Per-sandbox memory limit is a separate knob** (ActorTemplate
+  `limits.memory`, default 256 Mi in the benchmark templates). Undersized,
+  it OOM-kills the sentry mid-checkpoint and leaves the actor in
+  SUSPENDING; node swap *masks* the undersize (shmem pages page out and
+  don't count) and turns it into 90 s checkpoints. Harness knob:
+  `ACTOR_MEMORY`.
+- **Failures that never reach a terminal state** (checkpoint OOM →
+  SUSPENDING, restore failure → RESUMING, delete mid-checkpoint →
+  DELETING, sandbox death → RUNNING) each pin a worker; a medic must
+  exist and its threshold must exceed the slowest honest operation
+  (`UNWEDGE_AFTER`).
+- **gVisor snapshots pin the CPU FeatureSet.** A golden taken on a
+  nested-virtualization pool (`vmx`) cannot restore on a pool without it —
+  all pools serving a fleet must expose identical CPU features.
+- **GKE mechanics:** `swapSizeGib` is an int and needs `enabled: true`;
+  boot-disk swap ≤ 50 % of the boot disk; changing swap recreates the pool
+  (use delete-first upgrades in a stocked-out zone); Local-SSD swap needs
+  `-lssd` shapes with `--ephemeral-storage-local-ssd`; the benchmark
+  Postgres reserves 2 vCPU and silently loses its node to a dense pool.
 
-**Knee 2 (running) — three identical `c3-standard-4-lssd` nodes (nested
-virt on), 22 workers, 512 MiB agents, actor limit 2 GiB, 150 agents,
-waves 30/+10; arms: no swap · 16 GiB boot-disk swap · 16 GiB Local-SSD
-swap.** 22 busy agents ≈ 15 GiB resident on a 13.6 GiB node, so the node
-is the only memory constraint and the arms differ in swap alone.
+### Verdict for the calculator/model
+
+Keep swap out of the density model. The levers that move $/agent for
+personal agents remain: keep agents small enough to snapshot fast
+(≤128–256 MiB resident), right-size worker slots to the machine, autoscale
+or splay peaks, and — for memory-heavy agents — invest in smaller/lazier
+snapshots rather than in RAM oversubscription.

@@ -1,0 +1,662 @@
+{"time":"2026-09-29T06:16:28.248386183Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0007: /writeram: HTTP 503: actor agents-sim/sim-0007 unavailable: another operation is in progress for this actor"}
+{"time":"2026-09-29T06:16:28.248478714Z","level":"WARN","msg":"agent setup failed","err":"fill RAM sim-0002: /writeram: HTTP 503: actor agents-sim/sim-0002 unavailable: another operation is in progress for this actor"}
+{"time":"2026-09-29T06:16:28.248486723Z","level":"INFO","msg":"setup complete","agents":148,"failed":2}
+{"time":"2026-09-29T06:16:28.248498989Z","level":"INFO","msg":"starting load","agents":150,"duration":"50m0s","compress":6,"duty_cycle_uncompressed":"2.36%"}
+{"time":"2026-09-29T06:16:28.248550049Z","level":"INFO","msg":"wave","active_agents":30,"observing_for":"3m0s"}
+{"time":"2026-09-29T06:16:48.249284386Z","level":"INFO","msg":"progress","activations":0,"wake_p50_ms":0,"wake_p99_ms":0,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":0,"errors":0,"refusals":0}
+{"time":"2026-09-29T06:17:08.249523925Z","level":"INFO","msg":"progress","activations":1,"wake_p50_ms":5925,"wake_p99_ms":5925,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":0,"refusals":0}
+{"time":"2026-09-29T06:17:28.248961116Z","level":"INFO","msg":"progress","activations":2,"wake_p50_ms":5574,"wake_p99_ms":5574,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":17,"errors":0,"refusals":0}
+{"time":"2026-09-29T06:17:48.248936712Z","level":"INFO","msg":"progress","activations":5,"wake_p50_ms":5574,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":0,"refusals":2}
+{"time":"2026-09-29T06:18:08.252954901Z","level":"INFO","msg":"progress","activations":6,"wake_p50_ms":5574,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":0,"refusals":2}
+{"time":"2026-09-29T06:18:28.25213627Z","level":"INFO","msg":"progress","activations":8,"wake_p50_ms":5925,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":0,"refusals":2}
+{"time":"2026-09-29T06:18:48.250781217Z","level":"INFO","msg":"progress","activations":9,"wake_p50_ms":5925,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":0,"refusals":2}
+{"time":"2026-09-29T06:19:08.249698267Z","level":"INFO","msg":"progress","activations":11,"wake_p50_ms":5574,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":0,"refusals":2}
+{"time":"2026-09-29T06:19:28.249147463Z","level":"INFO","msg":"progress","activations":13,"wake_p50_ms":5574,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":0,"refusals":2}
+{"time":"2026-09-29T06:19:28.249211598Z","level":"INFO","msg":"wave result","active_agents":30,"activations":13,"refusal_pct":"15.4","error_pct":"0.0","wake_p50_ms":5574,"wake_p99_ms":12683,"turn_p99_ms":-9223372036854775808,"probe_p50_ms":18,"failed":true,"failed_on":"refusals+wake-p99"}
+=== loadtest waves ===
+active_agents,activations,refusals,errors,wake_p50_ms,wake_p99_ms
+30,13,2,0,5575,12683
+=== end loadtest ===
+LOADTEST VERDICT: failure at 30 active agents; last sustainable level = 0
+{"time":"2026-09-29T06:19:28.250124998Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:19:28.250951681Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:19:29.040181197Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:19:38.17103412Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:19:42.76171715Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:19:48.249568382Z","level":"INFO","msg":"progress","activations":18,"wake_p50_ms":5436,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":10,"refusals":2}
+{"time":"2026-09-29T06:19:54.396112796Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:00.261862494Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:08.250962825Z","level":"INFO","msg":"progress","activations":19,"wake_p50_ms":5310,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":12,"refusals":2}
+{"time":"2026-09-29T06:20:11.130249Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:14.550703444Z","level":"WARN","msg":"activation first request failed","actor":"sim-0021","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:17.431733487Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:22.680036232Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:28.249484576Z","level":"INFO","msg":"progress","activations":22,"wake_p50_ms":5191,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":18,"refusals":2}
+{"time":"2026-09-29T06:20:40.375626874Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:48.249416911Z","level":"INFO","msg":"progress","activations":23,"wake_p50_ms":5151,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":20,"refusals":2}
+{"time":"2026-09-29T06:20:48.521718761Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:20:48.790554811Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:21:08.249353236Z","level":"INFO","msg":"progress","activations":25,"wake_p50_ms":5103,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":24,"refusals":2}
+{"time":"2026-09-29T06:21:16.181878313Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:21:28.249348419Z","level":"INFO","msg":"progress","activations":27,"wake_p50_ms":5103,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":76,"refusals":2}
+{"time":"2026-09-29T06:21:34.094985761Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:21:48.24957275Z","level":"INFO","msg":"progress","activations":29,"wake_p50_ms":750,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":128,"refusals":2}
+{"time":"2026-09-29T06:22:05.108946991Z","level":"WARN","msg":"activation first request failed","actor":"sim-0021","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:22:08.250955676Z","level":"INFO","msg":"progress","activations":30,"wake_p50_ms":750,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":130,"refusals":2}
+{"time":"2026-09-29T06:22:25.154060611Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:22:26.348580885Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:22:28.249698639Z","level":"INFO","msg":"progress","activations":32,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":134,"refusals":2}
+{"time":"2026-09-29T06:22:33.237605795Z","level":"WARN","msg":"activation first request failed","actor":"sim-0018","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:22:48.257856295Z","level":"INFO","msg":"progress","activations":33,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":136,"refusals":2}
+{"time":"2026-09-29T06:22:50.081085947Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:23:08.249250202Z","level":"INFO","msg":"progress","activations":34,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":138,"refusals":2}
+{"time":"2026-09-29T06:23:25.229937188Z","level":"WARN","msg":"activation first request failed","actor":"sim-0007","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:23:28.251022655Z","level":"INFO","msg":"progress","activations":35,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":140,"refusals":2}
+{"time":"2026-09-29T06:23:46.305800432Z","level":"WARN","msg":"activation first request failed","actor":"sim-0026","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:23:48.249947678Z","level":"INFO","msg":"progress","activations":36,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":142,"refusals":2}
+{"time":"2026-09-29T06:23:55.616248474Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:04.802557312Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:08.249507586Z","level":"INFO","msg":"progress","activations":38,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":146,"refusals":2}
+{"time":"2026-09-29T06:24:08.47161733Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:13.177170197Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:20.953405753Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:25.527742808Z","level":"WARN","msg":"activation first request failed","actor":"sim-0014","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:28.248874542Z","level":"INFO","msg":"progress","activations":42,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":154,"refusals":2}
+{"time":"2026-09-29T06:24:37.857861156Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:39.425082684Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:24:48.252436452Z","level":"INFO","msg":"progress","activations":44,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":158,"refusals":2}
+{"time":"2026-09-29T06:24:51.315150746Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:08.259952191Z","level":"INFO","msg":"progress","activations":45,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":160,"refusals":2}
+{"time":"2026-09-29T06:25:24.131211652Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:27.245521014Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:28.248969103Z","level":"INFO","msg":"progress","activations":47,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":164,"refusals":2}
+{"time":"2026-09-29T06:25:30.151789985Z","level":"WARN","msg":"activation first request failed","actor":"sim-0028","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:32.556283553Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:33.136026225Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:33.543693361Z","level":"WARN","msg":"activation first request failed","actor":"sim-0028","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:48.249942685Z","level":"INFO","msg":"progress","activations":51,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":172,"refusals":2}
+{"time":"2026-09-29T06:25:50.283660242Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:25:54.305016488Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:26:08.25437307Z","level":"INFO","msg":"progress","activations":53,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":176,"refusals":2}
+{"time":"2026-09-29T06:26:22.939687927Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:26:28.248942386Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":178,"refusals":2}
+{"time":"2026-09-29T06:26:48.248753725Z","level":"INFO","msg":"progress","activations":54,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":178,"refusals":2}
+{"time":"2026-09-29T06:26:52.738448115Z","level":"WARN","msg":"activation first request failed","actor":"sim-0029","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:02.745140769Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:06.38704269Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:08.249030912Z","level":"INFO","msg":"progress","activations":56,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":182,"refusals":2}
+{"time":"2026-09-29T06:27:10.512925075Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:16.686118567Z","level":"WARN","msg":"activation first request failed","actor":"sim-0007","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:28.249437812Z","level":"INFO","msg":"progress","activations":58,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":186,"refusals":2}
+{"time":"2026-09-29T06:27:29.206355193Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:31.309692472Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:45.241190932Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:46.813835173Z","level":"WARN","msg":"activation first request failed","actor":"sim-0028","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:27:48.248902412Z","level":"INFO","msg":"progress","activations":62,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":194,"refusals":2}
+{"time":"2026-09-29T06:27:50.120450287Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:28:08.249437501Z","level":"INFO","msg":"progress","activations":63,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":196,"refusals":2}
+{"time":"2026-09-29T06:28:08.678272573Z","level":"WARN","msg":"activation first request failed","actor":"sim-0019","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:28:11.073536263Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:28:18.403842905Z","level":"WARN","msg":"activation first request failed","actor":"sim-0019","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:28:26.789691794Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:28:28.249369963Z","level":"INFO","msg":"progress","activations":68,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":254,"refusals":2}
+{"time":"2026-09-29T06:28:48.260984093Z","level":"INFO","msg":"progress","activations":68,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":254,"refusals":2}
+{"time":"2026-09-29T06:29:06.281778706Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:29:08.249959345Z","level":"INFO","msg":"progress","activations":69,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":256,"refusals":2}
+{"time":"2026-09-29T06:29:08.787213532Z","level":"WARN","msg":"activation first request failed","actor":"sim-0028","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:29:11.307701277Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:29:28.253681803Z","level":"INFO","msg":"progress","activations":71,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":260,"refusals":2}
+{"time":"2026-09-29T06:29:37.570200451Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:29:43.801259879Z","level":"WARN","msg":"activation first request failed","actor":"sim-0021","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:29:44.050621068Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:29:48.252409538Z","level":"INFO","msg":"progress","activations":74,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":266,"refusals":2}
+{"time":"2026-09-29T06:30:03.360421946Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:30:08.248731562Z","level":"INFO","msg":"progress","activations":75,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":268,"refusals":2}
+{"time":"2026-09-29T06:30:14.548174483Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:30:25.427797078Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:30:27.629626246Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:30:27.800178289Z","level":"WARN","msg":"activation first request failed","actor":"sim-0014","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:30:28.248732993Z","level":"INFO","msg":"progress","activations":78,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":274,"refusals":2}
+{"time":"2026-09-29T06:30:42.568065385Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:30:44.251648823Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:30:48.249497894Z","level":"INFO","msg":"progress","activations":80,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":278,"refusals":2}
+{"time":"2026-09-29T06:31:05.686720231Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:31:08.249404451Z","level":"INFO","msg":"progress","activations":81,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":280,"refusals":2}
+{"time":"2026-09-29T06:31:08.906793664Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:31:11.002391069Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:31:28.24925421Z","level":"INFO","msg":"progress","activations":83,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":284,"refusals":2}
+{"time":"2026-09-29T06:31:34.343351222Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:31:41.31737678Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:31:44.08172703Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:31:48.249590917Z","level":"INFO","msg":"progress","activations":87,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":340,"refusals":2}
+{"time":"2026-09-29T06:31:56.033902868Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:32:03.86456289Z","level":"WARN","msg":"activation first request failed","actor":"sim-0007","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:32:08.250834491Z","level":"INFO","msg":"progress","activations":88,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":342,"refusals":2}
+{"time":"2026-09-29T06:32:19.966164997Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:32:28.24995492Z","level":"INFO","msg":"progress","activations":89,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":344,"refusals":2}
+{"time":"2026-09-29T06:32:48.250566871Z","level":"INFO","msg":"progress","activations":89,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":344,"refusals":2}
+{"time":"2026-09-29T06:32:57.188005735Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:08.249954532Z","level":"INFO","msg":"progress","activations":90,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":346,"refusals":2}
+{"time":"2026-09-29T06:33:17.881699287Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:26.302631306Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:28.249963162Z","level":"INFO","msg":"progress","activations":93,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":400,"refusals":2}
+{"time":"2026-09-29T06:33:30.703544154Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:35.163551145Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:36.456779325Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:40.644240014Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:43.504348515Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:44.750929377Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:33:48.249961062Z","level":"INFO","msg":"progress","activations":99,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":412,"refusals":2}
+{"time":"2026-09-29T06:34:05.129816116Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:34:06.647621605Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:34:07.303629779Z","level":"WARN","msg":"activation first request failed","actor":"sim-0026","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:34:08.248965551Z","level":"INFO","msg":"progress","activations":102,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":418,"refusals":2}
+{"time":"2026-09-29T06:34:18.125132142Z","level":"WARN","msg":"activation first request failed","actor":"sim-0007","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:34:18.3446836Z","level":"WARN","msg":"activation first request failed","actor":"sim-0021","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:34:26.699934562Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:34:28.248960892Z","level":"INFO","msg":"progress","activations":104,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":422,"refusals":2}
+{"time":"2026-09-29T06:34:48.249958989Z","level":"INFO","msg":"progress","activations":104,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":422,"refusals":2}
+{"time":"2026-09-29T06:35:08.248948155Z","level":"INFO","msg":"progress","activations":104,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":422,"refusals":2}
+{"time":"2026-09-29T06:35:28.249489404Z","level":"INFO","msg":"progress","activations":104,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":422,"refusals":2}
+{"time":"2026-09-29T06:35:48.248972136Z","level":"INFO","msg":"progress","activations":105,"wake_p50_ms":0,"wake_p99_ms":12683,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":472,"refusals":2}
+{"time":"2026-09-29T06:35:50.478574501Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:35:50.517876257Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:35:53.45881278Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:35:55.714176685Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:36:08.25576897Z","level":"INFO","msg":"progress","activations":109,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":480,"refusals":2}
+{"time":"2026-09-29T06:36:16.398241959Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:36:26.841912928Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:36:28.248958109Z","level":"INFO","msg":"progress","activations":111,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":484,"refusals":2}
+{"time":"2026-09-29T06:36:35.073219657Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:36:41.455996736Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:36:48.249717222Z","level":"INFO","msg":"progress","activations":112,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":486,"refusals":2}
+{"time":"2026-09-29T06:36:54.202775656Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:37:08.251721589Z","level":"INFO","msg":"progress","activations":113,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":488,"refusals":2}
+{"time":"2026-09-29T06:37:17.936045344Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:37:28.250967862Z","level":"INFO","msg":"progress","activations":114,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":490,"refusals":2}
+{"time":"2026-09-29T06:37:32.636594183Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:37:33.440101054Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:37:48.251035042Z","level":"INFO","msg":"progress","activations":116,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":494,"refusals":2}
+{"time":"2026-09-29T06:37:54.393647307Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:38:08.257054166Z","level":"INFO","msg":"progress","activations":118,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":546,"refusals":2}
+{"time":"2026-09-29T06:38:22.967819741Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:38:28.249339628Z","level":"INFO","msg":"progress","activations":119,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":548,"refusals":2}
+{"time":"2026-09-29T06:38:28.393478874Z","level":"WARN","msg":"activation first request failed","actor":"sim-0011","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:38:29.607015004Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:38:44.164877178Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:38:46.287166572Z","level":"WARN","msg":"activation first request failed","actor":"sim-0017","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:38:48.249963214Z","level":"INFO","msg":"progress","activations":122,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":554,"refusals":2}
+{"time":"2026-09-29T06:38:54.791801128Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:39:01.629806203Z","level":"WARN","msg":"activation first request failed","actor":"sim-0019","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:39:08.248964312Z","level":"INFO","msg":"progress","activations":124,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":558,"refusals":2}
+{"time":"2026-09-29T06:39:25.705716772Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:39:28.249950993Z","level":"INFO","msg":"progress","activations":125,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":560,"refusals":2}
+{"time":"2026-09-29T06:39:44.51054773Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:39:48.249204673Z","level":"INFO","msg":"progress","activations":126,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":562,"refusals":2}
+{"time":"2026-09-29T06:40:08.249412261Z","level":"INFO","msg":"progress","activations":127,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":612,"refusals":2}
+{"time":"2026-09-29T06:40:10.063731292Z","level":"WARN","msg":"activation first request failed","actor":"sim-0026","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:40:28.260975238Z","level":"INFO","msg":"progress","activations":128,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":614,"refusals":2}
+{"time":"2026-09-29T06:40:48.268013926Z","level":"INFO","msg":"progress","activations":128,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":614,"refusals":2}
+{"time":"2026-09-29T06:40:58.9635981Z","level":"WARN","msg":"activation first request failed","actor":"sim-0011","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:41:00.508159549Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:41:08.248953875Z","level":"INFO","msg":"progress","activations":130,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":618,"refusals":2}
+{"time":"2026-09-29T06:41:28.267959436Z","level":"INFO","msg":"progress","activations":130,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":618,"refusals":2}
+{"time":"2026-09-29T06:41:38.131569995Z","level":"WARN","msg":"activation first request failed","actor":"sim-0028","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:41:42.110512005Z","level":"WARN","msg":"activation first request failed","actor":"sim-0017","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:41:45.940440898Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:41:48.250308684Z","level":"INFO","msg":"progress","activations":133,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":624,"refusals":2}
+{"time":"2026-09-29T06:42:02.76859325Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:42:04.988828021Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:42:08.251881042Z","level":"INFO","msg":"progress","activations":135,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":628,"refusals":2}
+{"time":"2026-09-29T06:42:14.335979677Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:42:16.820442843Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:42:28.25217451Z","level":"INFO","msg":"progress","activations":136,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":630,"refusals":2}
+{"time":"2026-09-29T06:42:29.392907515Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:42:32.259880711Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:42:48.251676753Z","level":"INFO","msg":"progress","activations":138,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":634,"refusals":2}
+{"time":"2026-09-29T06:43:06.446503263Z","level":"WARN","msg":"activation first request failed","actor":"sim-0029","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:43:08.249972139Z","level":"INFO","msg":"progress","activations":139,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":636,"refusals":2}
+{"time":"2026-09-29T06:43:09.109607126Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:43:28.2487493Z","level":"INFO","msg":"progress","activations":140,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":638,"refusals":2}
+{"time":"2026-09-29T06:43:28.267057608Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:43:31.940214381Z","level":"WARN","msg":"activation first request failed","actor":"sim-0019","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:43:34.898831541Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:43:41.656615458Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:43:46.147515769Z","level":"WARN","msg":"activation first request failed","actor":"sim-0007","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:43:48.248970889Z","level":"INFO","msg":"progress","activations":144,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":694,"refusals":2}
+{"time":"2026-09-29T06:43:57.908478821Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:44:08.249739672Z","level":"INFO","msg":"progress","activations":145,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":696,"refusals":2}
+{"time":"2026-09-29T06:44:17.63321227Z","level":"WARN","msg":"activation first request failed","actor":"sim-0029","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:44:17.972585319Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:44:18.722251648Z","level":"WARN","msg":"activation first request failed","actor":"sim-0014","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:44:28.248736692Z","level":"INFO","msg":"progress","activations":148,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":702,"refusals":2}
+{"time":"2026-09-29T06:44:48.249134716Z","level":"INFO","msg":"progress","activations":148,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":702,"refusals":2}
+{"time":"2026-09-29T06:45:08.248966916Z","level":"INFO","msg":"progress","activations":150,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":802,"refusals":2}
+{"time":"2026-09-29T06:45:13.374246616Z","level":"WARN","msg":"activation first request failed","actor":"sim-0029","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:45:17.511112366Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:45:19.946932753Z","level":"WARN","msg":"activation first request failed","actor":"sim-0018","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:45:22.160007413Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:45:28.251304733Z","level":"INFO","msg":"progress","activations":154,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":810,"refusals":2}
+{"time":"2026-09-29T06:45:48.26803881Z","level":"INFO","msg":"progress","activations":154,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":810,"refusals":2}
+{"time":"2026-09-29T06:45:49.689014353Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:46:08.260982908Z","level":"INFO","msg":"progress","activations":155,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":812,"refusals":2}
+{"time":"2026-09-29T06:46:18.003842233Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:46:18.297583062Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:46:28.252356147Z","level":"INFO","msg":"progress","activations":156,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":814,"refusals":2}
+{"time":"2026-09-29T06:46:44.741232812Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:46:47.786933898Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:46:48.248962713Z","level":"INFO","msg":"progress","activations":158,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":818,"refusals":2}
+{"time":"2026-09-29T06:47:08.253105069Z","level":"INFO","msg":"progress","activations":158,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":818,"refusals":2}
+{"time":"2026-09-29T06:47:28.253127853Z","level":"INFO","msg":"progress","activations":158,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":818,"refusals":2}
+{"time":"2026-09-29T06:47:28.328186965Z","level":"WARN","msg":"activation first request failed","actor":"sim-0017","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:47:31.48390389Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:47:48.252028462Z","level":"INFO","msg":"progress","activations":161,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":872,"refusals":2}
+{"time":"2026-09-29T06:48:08.260975223Z","level":"INFO","msg":"progress","activations":161,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":872,"refusals":2}
+{"time":"2026-09-29T06:48:28.267393729Z","level":"INFO","msg":"progress","activations":161,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":872,"refusals":2}
+{"time":"2026-09-29T06:48:34.11266587Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:48:36.015988577Z","level":"WARN","msg":"activation first request failed","actor":"sim-0014","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:48:44.672438188Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:48:48.250951224Z","level":"INFO","msg":"progress","activations":164,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":878,"refusals":2}
+{"time":"2026-09-29T06:49:03.034972069Z","level":"WARN","msg":"activation first request failed","actor":"sim-0019","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:49:08.249162534Z","level":"INFO","msg":"progress","activations":165,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":880,"refusals":2}
+{"time":"2026-09-29T06:49:08.429759359Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:49:13.941506301Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:49:28.24887804Z","level":"INFO","msg":"progress","activations":167,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":884,"refusals":2}
+{"time":"2026-09-29T06:49:45.327766312Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:49:48.250964568Z","level":"INFO","msg":"progress","activations":167,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":884,"refusals":2}
+{"time":"2026-09-29T06:50:08.249953558Z","level":"INFO","msg":"progress","activations":167,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":884,"refusals":2}
+{"time":"2026-09-29T06:50:28.250961835Z","level":"INFO","msg":"progress","activations":167,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":884,"refusals":2}
+{"time":"2026-09-29T06:50:48.249964207Z","level":"INFO","msg":"progress","activations":167,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":884,"refusals":2}
+{"time":"2026-09-29T06:51:08.249962806Z","level":"INFO","msg":"progress","activations":168,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":934,"refusals":2}
+{"time":"2026-09-29T06:51:28.209185102Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:51:28.248818929Z","level":"INFO","msg":"progress","activations":169,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":936,"refusals":2}
+{"time":"2026-09-29T06:51:31.290653721Z","level":"WARN","msg":"activation first request failed","actor":"sim-0021","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:51:46.998938516Z","level":"WARN","msg":"activation first request failed","actor":"sim-0017","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:51:48.249593818Z","level":"INFO","msg":"progress","activations":171,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":940,"refusals":2}
+{"time":"2026-09-29T06:51:50.168387733Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:52:08.260978341Z","level":"INFO","msg":"progress","activations":172,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":942,"refusals":2}
+{"time":"2026-09-29T06:52:22.087811655Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:52:26.620794582Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:52:28.248977828Z","level":"INFO","msg":"progress","activations":173,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":944,"refusals":2}
+{"time":"2026-09-29T06:52:35.544865382Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:52:43.448719246Z","level":"WARN","msg":"activation first request failed","actor":"sim-0029","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:52:44.649054272Z","level":"WARN","msg":"activation first request failed","actor":"sim-0014","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:52:48.248914002Z","level":"INFO","msg":"progress","activations":176,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":950,"refusals":2}
+{"time":"2026-09-29T06:52:50.343859258Z","level":"WARN","msg":"activation first request failed","actor":"sim-0021","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:53:06.002703909Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:53:08.248876295Z","level":"INFO","msg":"progress","activations":177,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":952,"refusals":2}
+{"time":"2026-09-29T06:53:19.377613157Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:53:22.0040714Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:53:22.673017981Z","level":"WARN","msg":"activation first request failed","actor":"sim-0026","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:53:28.249520885Z","level":"INFO","msg":"progress","activations":180,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":958,"refusals":2}
+{"time":"2026-09-29T06:53:41.854995489Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:53:48.248971015Z","level":"INFO","msg":"progress","activations":182,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1010,"refusals":2}
+{"time":"2026-09-29T06:53:58.931237867Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:54:08.249954367Z","level":"INFO","msg":"progress","activations":183,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1012,"refusals":2}
+{"time":"2026-09-29T06:54:15.403713531Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:54:17.877899985Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:54:17.983234243Z","level":"WARN","msg":"activation first request failed","actor":"sim-0017","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:54:21.017411617Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:54:28.250544008Z","level":"INFO","msg":"progress","activations":188,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1070,"refusals":2}
+{"time":"2026-09-29T06:54:40.784844474Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:54:42.269710176Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:54:48.249962506Z","level":"INFO","msg":"progress","activations":190,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1074,"refusals":2}
+{"time":"2026-09-29T06:54:50.999613364Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:55:03.987571064Z","level":"WARN","msg":"activation first request failed","actor":"sim-0018","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:55:08.252939326Z","level":"INFO","msg":"progress","activations":192,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1078,"refusals":2}
+{"time":"2026-09-29T06:55:26.355192079Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:55:28.248752993Z","level":"INFO","msg":"progress","activations":193,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1080,"refusals":2}
+{"time":"2026-09-29T06:55:42.099634315Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:55:43.323444064Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:55:48.251973459Z","level":"INFO","msg":"progress","activations":195,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1084,"refusals":2}
+{"time":"2026-09-29T06:55:48.903378992Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:56:08.248752198Z","level":"INFO","msg":"progress","activations":195,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1084,"refusals":2}
+{"time":"2026-09-29T06:56:14.652276841Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:56:15.53251224Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:56:24.865557569Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:56:28.248739514Z","level":"INFO","msg":"progress","activations":197,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1088,"refusals":2}
+{"time":"2026-09-29T06:56:35.400049516Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:56:48.251472321Z","level":"INFO","msg":"progress","activations":197,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1088,"refusals":2}
+{"time":"2026-09-29T06:57:02.656129034Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:57:08.249473284Z","level":"INFO","msg":"progress","activations":198,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1090,"refusals":2}
+{"time":"2026-09-29T06:57:13.191840605Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:57:20.336411953Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:57:20.618879946Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:57:25.450588485Z","level":"WARN","msg":"activation first request failed","actor":"sim-0021","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:57:27.692121734Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:57:28.248749502Z","level":"INFO","msg":"progress","activations":203,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1148,"refusals":2}
+{"time":"2026-09-29T06:57:28.339650128Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:57:48.249975566Z","level":"INFO","msg":"progress","activations":205,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1200,"refusals":2}
+{"time":"2026-09-29T06:58:04.345767539Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:58:08.249250032Z","level":"INFO","msg":"progress","activations":207,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1252,"refusals":2}
+{"time":"2026-09-29T06:58:25.9432575Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:58:28.249959792Z","level":"INFO","msg":"progress","activations":208,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1254,"refusals":2}
+{"time":"2026-09-29T06:58:31.866985418Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:58:33.302839837Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:58:33.753430787Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:58:44.482109144Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:58:48.251708118Z","level":"INFO","msg":"progress","activations":213,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1312,"refusals":2}
+{"time":"2026-09-29T06:58:55.640834029Z","level":"WARN","msg":"activation first request failed","actor":"sim-0003","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:04.774031947Z","level":"WARN","msg":"activation first request failed","actor":"sim-0028","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:06.338391968Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:08.249946774Z","level":"INFO","msg":"progress","activations":216,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1318,"refusals":2}
+{"time":"2026-09-29T06:59:10.782615435Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:12.724661015Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:27.565155902Z","level":"WARN","msg":"activation first request failed","actor":"sim-0007","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:28.248698656Z","level":"INFO","msg":"progress","activations":219,"wake_p50_ms":0,"wake_p99_ms":9870,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1324,"refusals":2}
+{"time":"2026-09-29T06:59:29.583647951Z","level":"WARN","msg":"activation first request failed","actor":"sim-0016","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:32.655836196Z","level":"WARN","msg":"activation first request failed","actor":"sim-0004","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:48.25868047Z","level":"INFO","msg":"progress","activations":221,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1328,"refusals":2}
+{"time":"2026-09-29T06:59:54.953587032Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T06:59:58.327782521Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:00:02.556205705Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:00:08.24868403Z","level":"INFO","msg":"progress","activations":224,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1334,"refusals":2}
+{"time":"2026-09-29T07:00:22.514701006Z","level":"WARN","msg":"activation first request failed","actor":"sim-0023","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:00:28.248957325Z","level":"INFO","msg":"progress","activations":225,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1336,"refusals":2}
+{"time":"2026-09-29T07:00:32.985802198Z","level":"WARN","msg":"activation first request failed","actor":"sim-0008","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:00:46.50721073Z","level":"WARN","msg":"activation first request failed","actor":"sim-0005","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:00:48.248965647Z","level":"INFO","msg":"progress","activations":227,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1340,"refusals":2}
+{"time":"2026-09-29T07:00:58.382936501Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:01:07.153150719Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:01:08.248964871Z","level":"INFO","msg":"progress","activations":229,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1344,"refusals":2}
+{"time":"2026-09-29T07:01:15.638390972Z","level":"WARN","msg":"activation first request failed","actor":"sim-0025","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:01:28.250993576Z","level":"INFO","msg":"progress","activations":229,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1344,"refusals":2}
+{"time":"2026-09-29T07:01:48.24996326Z","level":"INFO","msg":"progress","activations":229,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1344,"refusals":2}
+{"time":"2026-09-29T07:02:08.249245798Z","level":"INFO","msg":"progress","activations":229,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1344,"refusals":2}
+{"time":"2026-09-29T07:02:20.937693083Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:02:22.295476893Z","level":"WARN","msg":"activation first request failed","actor":"sim-0011","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:02:28.250049968Z","level":"INFO","msg":"progress","activations":231,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1348,"refusals":2}
+{"time":"2026-09-29T07:02:48.254503022Z","level":"INFO","msg":"progress","activations":232,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1398,"refusals":2}
+{"time":"2026-09-29T07:02:54.28387019Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:02:57.340494685Z","level":"WARN","msg":"activation first request failed","actor":"sim-0000","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:03:08.256982374Z","level":"INFO","msg":"progress","activations":234,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1402,"refusals":2}
+{"time":"2026-09-29T07:03:08.680958978Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:03:28.261967419Z","level":"INFO","msg":"progress","activations":235,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1404,"refusals":2}
+{"time":"2026-09-29T07:03:28.620591255Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:03:37.400473933Z","level":"WARN","msg":"activation first request failed","actor":"sim-0020","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:03:48.251525263Z","level":"INFO","msg":"progress","activations":236,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1406,"refusals":2}
+{"time":"2026-09-29T07:04:08.248969922Z","level":"INFO","msg":"progress","activations":236,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1406,"refusals":2}
+{"time":"2026-09-29T07:04:12.968705097Z","level":"WARN","msg":"activation first request failed","actor":"sim-0010","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:04:24.638356879Z","level":"WARN","msg":"activation first request failed","actor":"sim-0019","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:04:28.251637291Z","level":"INFO","msg":"progress","activations":238,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1410,"refusals":2}
+{"time":"2026-09-29T07:04:34.852615629Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:04:39.629745163Z","level":"WARN","msg":"activation first request failed","actor":"sim-0027","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:04:48.252243435Z","level":"INFO","msg":"progress","activations":239,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1412,"refusals":2}
+{"time":"2026-09-29T07:04:51.234411682Z","level":"WARN","msg":"activation first request failed","actor":"sim-0007","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:05:08.249267362Z","level":"INFO","msg":"progress","activations":241,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1464,"refusals":2}
+{"time":"2026-09-29T07:05:08.275274579Z","level":"WARN","msg":"activation first request failed","actor":"sim-0024","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:05:16.69546812Z","level":"WARN","msg":"activation first request failed","actor":"sim-0009","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:05:25.088803179Z","level":"WARN","msg":"activation first request failed","actor":"sim-0001","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:05:28.143453815Z","level":"WARN","msg":"activation first request failed","actor":"sim-0013","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:05:28.248784846Z","level":"INFO","msg":"progress","activations":245,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1472,"refusals":2}
+{"time":"2026-09-29T07:05:34.262445099Z","level":"WARN","msg":"activation first request failed","actor":"sim-0022","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:05:48.249254609Z","level":"INFO","msg":"progress","activations":246,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1474,"refusals":2}
+{"time":"2026-09-29T07:05:52.139370521Z","level":"WARN","msg":"activation first request failed","actor":"sim-0015","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:06:08.25081246Z","level":"INFO","msg":"progress","activations":248,"wake_p50_ms":0,"wake_p99_ms":9532,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":18,"errors":1526,"refusals":2}
+{"time":"2026-09-29T07:06:09.229956413Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:06:19.259359439Z","level":"WARN","msg":"activation first request failed","actor":"sim-0029","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:06:24.290029463Z","level":"WARN","msg":"activation first request failed","actor":"sim-0002","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:06:24.863996582Z","level":"WARN","msg":"activation first request failed","actor":"sim-0006","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+{"time":"2026-09-29T07:06:27.506224026Z","level":"WARN","msg":"activation first request failed","actor":"sim-0012","err":"Post \"http://atenet-router.ate-system.svc.cluster.local/ping\": context canceled"}
+=== agentsim summary ===
+agents=150 activations=253 pings=605 errors=1536 refusals_503_504=2 compress=6
+wake     n=231   first-request ms p50=0 p90=0 p99=9533 max=15090
+session  n=22    first-request ms p50=0 p90=0 p99=0 max=0
+post-resume RAM walk ms p50=40 p90=54 p99=56 (demand-paging cost)
+CPU probe ms p50=18 p90=22 p99=22 (fixed work; drift = throttling)
+=== agentsim csv ===
+unix_ms,agent,kind,first_req_ms,readram_ms,pings,errors,refusals
+1790662621628,14,wake,5925.2,34.9,1,0,0
+1790662641115,15,wake,5574.9,34.3,1,0,0
+1790662646986,13,wake,5103.3,61.5,1,0,0
+1790662652835,6,wake,15090.0,40.3,1,0,1
+1790662655288,23,wake,12683.0,35.8,1,0,1
+1790662678085,27,wake,5191.6,54.1,1,0,0
+1790662695716,29,wake,8461.1,42.5,1,0,0
+1790662694643,25,wake,9532.6,44.9,1,0,0
+1790662710591,0,wake,9871.0,52.2,1,0,0
+1790662735070,25,wake,5152.0,33.5,1,0,0
+1790662742487,11,wake,5310.1,34.0,1,0,0
+1790662749664,22,wake,5436.9,56.4,1,0,0
+1790662756855,8,wake,5700.9,44.7,1,0,0
+1790662767493,12,wake,750.6,0.0,1,2,0
+1790662759150,0,wake,9097.3,0.0,1,2,0
+1790662769027,24,wake,0.1,0.0,1,2,0
+1790662778164,22,wake,0.0,0.0,1,2,0
+1790662782758,13,wake,0.0,0.0,1,2,0
+1790662800258,12,wake,0.0,0.0,1,2,0
+1790662811127,4,wake,0.0,0.0,1,2,0
+1790662814547,21,wake,0.0,0.0,1,2,0
+1790662817429,3,wake,0.0,0.0,1,2,0
+1790662840372,24,wake,0.0,0.0,1,2,0
+1790662848518,24,wake,0.0,0.0,1,2,0
+1790662848787,22,wake,0.0,0.0,1,2,0
+1790662794368,15,session,0.0,0.0,17,50,0
+1790662876178,6,wake,0.0,0.0,1,2,0
+1790662894092,6,wake,0.0,0.0,1,2,0
+1790662822677,27,session,0.0,0.0,17,50,0
+1790662925079,21,wake,0.0,0.0,1,2,0
+1790662945144,3,wake,0.0,0.0,1,2,0
+1790662946344,16,wake,0.1,0.0,1,2,0
+1790662953230,18,wake,0.0,0.0,1,2,0
+1790662970059,10,wake,0.0,0.0,1,2,0
+1790663005203,7,wake,0.0,0.0,1,2,0
+1790663026301,26,wake,0.0,0.0,1,2,0
+1790663035596,13,wake,0.0,0.0,1,2,0
+1790663044798,9,wake,0.1,0.0,1,2,0
+1790663048468,25,wake,0.0,0.0,1,2,0
+1790663053173,2,wake,0.0,0.0,1,2,0
+1790663060949,5,wake,0.0,0.0,1,2,0
+1790663065525,14,wake,0.0,0.0,1,2,0
+1790663077837,25,wake,0.0,0.0,1,2,0
+1790663079422,27,wake,0.0,0.0,1,2,0
+1790663091311,22,wake,0.0,0.0,1,2,0
+1790663124108,27,wake,0.0,0.0,1,2,0
+1790663127242,1,wake,0.0,0.0,1,2,0
+1790663130148,28,wake,0.0,0.0,1,2,0
+1790663132553,23,wake,0.0,0.0,1,2,0
+1790663133133,3,wake,0.0,0.0,1,2,0
+1790663133540,28,wake,0.0,0.0,1,2,0
+1790663150280,24,wake,0.0,0.0,1,2,0
+1790663154275,23,wake,0.0,0.0,1,2,0
+1790663182936,1,wake,0.0,0.0,1,2,0
+1790663222742,9,wake,0.0,0.0,1,2,0
+1790663226383,0,wake,0.0,0.0,1,2,0
+1790663230509,10,wake,0.0,0.0,1,2,0
+1790663236682,7,wake,0.0,0.0,1,2,0
+1790663249203,0,wake,0.0,0.0,1,2,0
+1790663251306,8,wake,0.0,0.0,1,2,0
+1790663265238,22,wake,0.0,0.0,1,2,0
+1790663266811,28,wake,0.0,0.0,1,2,0
+1790663270117,25,wake,0.0,0.0,1,2,0
+1790663288674,19,wake,0.0,0.0,1,2,0
+1790663291070,16,wake,0.0,0.0,1,2,0
+1790663212702,29,session,0.0,0.0,17,50,0
+1790663298400,19,wake,0.0,0.0,1,2,0
+1790663306766,27,wake,0.0,0.0,1,2,0
+1790663346260,10,wake,0.0,0.0,1,2,0
+1790663348784,28,wake,0.0,0.0,1,2,0
+1790663351304,10,wake,0.0,0.0,1,2,0
+1790663377543,15,wake,0.1,0.0,1,2,0
+1790663383795,21,wake,0.0,0.0,1,2,0
+1790663384047,12,wake,0.0,0.0,1,2,0
+1790663403354,16,wake,0.0,0.0,1,2,0
+1790663414518,9,wake,0.0,0.0,1,2,0
+1790663425423,0,wake,0.0,0.0,1,2,0
+1790663427797,14,wake,0.0,0.0,1,2,0
+1790663442565,24,wake,0.0,0.0,1,2,0
+1790663444248,8,wake,0.0,0.0,1,2,0
+1790663465683,20,wake,0.0,0.0,1,2,0
+1790663468904,13,wake,0.0,0.0,1,2,0
+1790663470999,13,wake,0.0,0.0,1,2,0
+1790663494340,23,wake,0.0,0.0,1,2,0
+1790663501313,25,wake,0.0,0.0,1,2,0
+1790663504078,12,wake,0.0,0.0,1,2,0
+1790663427627,16,session,0.0,0.0,17,50,0
+1790663523861,7,wake,0.0,0.0,1,2,0
+1790663539953,25,wake,0.1,0.0,1,2,0
+1790663577185,16,wake,0.0,0.0,1,2,0
+1790663516029,1,session,0.0,0.0,17,50,0
+1790663597878,1,wake,0.0,0.0,1,2,0
+1790663606275,3,wake,0.0,0.0,1,2,0
+1790663610699,23,wake,0.0,0.0,1,2,0
+1790663615157,24,wake,0.0,0.0,1,2,0
+1790663616453,22,wake,0.0,0.0,1,2,0
+1790663620638,8,wake,0.0,0.0,1,2,0
+1790663623501,5,wake,0.0,0.0,1,2,0
+1790663624748,20,wake,0.0,0.0,1,2,0
+1790663645101,22,wake,0.1,0.0,1,2,0
+1790663646645,23,wake,0.0,0.0,1,2,0
+1790663647300,26,wake,0.0,0.0,1,2,0
+1790663658117,7,wake,0.0,0.0,1,2,0
+1790663658341,21,wake,0.0,0.0,1,2,0
+1790663666693,24,session,0.1,0.0,17,50,0
+1790663750475,13,wake,0.0,0.0,1,2,0
+1790663750515,6,wake,0.0,0.0,1,2,0
+1790663753452,0,wake,0.0,0.0,1,2,0
+1790663755711,10,wake,0.0,0.0,1,2,0
+1790663776371,16,wake,0.0,0.0,1,2,0
+1790663786835,4,wake,0.0,0.0,1,2,0
+1790663801453,16,wake,0.0,0.0,1,2,0
+1790663814199,4,wake,0.0,0.0,1,2,0
+1790663837931,3,wake,0.0,0.0,1,2,0
+1790663852633,12,wake,0.0,0.0,1,2,0
+1790663853437,16,wake,0.0,0.0,1,2,0
+1790663874390,10,wake,0.0,0.0,1,2,0
+1790663795066,24,session,0.0,0.0,17,50,0
+1790663902927,9,wake,0.0,0.0,1,2,0
+1790663908387,11,wake,0.0,0.0,1,2,0
+1790663909603,24,wake,0.0,0.0,1,2,0
+1790663924160,1,wake,0.0,0.0,1,2,0
+1790663934771,4,wake,0.0,0.0,1,2,0
+1790663941627,19,wake,0.0,0.0,1,2,0
+1790663965685,8,wake,0.0,0.0,1,2,0
+1790663984507,16,wake,0.0,0.0,1,2,0
+1790663926284,17,session,0.0,0.0,17,50,0
+1790664010060,26,wake,0.0,0.0,1,2,0
+1790664058940,11,wake,0.0,0.0,1,2,0
+1790664060504,27,wake,0.0,0.0,1,2,0
+1790664098106,28,wake,0.0,0.0,1,2,0
+1790664102107,17,wake,0.0,0.0,1,2,0
+1790664105936,10,wake,0.0,0.0,1,2,0
+1790664122760,2,wake,0.0,0.0,1,2,0
+1790664124985,9,wake,0.0,0.0,1,2,0
+1790664136817,16,wake,0.0,0.0,1,2,0
+1790664149390,13,wake,0.0,0.0,1,2,0
+1790664152256,16,wake,0.0,0.0,1,2,0
+1790664186443,29,wake,0.0,0.0,1,2,0
+1790664189106,4,wake,0.0,0.0,1,2,0
+1790664208263,25,wake,0.0,0.0,1,2,0
+1790664134314,15,session,0.0,0.0,17,50,0
+1790664214896,23,wake,0.0,0.0,1,2,0
+1790664226136,7,wake,0.0,0.0,1,2,0
+1790664237905,13,wake,0.0,0.0,1,2,0
+1790664257630,29,wake,0.0,0.0,1,2,0
+1790664257969,4,wake,0.0,0.0,1,2,0
+1790664258719,14,wake,0.0,0.0,1,2,0
+1790664211936,19,session,0.0,0.0,17,50,0
+1790664221652,27,session,0.0,0.0,17,50,0
+1790664313366,29,wake,0.0,0.0,1,2,0
+1790664317488,3,wake,0.0,0.0,1,2,0
+1790664319943,18,wake,0.1,0.0,1,2,0
+1790664322156,20,wake,0.0,0.0,1,2,0
+1790664349668,12,wake,0.0,0.0,1,2,0
+1790664377999,4,wake,0.0,0.0,1,2,0
+1790664404738,10,wake,0.0,0.0,1,2,0
+1790664407783,10,wake,0.0,0.0,1,2,0
+1790664448325,17,wake,0.0,0.0,1,2,0
+1790664451480,22,wake,0.0,0.0,1,2,0
+1790664378294,27,session,0.0,0.0,17,50,0
+1790664514088,12,wake,0.0,0.0,1,2,0
+1790664516013,14,wake,0.0,0.0,1,2,0
+1790664524668,6,wake,0.0,0.0,1,2,0
+1790664543024,19,wake,0.0,0.0,1,2,0
+1790664548405,15,wake,0.0,0.0,1,2,0
+1790664553935,4,wake,0.0,0.0,1,2,0
+1790664585304,8,session,0.0,0.0,17,50,0
+1790664688185,2,wake,0.0,0.0,1,2,0
+1790664691286,21,wake,0.0,0.0,1,2,0
+1790664706991,17,wake,0.0,0.0,1,2,0
+1790664710165,9,wake,0.0,0.0,1,2,0
+1790664746618,4,wake,0.0,0.0,1,2,0
+1790664755541,8,wake,0.0,0.0,1,2,0
+1790664763445,29,wake,0.0,0.0,1,2,0
+1790664764646,14,wake,0.0,0.0,1,2,0
+1790664770340,21,wake,0.0,0.0,1,2,0
+1790664799374,5,wake,0.0,0.0,1,2,0
+1790664802001,16,wake,0.0,0.0,1,2,0
+1790664802669,26,wake,0.0,0.0,1,2,0
+1790664821852,16,wake,0.0,0.0,1,2,0
+1790664742061,15,session,0.0,0.0,17,50,0
+1790664838928,6,wake,0.0,0.0,1,2,0
+1790664855398,1,wake,0.0,0.0,1,2,0
+1790664857875,5,wake,0.0,0.0,1,2,0
+1790664857977,17,wake,0.0,0.0,1,2,0
+1790664861014,8,wake,0.0,0.0,1,2,0
+1790664785999,20,session,0.0,0.0,17,50,0
+1790664880779,20,wake,0.0,0.0,1,2,0
+1790664882266,8,wake,0.0,0.0,1,2,0
+1790664890993,20,wake,0.0,0.0,1,2,0
+1790664903967,18,wake,0.0,0.0,1,2,0
+1790664926348,15,wake,0.0,0.0,1,2,0
+1790664942075,25,wake,0.0,0.0,1,2,0
+1790664943320,25,wake,0.0,0.0,1,2,0
+1790664975529,8,wake,0.0,0.0,1,2,0
+1790664984862,8,wake,0.0,0.0,1,2,0
+1790665022653,2,wake,0.0,0.0,1,2,0
+1790664948899,16,session,0.0,0.0,17,50,0
+1790665033189,10,wake,0.0,0.0,1,2,0
+1790665040616,4,wake,0.0,0.0,1,2,0
+1790665045447,21,wake,0.0,0.0,1,2,0
+1790665047688,20,wake,0.0,0.0,1,2,0
+1790665048336,25,wake,0.0,0.0,1,2,0
+1790664974649,13,session,0.0,0.0,17,50,0
+1790664995397,5,session,0.0,0.0,17,50,0
+1790665084342,1,wake,0.0,0.0,1,2,0
+1790665105940,13,wake,0.0,0.0,1,2,0
+1790665111863,24,wake,0.0,0.0,1,2,0
+1790665113299,24,wake,0.0,0.0,1,2,0
+1790665113750,1,wake,0.0,0.0,1,2,0
+1790665040333,3,session,0.0,0.0,17,50,0
+1790665124479,2,wake,0.0,0.0,1,2,0
+1790665135617,3,wake,0.0,0.0,1,2,0
+1790665144769,28,wake,0.0,0.0,1,2,0
+1790665146335,25,wake,0.0,0.0,1,2,0
+1790665150779,22,wake,0.0,0.0,1,2,0
+1790665152721,24,wake,0.0,0.0,1,2,0
+1790665167544,7,wake,0.0,0.0,1,2,0
+1790665169580,16,wake,0.0,0.0,1,2,0
+1790665172652,4,wake,0.0,0.0,1,2,0
+1790665194949,13,wake,0.0,0.0,1,2,0
+1790665198307,23,wake,0.0,0.0,1,2,0
+1790665202552,1,wake,0.0,0.0,1,2,0
+1790665222510,23,wake,0.0,0.0,1,2,0
+1790665232960,8,wake,0.0,0.0,1,2,0
+1790665246499,5,wake,0.0,0.0,1,2,0
+1790665258378,24,wake,0.1,0.0,1,2,0
+1790665267120,27,wake,0.0,0.0,1,2,0
+1790665340934,13,wake,0.0,0.0,1,2,0
+1790665342292,11,wake,0.0,0.0,1,2,0
+1790665275634,25,session,0.0,0.0,17,50,0
+1790665374257,12,wake,0.0,0.0,1,2,0
+1790665377337,0,wake,0.0,0.0,1,2,0
+1790665388673,10,wake,0.0,0.0,1,2,0
+1790665417397,20,wake,0.0,0.0,1,2,0
+1790665452965,10,wake,0.0,0.0,1,2,0
+1790665464635,19,wake,0.0,0.0,1,2,0
+1790665474849,9,wake,0.0,0.0,1,2,0
+1790665408600,1,session,0.0,0.0,17,50,0
+1790665491231,7,wake,0.0,0.0,1,2,0
+1790665508272,24,wake,0.1,0.0,1,2,0
+1790665516692,9,wake,0.0,0.0,1,2,0
+1790665525085,1,wake,0.0,0.0,1,2,0
+1790665528140,13,wake,0.0,0.0,1,2,0
+1790665534259,22,wake,0.0,0.0,1,2,0
+1790665552136,15,wake,0.0,0.0,1,2,0
+1790665479626,27,session,0.0,0.0,17,50,0
+1790665569226,6,wake,0.0,0.0,1,2,0
+1790665579251,29,wake,0.0,0.0,1,2,0
+1790665584284,2,wake,0.0,0.0,1,2,0
+1790665584861,6,wake,0.1,0.0,1,2,0
+1790665587503,12,wake,0.0,0.0,1,2,0
+=== end csv ===
