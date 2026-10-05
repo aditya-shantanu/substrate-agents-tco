@@ -119,19 +119,20 @@
 
   <div class="card">
     <h2>1 · How busy is one agent?</h2>
-    <p class="why">A personal agent (OpenClaw, Hermes) mostly sleeps: a few chats plus some scheduled check-ins per day.</p>
+    <p class="why">A personal agent (OpenClaw, Hermes) mostly sleeps: a few chats plus some scheduled check-ins per day. The <em>task script</em> preset is the coding-agent benchmark Phase 2 now runs by default (8 tasks × 20 steps, asleep during every LLM think gap): each step is one "check-in" of ≈2 s of work with no idle wait. Its step time and the 1 GiB actor's suspend/resume are estimates until a run measures them — the measured defaults stay on the personal profile.</p>
     <div class="row"><label for="preset">Start from a preset</label>
       <select id="preset" style="grid-column:2/4">
-        <option value="personal" selected>Personal agent</option>
+        <option value="personal" selected>Personal agent (measured baseline)</option>
         <option value="chatty">Chatty assistant</option>
-        <option value="coder">Coding agent</option>
+        <option value="codingScript">Coding agent — task script (substrate#1934), step time estimated</option>
+        <option value="coder">Coding agent — two long sessions a day</option>
         <option value="custom">Custom</option>
       </select></div>
     <div class="row"><label for="sessions">Chat sessions per day</label><input id="sessions" type="number" min="0" step="0.5" value="3"><span class="unit"></span></div>
     <div class="row"><label for="sessMin">Length of one session</label><input id="sessMin" type="number" min="0.1" step="0.5" value="8"><span class="unit">min</span></div>
     <div class="row"><label for="wakes">Scheduled check-ins per day</label><input id="wakes" type="number" min="0" step="1" value="40"><span class="unit"></span>
       <div class="hint">Heartbeats, crons, reminders. OpenClaw's default heartbeat alone is every 30 min ≈ 40–48/day. (A real OpenClaw agent on a 20-min cron measured just 0.72% awake time.)</div></div>
-    <div class="row"><label for="wakeSec">Length of one check-in</label><input id="wakeSec" type="number" min="1" step="1" value="15"><span class="unit">s</span></div>
+    <div class="row"><label for="wakeSec">Length of one check-in</label><input id="wakeSec" type="number" min="0.5" step="0.1" value="15"><span class="unit">s</span></div>
     <div class="derived" id="workloadDerived"></div>
   </div>
 
@@ -351,6 +352,12 @@ const PRESETS = {
   personal: {sessions:3,  sessMin:8,  wakes:40, wakeSec:15},
   chatty:   {sessions:12, sessMin:6,  wakes:48, wakeSec:15},
   coder:    {sessions:2,  sessMin:45, wakes:8,  wakeSec:30},
+  // The coding-agent task script (substrate#1934) as Phase 2 runs it by
+  // default: 8 tasks × 20 steps a day, each step a short burst of real work
+  // (≈2.2 s estimated from the script's CPU/I/O budget — replace with the
+  // measured step time once a run reports it), suspended by the driver the
+  // moment a step ends (no idle wait) while the LLM "thinks".
+  codingScript: {sessions:0, sessMin:8, wakes:160, wakeSec:2.2, tidle:0},
 };
 const SR_PRESETS = {
   glutton:  {g_ts:0.40, g_tr:0.25, m_ts:0.80, m_tr:0.50, snapGiB:0.05},

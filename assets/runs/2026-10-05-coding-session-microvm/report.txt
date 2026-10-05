@@ -1,0 +1,41 @@
+
+[1m┌──────────────────────────────────────────────────────────────────┐[0m
+[1m│  SUBSTRATE DENSITY RUN — RESULTS                                 │[0m
+[1m└──────────────────────────────────────────────────────────────────┘[0m
+
+  What ran
+    agents simulated        40   (coding-session script, think ×4, driver suspend, time ×6); 22 were activated inside the window
+    worker pool             10 workers on 2 × c3-standard-4
+    window                  27.4 min wall = 2.7 h of agent-life
+    activations served      618  (15.4/agent; errors 0, router refusals 5)
+
+  What it measured
+    resume P50 / P90 / P99  1,906 / 3,278 / 9,603 ms  (n=618)   ← T_r, user-visible wake-up
+    suspend (avg)           3,849 ms                ← T_s, from 618 suspends (driver)
+    suspend P50 / P90 / P99 2,720 / 8,419 / 14,132 ms  (n=618)
+
+    step work P50 / P90 / P99 1,030 / 3,663 / 4,627 ms  ← the agent's own ops per step
+    workers busy            mean 2.61 · p99 7 · peak 8 of 10
+    density (this run)      15.3:1 mean · 5.7:1 at p99 ← bankable
+
+  Real-world cost per agent (measured T_s/T_r plugged into the model)
+    one agent/day           8 tasks × 20 steps = 160 steps, 1.5s work each (measured)
+    think per task          276s (agent asleep: free)
+    overhead per wake-up    0s wait (driver suspends at once) + 3.8s suspend + 1.9s resume = 5.8s
+    worker-time per agent   (247s + 160×5.8s)/86400 = 1.35%
+    agents per worker       0.70 ÷ (1.35% × 2.0 peak) = 25.9
+    worker cost             $0.0907/hr ÷ 5.0 per node × 730h = $13.25/mo (cud3)
+    compute [2m$13.25 ÷ 25.9[0m   $0.51
+    snapshot at rest        $0.005   (0.25 GiB × $0.02/GiB-mo)
+    GCS ops                 $0.178
+  [1m╔──────────────────────────────────────────────────────────────────╗
+  ║   COST PER AGENT PER MONTH  ≈  $0.69                          ║
+  ╚──────────────────────────────────────────────────────────────────╝[0m
+  [2mvs $13.25/mo for a dedicated always-on worker — 19× cheaper.
+  Multi-actor workers (roadmap, CPU-packed): ≈166 agents/machine →
+  ≈$0.58/agent/mo — a projection, not today's price.
+  Excludes LLM tokens and amortized cluster fee/control plane (add
+  ~$573/mo ÷ fleet size). Utilization/peak are assumptions; T_s, T_r,
+  snapshot size and density above are measured.
+  Latency percentiles (P50/P90/P99/max, with n): /Users/adityashantanu/repos/substrate-agents-tco/service/experiment/results/20261005-124232/latency.csv[0m
+

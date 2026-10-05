@@ -27,7 +27,11 @@ python3 "${SERVICE_DIR}/analysis/report.py" \
   --compress "${COMPRESS}" ${WORKER_COST_HR:+--worker-cost-hr ${WORKER_COST_HR}} \
   | tee "${OUT}/density.txt"
 
-MACHINE_TYPE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.labels.node\.kubernetes\.io/instance-type}')
+# Price the node the workers actually ran on (multi-pool clusters, e.g. a
+# bare-metal pool next to the default one), not the first node listed.
+WORKER_NODE=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool -o jsonpath='{.items[0].spec.nodeName}' 2>/dev/null)
+MACHINE_TYPE=$(kubectl get node "${WORKER_NODE:-}" -o jsonpath='{.metadata.labels.node\.kubernetes\.io/instance-type}' 2>/dev/null \
+  || kubectl get nodes -o jsonpath='{.items[0].metadata.labels.node\.kubernetes\.io/instance-type}')
 POOL_NODES=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool \
   -o jsonpath='{range .items[*]}{.spec.nodeName}{"\n"}{end}' 2>/dev/null | sort -u | grep -c . || echo 1)
 SNAP_GIB=$(gcloud storage du -s "gs://${BUCKET_NAME}/benchmark-workloads/glutton/atespaces/agents-sim/**" 2>/dev/null \
@@ -37,7 +41,8 @@ python3 "${SERVICE_DIR}/analysis/final_report.py" \
   --metrics "${OUT}/metrics.txt" --compress "${COMPRESS}" \
   --machine-type "${MACHINE_TYPE}" --pool-workers "${WORKER_COUNT}" \
   --pool-nodes "${POOL_NODES}" --snap-gib "${SNAP_GIB:-0.05}" \
-  --price-model "${PRICE_MODEL}" --peak-model "${PEAK_MODEL}" --peak-value "${PEAK_VALUE}" | tee "${OUT}/report.txt"
+  --price-model "${PRICE_MODEL}" --peak-model "${PEAK_MODEL}" --peak-value "${PEAK_VALUE}" \
+  --idle-timeout-run "${IDLE_TIMEOUT}" | tee "${OUT}/report.txt"
 
 echo
 echo "results in ${OUT}"

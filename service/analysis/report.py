@@ -74,7 +74,7 @@ def main():
               f"p50={pct(v,.5):.0f} p90={pct(v,.9):.0f} p99={pct(v,.99):.0f}")
     walks = sorted(float(r["readram_ms"]) for r in sim if float(r["readram_ms"]) > 0)
     if walks:
-        print(f"  post-resume RAM walk ms p50={pct(walks,.5):.0f} p99={pct(walks,.99):.0f}")
+        print(f"  post-resume RAM walk ms p50={pct(walks,.5):.0f} p90={pct(walks,.9):.0f} p99={pct(walks,.99):.0f}")
 
     with open(args.occupancy) as f:
         occ = [r for r in csv.DictReader(f)

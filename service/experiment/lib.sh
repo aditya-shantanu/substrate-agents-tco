@@ -62,12 +62,62 @@ export PEAK_VALUE="${PEAK_VALUE:-2}"             # multiplier (mult) or fraction
 # use MEM_TARGET=1Gi to put memory (not worker slots) on the critical path.
 export MEM_TARGET="${MEM_TARGET:-128Mi}"         # resident working set filled at boot
 export MEM_CHURN="${MEM_CHURN:-16Mi}"            # dirtied every turn (snapshots change like a live app)
+# --- workload ---
+# WORKLOAD selects what a simulated agent does when it is awake:
+#   personal        agentsim's personal-agent turns: SESSIONS_PER_DAY chats
+#                   of 8 min + WAKES_PER_DAY 15 s check-ins, RAM walk/churn
+#                   and a file write per turn (MEM_TARGET/MEM_CHURN apply).
+#   coding-session  the agent-session script from substrate's benchmarking
+#                   suite (agent-substrate/substrate#1934): every session is
+#                   one 20-step coding task (clone, build, fix a test,
+#                   refactor, package) with an LLM think gap before each
+#                   step. SESSIONS_PER_DAY is then tasks per agent-day.
+#   <path>.yaml     a script of your own in the same format (validated
+#                   locally, shipped to the Job as a ConfigMap).
+# THINK_SCALE multiplies every think gap (the script's 2–8 s are optimistic
+# for a real model; ×4 ≈ 8–32 s). Think gaps are not time-compressed.
+# SCRIPT_SUSPEND: driver = agentsim suspends the actor right after each
+# step (the upstream benchmark's behavior; think gaps are free); idle = the
+# autosuspender's IDLE_TIMEOUT decides (production-like; gaps shorter than
+# the wait keep the worker).
+export WORKLOAD="${WORKLOAD:-coding-session}"   # the default workload since 2026-10-05
+export THINK_SCALE="${THINK_SCALE:-4}"
+export SCRIPT_SUSPEND="${SCRIPT_SUSPEND:-driver}"
+# WORKLOAD=ping: the one-ping GluttonUser loop of substrate's benchmarking
+# suite (the Prow 200K run): PING_ACTORS_PER_USER actors per virtual user,
+# served one at a time — wake by ping, PING_LIVE awake, suspend, PING_WAIT —
+# no memory fill, no other work. Overcommit is N:1 by construction.
+export PING_ACTORS_PER_USER="${PING_ACTORS_PER_USER:-0}"
+export PING_WAIT="${PING_WAIT:-10s}"
+export PING_LIVE="${PING_LIVE:-0s}"
+if [[ "${WORKLOAD}" == "personal" ]]; then
+  export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-3}"
+  export WAKES_PER_DAY="${WAKES_PER_DAY:-40}"
+  export SCRIPT_ARG=""
+elif [[ "${WORKLOAD}" == "ping" ]]; then
+  export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-0}"   # unused: the loop is continuous
+  export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
+  export SCRIPT_ARG=""
+  [[ "${PING_ACTORS_PER_USER}" -gt 0 ]] || export PING_ACTORS_PER_USER=20
+else
+  export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-8}"   # tasks per agent-day
+  export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
+  if [[ "${WORKLOAD}" == */* || "${WORKLOAD}" == *.yaml || "${WORKLOAD}" == *.yml ]]; then
+    [[ -f "${WORKLOAD}" ]] || { echo "WORKLOAD=${WORKLOAD}: no such script file" >&2; exit 1; }
+    WORKLOAD="$(cd "$(dirname "${WORKLOAD}")" && pwd)/$(basename "${WORKLOAD}")"  # stages cd elsewhere
+    export SCRIPT_ARG="/etc/agentscript/script.yaml"   # ConfigMap mount (40-deploy)
+  else
+    export SCRIPT_ARG="${WORKLOAD}"                     # built-in name
+  fi
+fi
 # Per-ACTOR memory limit (ActorTemplate spec.resources.limits.memory, a
 # cgroup on the sandbox — separate from the worker pod's limit). Must exceed
 # MEM_TARGET + churn + ~100Mi sentry overhead, or the sandbox is OOM-killed
 # (silently, mid-checkpoint → stuck SUSPENDING). With node swap the sandbox's
-# shmem pages can page out and mask an undersized limit — badly.
-export ACTOR_MEMORY="${ACTOR_MEMORY:-256Mi}"
+# shmem pages can page out and mask an undersized limit — badly. The
+# coding-session script declares a 1Gi floor (agentsim refuses a smaller
+# template), so script workloads default to 1Gi.
+export ACTOR_MEMORY="${ACTOR_MEMORY:-$([[ "${WORKLOAD}" == "personal" || "${WORKLOAD}" == "ping" ]] && echo 256Mi || echo 1Gi)}"
 
 # --- worker pod shape (used by the Burstable patch; requests<limits) ---
 # Under kubelet LimitedSwap a pod may swap at most request/nodeRAM × swap,

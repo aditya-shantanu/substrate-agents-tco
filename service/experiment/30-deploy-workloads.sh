@@ -15,8 +15,13 @@ fi
 # deploy.sh waits for the pool rollout and the golden snapshots; a 60-worker
 # rollout needs more than its 300s default (upstream reads WAIT_TIMEOUT_SECS
 # from the environment in our pinned worktree).
+# WORKER_NODE_SELECTOR / WORKER_TOLERATION pin the worker pods to a node set
+# (e.g. a bare-metal pool: WORKER_NODE_SELECTOR=ate.dev/pool=metal
+# WORKER_TOLERATION=ate.dev/sandboxClass=microvm:NoSchedule); empty = any node.
 WAIT_TIMEOUT_SECS="${DEPLOY_WAIT_SECS:-900}" ./benchmarking/workloads/deploy.sh --deploy \
-  --worker-count "${WORKER_COUNT}" --sandbox-class "${SANDBOX_CLASS:-gvisor}" --actor-memory "${ACTOR_MEMORY}"
+  --worker-count "${WORKER_COUNT}" --sandbox-class "${SANDBOX_CLASS:-gvisor}" --actor-memory "${ACTOR_MEMORY}" \
+  ${WORKER_NODE_SELECTOR:+--worker-node-selector "${WORKER_NODE_SELECTOR}"} \
+  ${WORKER_TOLERATION:+--worker-toleration "${WORKER_TOLERATION}"}
 
 # Swap applies only to Burstable pods: give workers requests<limits so the
 # kernel may actually swap their cold pages.

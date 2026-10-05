@@ -12,12 +12,16 @@ actually get, and what does an agent cost per month?" on a Substrate cluster
   Prometheus-style `/metrics`). It is the workload-agnostic generalization of
   the gateway-embedded idle-suspender in the `always-on-agent` OpenClaw
   integration.
-- **`cmd/agentsim`** — simulates N personal agents (OpenClaw/Hermes-shaped:
-  ~3 sessions + ~40 short wakes per day, idle otherwise) against **Glutton**
-  actors through the router. Every activation resumes implicitly via HTTP,
-  then behaves like a real workload: walks its RAM working set (demand-paging
-  cost), dirties a rotating window of memory each turn, and writes/reads
-  files. Time compression (`--compress`) plays a day in minutes.
+- **`cmd/agentsim`** — simulates N agents against **Glutton** actors
+  through the router, in one of two workloads (see [Workloads](#workloads)):
+  *personal agents* (OpenClaw/Hermes-shaped: ~3 sessions + ~40 short wakes
+  per day, idle otherwise; each turn walks the RAM working set, dirties a
+  rotating window of memory and writes/reads files) or the *coding-agent
+  script* from Substrate's own benchmark suite (`--script coding-session`:
+  20-step tasks with an LLM think gap before every step). Every activation
+  resumes implicitly via HTTP. Time compression (`--compress`) plays a day
+  in minutes. `internal/agentscript` is the script loader, vendored from
+  substrate's `internal/benchmarking/boomer/agentsession`.
 
 Analysis lives in `analysis/`: `final_report.py` renders the results card
 ending in **measured cost per agent per month**; `report.py` is the density
@@ -70,7 +74,8 @@ dropdown (priced when the family is known).
 Keys: `↑/↓` field, `←/→` change, type into text fields, `r` re-check
 cluster, `enter` run, `q`/`ctrl+c` quit. Artifacts land in
 `experiment/results/<timestamp>/` (run.log, occupancy.csv, metrics.txt,
-report.txt, ui.log).
+report.txt, latency.csv — every latency as P50 / P90 / P99 / max with n —
+and ui.log).
 
 ![The live test: worker occupancy, suspend/resume latency, throughput](../assets/screenshots/live.svg)
 
@@ -90,6 +95,7 @@ cd service/experiment
 ./run.sh --load-test                      # waves until failure -> max density
 ./run.sh --force                          # redo setup stages even if present
 AGENTS=100 IDLE_TIMEOUT=5s ./run.sh       # env overrides work too
+./run.sh --workload coding-session --think-scale 4   # the coding-agent script (below)
 ```
 
 ## Step-by-step: the numbered scripts
@@ -126,6 +132,50 @@ changed knobs (it replaces the old one); `50-collect.sh` snapshots results
 Feed the measured suspend/resume averages and achieved utilization back into
 the calculator (`calculator.html` at the repo root) to reconcile theory
 with practice.
+
+## Workloads
+
+`WORKLOAD` (TUI: the *Workload* field) picks what an awake agent does:
+
+| `WORKLOAD` | What a session is | Knobs |
+|---|---|---|
+| `personal` | an 8-min chat (ping every 30 s, RAM churn + file write per turn); plus `WAKES_PER_DAY` 15-s check-ins — the profile the 2026-09-25 $1.21 baseline used | `SESSIONS_PER_DAY`=3, `WAKES_PER_DAY`=40, `MEM_TARGET`, `MEM_CHURN` |
+| `coding-session` (**default**) | one **task** of the agent-session script from substrate's benchmarking suite ([#1934](https://github.com/agent-substrate/substrate/pull/1934), [#2046](https://github.com/agent-substrate/substrate/pull/2046)): 20 steps — read the task, clone, explore, install deps, build, run tests, reason about the failure, fix, rebuild, write tests, lint, refactor, package, commit — each costing the sandbox the CPU (`burn_cpu`), network (`ingest`), disk and RAM the real action would, with an LLM **think gap** before every step | `SESSIONS_PER_DAY`=8 (tasks/day), `WAKES_PER_DAY`=0, `THINK_SCALE`=4, `SCRIPT_SUSPEND`=driver, `ACTOR_MEMORY`=1Gi |
+| `ping` | the **one-ping GluttonUser loop** of substrate's benchmarking suite (what the Sep 2026 Prow 200K run drives): a virtual user owns `PING_ACTORS_PER_USER` actors and serves them one at a time — wake by ping (implicit resume), stay awake `PING_LIVE`, SuspendActor, sleep `PING_WAIT`, next actor. No memory fill ("nomem"), no other work, so a wake is the bare restore of an idle sandbox and overcommit is N:1 **by construction**. Measures switch cost and control-plane behavior under churn, not agent work | `PING_ACTORS_PER_USER`=20, `PING_WAIT`=10s, `PING_LIVE`=0s, `ACTOR_MEMORY`=256Mi; size the fleet as `AGENTS` = users × 20 with one user per worker |
+| `path/to/script.yaml` | your own script in the same YAML format (op table in substrate's `benchmarking/README.md`, "Writing an agent-session script"); validated locally, shipped to the Job as a ConfigMap | same as above |
+
+How a step runs (`cmd/agentsim/script.go`): sleep the think gap (script
+value × `THINK_SCALE`, ±20 % jitter — **not** time-compressed, like
+suspend/resume it is the quantity under test), check the actor's state,
+send the wake ping through the router (`first_req_ms`, the user-visible
+resume when `was_suspended=1`), run the step's ops (`step_ms`), then either
+call SuspendActor at once (`SCRIPT_SUSPEND=driver`, the upstream
+benchmark's behavior; `suspend_ms`) or leave it to the autosuspender's
+`IDLE_TIMEOUT` (`idle`, production-like: gaps shorter than the wait keep
+the worker). `--compress` still governs the Poisson gaps between tasks.
+The summary prints a per-step table (`=== agentsim steps ===`) and the
+cost card prices the task shape it finds in the log's profile block:
+
+```
+worker-time per agent = (tasks × steps × step_work + gaps spent awake + wakes × (wait + T_s + T_r)) / 86400
+```
+
+Why the defaults: the script's own think gaps are 2–8 s — a fast model —
+which is shorter than a suspend+resume on this pool, so at ×1 the worker is
+never free and density is ~1. ×4 (8–32 s gaps) is closer to a coding model;
+×10 approaches the "80–95 % idle" coding-agent class. The script needs 1 GiB
+actors (~96 MiB of arrays + ~110 MiB of tmpfs files, guest peak ~320 MiB);
+agentsim refuses a smaller template, and `lib.sh` sets `ACTOR_MEMORY=1Gi`
+when a script is selected. Expect snapshots of a few hundred MiB and
+multi-second resumes (see the 512 MiB results in `research/research.md`)
+and far more suspend/resume churn per agent-day than the personal profile:
+restore CPU, not time-sharing, is what this workload saturates first.
+
+Check a script without a cluster:
+
+```bash
+go run ./cmd/agentsim --check-script coding-session        # or a path
+```
 
 ## What you'll see
 
@@ -232,6 +282,13 @@ atespace.
   makes the *second* suspend fail and wedges the actor in SUSPENDING.
 - **Suspend delay = idle-timeout + up to one poll interval.** Keep
   `--poll` well under `--idle-timeout`.
+- **Script driver mode and the autosuspender both suspend.** With
+  `SCRIPT_SUSPEND=driver` agentsim calls SuspendActor right after each
+  step; the autosuspender may race it once the idle wait passes. Both
+  tolerate the conflict (Aborted/FailedPrecondition), and the report takes
+  `T_s` from agentsim's `suspend_ms` in that mode. The medic still matters:
+  a 1 GiB actor checkpoints slowly, so keep `UNWEDGE_AFTER` above the
+  slowest honest suspend.
 - **Compressed time**: `--compress k` divides workload intervals by k but
   suspend/resume/idle-timeout run in real time, so the switching tax is k×
   overweighted vs reality. Compare measurements against the model run at the

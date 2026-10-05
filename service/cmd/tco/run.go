@@ -192,8 +192,8 @@ func (a *App) pollSim() tea.Msg {
 		case strings.Contains(l, `"msg":"progress"`):
 			var j map[string]any
 			if json.Unmarshal([]byte(l), &j) == nil {
-				m.line = fmt.Sprintf("activations %v · wake p50 %.1fs p99 %.1fs · turn p99 %vms · CPU probe %vms · refusals %v · errors %v",
-					j["activations"], num(j["wake_p50_ms"])/1000, num(j["wake_p99_ms"])/1000,
+				m.line = fmt.Sprintf("activations %v · resume p50/p90/p99 %.1f/%.1f/%.1fs · turn p99 %vms · CPU probe %vms · refusals %v · errors %v",
+					j["activations"], num(j["wake_p50_ms"])/1000, num(j["wake_p90_ms"])/1000, num(j["wake_p99_ms"])/1000,
 					j["turn_p99_ms"], j["probe_p50_ms"], j["refusals"], j["errors"])
 				m.refusals, m.errors = int(num(j["refusals"])), int(num(j["errors"]))
 			}
@@ -204,9 +204,9 @@ func (a *App) pollSim() tea.Msg {
 				if j["failed"] == true {
 					status = sBad.Render("FAILED")
 				}
-				waves = append(waves, fmt.Sprintf("  %3v agents  %4v acts  refus %4v%%  err %4v%%  wake p99 %5.1fs  %s",
+				waves = append(waves, fmt.Sprintf("  %3v agents  %4v acts  refus %4v%%  err %4v%%  resume p50/p90/p99 %4.1f/%4.1f/%4.1fs  %s",
 					j["active_agents"], j["activations"], j["refusal_pct"], j["error_pct"],
-					num(j["wake_p99_ms"])/1000, status))
+					num(j["wake_p50_ms"])/1000, num(j["wake_p90_ms"])/1000, num(j["wake_p99_ms"])/1000, status))
 			}
 		case strings.HasPrefix(l, "LOADTEST VERDICT:"):
 			m.verdict = l
@@ -243,13 +243,16 @@ PF=$!; trap 'kill $PF 2>/dev/null || true' EXIT
 sleep 3
 curl -sf --retry 3 localhost:18086/occupancy.csv > "$OUT/occupancy.csv"
 curl -sf --retry 3 localhost:18086/metrics > "$OUT/metrics.txt"
-MACHINE_TYPE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.labels.node\.kubernetes\.io/instance-type}')
+WORKER_NODE=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool -o jsonpath='{.items[0].spec.nodeName}' 2>/dev/null)
+MACHINE_TYPE=$(kubectl get node "${WORKER_NODE:-}" -o jsonpath='{.metadata.labels.node\.kubernetes\.io/instance-type}' 2>/dev/null \
+  || kubectl get nodes -o jsonpath='{.items[0].metadata.labels.node\.kubernetes\.io/instance-type}')
 POOL_NODES=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool -o jsonpath='{range .items[*]}{.spec.nodeName}{"\n"}{end}' | sort -u | grep -c . || echo 1)
 SNAP_GIB=$(gcloud storage du -s "gs://${BUCKET_NAME}/benchmark-workloads/glutton/atespaces/agents-sim/**" 2>/dev/null | awk -v n="${AGENTS}" '$1>0 {printf "%%.3f", $1/n/1073741824}')
 python3 "%s/analysis/final_report.py" \
   --run-log "$OUT/run.log" --occupancy "$OUT/occupancy.csv" --metrics "$OUT/metrics.txt" \
   --compress "${COMPRESS}" --machine-type "$MACHINE_TYPE" --pool-workers "${WORKER_COUNT}" \
   --pool-nodes "$POOL_NODES" --snap-gib "${SNAP_GIB:-0.05}" --price-model "${PRICE_MODEL}" \
+  --idle-timeout-run "${IDLE_TIMEOUT}" \
   --peak-model "${PEAK_MODEL:-mult}" --peak-value "${PEAK_VALUE:-2}" \
   | tee "$OUT/report.txt"
 `, a.outDir, a.svcDir)

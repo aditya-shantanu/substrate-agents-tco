@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/adityashantanu/substrate-agents-tco/service/internal/agentscript"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -35,7 +37,32 @@ type config struct {
 	waveStart int
 	waveStep  int
 	waveIntvl string
+
+	// workload: personal-agent turns, or the coding-session script
+	workload      string // personal | coding-session
+	tasksPerDay   int    // script mode: tasks per agent-day
+	thinkScale    int    // script mode: × every LLM think gap
+	scriptSuspend string // script mode: driver | idle
 }
+
+// codingSum is the shape of the built-in coding-session script, for the
+// load estimate and cost preview in script mode.
+var codingSum = func() agentscript.Summary {
+	s, err := agentscript.Load(agentscript.DefaultScript)
+	if err != nil {
+		panic(err)
+	}
+	return agentscript.Summarize(s)
+}()
+
+func (c config) coding() bool { return c.workload == "coding-session" }
+func (c config) ping() bool   { return c.workload == "ping" }
+
+// pingShape is the one-ping loop in model units: lib.sh defaults of 20
+// actors per user and a 10 s wait, a cycle of suspend + resume + a ping.
+const pingActorsPerUser, pingWaitSec = 20.0, 10.0
+
+func (c config) pingCycleSec() float64 { return estSuspend + estResume + 0.3 }
 
 func defaultConfig() config {
 	proj := strings.TrimSpace(shellOut("gcloud config get-value project 2>/dev/null"))
@@ -50,6 +77,9 @@ func defaultConfig() config {
 		agents: 120, compress: 6, duration: "30m", idle: "2s", price: "cud3",
 		peak:     "×2 average",
 		loadTest: false, waveStart: 10, waveStep: 10, waveIntvl: "3m",
+		// The coding-agent script is the default workload (Aditya, 2026-10-05);
+		// "personal" keeps the OpenClaw-shaped profile the $1.21 baseline used.
+		workload: "coding-session", tasksPerDay: 8, thinkScale: 4, scriptSuspend: "driver",
 	}
 }
 
@@ -98,7 +128,7 @@ func (c config) env() []string {
 	if c.loadTest {
 		lt = "true"
 	}
-	return []string{
+	env := []string{
 		"PROJECT_ID=" + c.project,
 		"CLUSTER_LOCATION=" + c.zone,
 		"GCE_REGION=" + regionOf(c.zone),
@@ -121,7 +151,16 @@ func (c config) env() []string {
 		fmt.Sprintf("WAVE_START=%d", c.waveStart),
 		fmt.Sprintf("WAVE_STEP=%d", c.waveStep),
 		"WAVE_INTERVAL=" + c.waveIntvl,
+		"WORKLOAD=" + c.workload,
+		fmt.Sprintf("THINK_SCALE=%d", c.thinkScale),
+		"SCRIPT_SUSPEND=" + c.scriptSuspend,
 	}
+	if c.coding() {
+		// tasks per day; no heartbeat-style check-ins for a coding agent.
+		// lib.sh also raises ACTOR_MEMORY to the script's 1Gi floor.
+		env = append(env, fmt.Sprintf("SESSIONS_PER_DAY=%d", c.tasksPerDay), "WAKES_PER_DAY=0")
+	}
+	return env
 }
 
 func (c config) machineChoices() []machine {
@@ -165,7 +204,35 @@ func parseSec(s string) float64 {
 // the measured switch times (2.46s/1.43s).
 const demandCalibration = 1.49
 
+// scriptShape is the coding-session workload in model units: steps per
+// task, estimated work per step (burn_cpu wall + ~1 s of I/O), and the
+// scaled think gap per step.
+func (c config) scriptShape() (steps, workSec, gapSec float64) {
+	steps = float64(codingSum.Steps)
+	workSec = codingSum.BurnWall.Seconds()/steps + 1.0
+	gapSec = codingSum.Think.Seconds() * float64(c.thinkScale) / steps
+	return
+}
+
 func (c config) demand() float64 {
+	if c.ping() {
+		// One user per 20 actors, at most one awake per user; a user holds a
+		// worker for the cycle out of every cycle + wait. Not compressed.
+		cycle := c.pingCycleSec()
+		return float64(c.agents) / pingActorsPerUser * cycle / (cycle + pingWaitSec) * demandCalibration
+	}
+	if c.coding() {
+		// Tasks arrive Poisson at the compressed rate; think gaps and switch
+		// times do not compress. Driver mode frees the worker for every gap;
+		// idle mode holds it until the idle wait elapses.
+		steps, work, gap := c.scriptShape()
+		tasksPerSec := float64(c.agents) * float64(c.tasksPerDay) * float64(c.compress) / 86400
+		hold := steps * (work + estSuspend + estResume)
+		if c.scriptSuspend == "idle" {
+			hold += steps * math.Min(gap, parseSec(c.idle)+estSuspend)
+		}
+		return tasksPerSec * hold * demandCalibration
+	}
 	arrivalPerSec := float64(c.agents) * wActsPerDay * float64(c.compress) / 86400
 	holdSec := parseSec(c.idle) + estSuspend + estResume + 4 // +work per wake
 	sessShare := 3.0 / wActsPerDay
@@ -184,6 +251,20 @@ func (c config) loadScore() float64 {
 func (c config) costPreview() (perAgent, workerMo float64, agentsPerWorker float64) {
 	m := machineByName(c.machine)
 	occ := (wLiveSecDay + wActsPerDay*(10+estSuspend+estResume)) / 86400 // 10s real-world idle wait
+	if c.ping() {
+		cycle := c.pingCycleSec()
+		occ = cycle / (pingActorsPerUser * (cycle + pingWaitSec)) // worker held for the cycle, once per period
+	}
+	if c.coding() {
+		// per step: the work, plus (driver) suspend+resume with no wait, or
+		// (idle) the run's idle wait before the suspend as well.
+		steps, work, _ := c.scriptShape()
+		wait := 0.0
+		if c.scriptSuspend == "idle" {
+			wait = parseSec(c.idle)
+		}
+		occ = float64(c.tasksPerDay) * steps * (work + wait + estSuspend + estResume) / 86400
+	}
 	model, v := c.peakParams()
 	var n float64
 	if model == "herd" {
@@ -260,6 +341,29 @@ var fields = []field{
 		func(c *config, d int) { c.workers = clampInt(c.workers+5*d, 5, 200) }, nil, nil},
 	{"Simulated agents", func(c *config) string { return fmt.Sprintf("%d", c.agents) },
 		func(c *config, d int) { c.agents = clampInt(c.agents+10*d, 10, 1000) }, nil, nil},
+	{"Workload", func(c *config) string {
+		switch {
+		case c.coding():
+			return fmt.Sprintf("coding agent — %d-step task script (substrate#1934)", codingSum.Steps)
+		case c.ping():
+			return "one-ping — GluttonUser loop (wake · ping · suspend · 10 s wait; 20 actors/user)"
+		}
+		return "personal agent — 3 chats + 40 check-ins a day"
+	}, func(c *config, d int) { c.workload = cycleStr(c.workload, []string{"personal", "coding-session", "ping"}, d) }, nil, nil},
+	{"  tasks per agent-day", func(c *config) string { return fmt.Sprintf("%d", c.tasksPerDay) },
+		func(c *config, d int) { c.tasksPerDay = cycleInt(c.tasksPerDay, []int{1, 2, 4, 8, 16, 32}, d) },
+		func(c *config) bool { return !c.coding() }, nil},
+	{"  LLM think scale", func(c *config) string {
+		return fmt.Sprintf("×%d — think gaps %d–%d s between steps", c.thinkScale, 2*c.thinkScale, 8*c.thinkScale)
+	}, func(c *config, d int) { c.thinkScale = cycleInt(c.thinkScale, []int{1, 2, 4, 8, 10, 20}, d) },
+		func(c *config) bool { return !c.coding() }, nil},
+	{"  suspend between steps", func(c *config) string {
+		if c.scriptSuspend == "idle" {
+			return "idle wait decides (production-like)"
+		}
+		return "driver, right after each step (benchmark-like)"
+	}, func(c *config, d int) { c.scriptSuspend = cycleStr(c.scriptSuspend, []string{"driver", "idle"}, d) },
+		func(c *config) bool { return !c.coding() }, nil},
 	{"Time compression", func(c *config) string {
 		return fmt.Sprintf("×%d — a day of agent-life every %s", c.compress, dayIn(c.compress))
 	},
@@ -319,7 +423,11 @@ func (a *App) viewConfig() string {
 		val := f.get(&a.cfg)
 		switch {
 		case dim:
-			b.WriteString(sFaint.Render(label+"  "+val) + sFaint.Render("  (enabled in load-test mode)") + "\n")
+			why := "  (enabled in load-test mode)"
+			if !strings.HasPrefix(f.label, "  wave") {
+				why = "  (coding-agent workload only)"
+			}
+			b.WriteString(sFaint.Render(label+"  "+val) + sFaint.Render(why) + "\n")
 		case i == a.cursor:
 			b.WriteString(sKey.Render("▸ ") + sSelected.Render(fmt.Sprintf("%-26s", f.label)) +
 				"  " + sSelected.Render("‹ "+val+" ›") + "\n")

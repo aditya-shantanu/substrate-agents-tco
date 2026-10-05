@@ -85,10 +85,13 @@ checkout:
   sampling + a web dashboard at `/` + a **medic** that heals actors wedged
   by a platform bug we found and filed
   ([agent-substrate/substrate#1914](https://github.com/agent-substrate/substrate/issues/1914)).
-- **agentsim**: N simulated personal agents against Glutton actors through
-  the router — implicit resume, RAM working-set walk (demand paging), memory
-  churn and file I/O every turn, Poisson sessions/wakes, time compression,
-  and a wave-based load-test mode that finds the pool's ceiling.
+- **agentsim**: N simulated agents against Glutton actors through the
+  router — implicit resume, Poisson sessions/wakes, time compression, and a
+  wave-based load-test mode that finds the pool's ceiling. Two workloads:
+  personal-agent turns (RAM working-set walk, memory churn and file I/O
+  every turn) or the **coding-agent task script** from Substrate's own
+  benchmark suite (20 steps with an LLM think gap before each; `WORKLOAD=
+  coding-session`, `THINK_SCALE`, see `service/README.md` → Workloads).
 
 Full instructions, knobs, "what you'll see" and gotchas:
 [`service/README.md`](service/README.md).
@@ -111,7 +114,10 @@ calculator.html              interactive cost calculator (Phase 1)
 MODEL.md                     the math + price book + measured constants
 service/cmd/tco              the TUI: configure → stages → live test → $$/agent card
 service/cmd/autosuspender    suspend side of the loop + web dashboard + medic
-service/cmd/agentsim         personal-agent workload simulator (+ load-test waves)
+service/cmd/agentsim         agent workload simulator: personal-agent turns or the
+                             coding-agent task script (+ load-test waves)
+service/internal/agentscript agent-session script loader (vendored from substrate's
+                             benchmarking suite) + the built-in coding-session.yaml
 service/experiment/          numbered scripts the TUI drives (also usable by hand)
 service/analysis/            report.py (density deep-dive) · final_report.py ($$ card)
 service/manifests/           k8s manifests for the experiment namespace

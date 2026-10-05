@@ -6,7 +6,20 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 sync_substrate_env
 
 cd "${SUBSTRATE_REPO}"
-./hack/install-ate.sh --deploy-ate-system
+# Since 2026-10 install-ate builds the envoy dataplane image with the local
+# `docker buildx` builder; a kubernetes-driver builder (upstream's
+# gke-builder) boots its buildkit pod in a `buildkit` namespace that a fresh
+# cluster does not have.
+kubectl create namespace buildkit --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+# That builder also pins its pod to ate.dev/benchmark-workers=true nodes
+# (the label substrate's benchmarking setup puts on worker nodes); a fresh
+# pool has none, so label ours.
+kubectl label nodes --all ate.dev/benchmark-workers=true --overwrite >/dev/null
+# Since 2026-10 install-ate requires an egress credential-provider choice.
+# The benchmark actors call no external APIs, so injection stays off (the
+# bundled k8s.io provider would also force the envoy dataplane).
+./hack/install-ate.sh --deploy-ate-system \
+  --credential-provider "${ATE_CREDENTIAL_PROVIDER:-{\"enabled\":false\}}"
 
 # Guard against cross-version residue: if the freshly installed atelet
 # DaemonSet has desired 0, the nodes still wear an older

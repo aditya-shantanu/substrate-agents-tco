@@ -332,3 +332,32 @@ exactly our measured $1.21 at 2.36% duty.
 Platform bug found during the runs (actors wedge in SUSPENDING, workers
 pinned): filed as agent-substrate/substrate#1914; the autosuspender's medic
 works around it.
+
+## Appendix C: the coding-agent (script) profile
+
+Phase 2 can run the agent-session script from Substrate's benchmarking suite
+(agent-substrate/substrate#1934; `WORKLOAD=coding-session`) instead of the
+personal-agent turns. A task is `S` steps (20 in the built-in script); step
+`i` is preceded by a think gap `θ_i` (script value × `THINK_SCALE`) and
+holds a worker for its measured work `W_i`. The same occupancy identity
+applies, with the activation count and the idle wait set by the step
+structure rather than by sessions and check-ins:
+
+```
+steps/day      = tasks_per_day × S
+A (wakes/day)  = steps/day × f + check-ins            f = share of steps whose actor was suspended
+live           = steps/day × W̄ + check-ins × 15 s      W̄ = measured mean step work
+held gaps      = steps/day × (1 − f) × θ̄               gaps spent awake (idle mode only)
+T_idle         = 0 (driver suspends when the turn ends) | IDLE_TIMEOUT (idle mode)
+d'             = (live + held gaps + A × (T_idle + T_s + T_r)) / 86400
+```
+
+`final_report.py` reads `S`, `tasks_per_day`, the scaled think total and
+the suspend mode from the profile block agentsim prints, and `W̄`, `f`,
+`T_s` (driver mode: agentsim's own SuspendActor timings) and `T_r` from the
+run. Two things differ from the personal profile and dominate the result:
+the per-agent wake count (160 per day at 8 tasks, vs 43) and the snapshot
+size (1 GiB actors, a few hundred MiB resident), so `T_s + T_r` and restore
+CPU, not time-sharing, bound density. At the script's native think gaps
+(2–8 s) a worker is never free; `THINK_SCALE` is the knob that places the
+workload in the deck's "80–95 % idle" coding-agent band.

@@ -34,6 +34,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/adityashantanu/substrate-agents-tco/service/internal/agentscript"
 	"github.com/adityashantanu/substrate-agents-tco/service/internal/ateclient"
 	"github.com/agent-substrate/substrate/pkg/proto/ateapipb"
 	"google.golang.org/grpc/codes"
@@ -62,6 +63,15 @@ type cfg struct {
 	failWakeP99Ms, failTurnP99Ms float64
 	probeBytes                   int
 	setupSuspend                 bool
+
+	// script mode (see script.go): sessions play an agent-session script
+	script        string  // built-in name or YAML path; empty = personal-agent turns
+	thinkScale    float64 // multiplier on every think gap
+	scriptSuspend string  // driver | idle
+
+	// one-ping mode (see ping.go): the benchmarking suite's GluttonUser loop
+	pingActorsPerUser  int // 0 = disabled
+	pingWait, pingLive time.Duration
 }
 
 // tsample is a timestamped latency sample (for windowed wave scoring).
@@ -79,6 +89,12 @@ type result struct {
 	errors     int
 	refusals   int     // 503/504 from the router: pool full or resume outran the park budget
 	readRAMMs  float64 // post-resume working-set walk latency (demand-paging cost)
+
+	// script mode, kind == "step"
+	step         string  // step name
+	stepMs       float64 // wall time of the step's ops (think gap and wake excluded)
+	suspendMs    float64 // driver-mode SuspendActor call duration (0 = none/failed)
+	wasSuspended int     // actor state before the wake: 1 suspended, 0 running, -1 unknown
 }
 
 type sim struct {
@@ -91,11 +107,15 @@ type sim struct {
 	turns   []tsample // every in-session ping, timed (service under contention)
 	probes  []tsample // fixed-work CPU probe per activation (throttle detector)
 	ready   []int     // agent ids that completed setup; only these run/are activated
+
+	script    *agentscript.Script // non-nil in script mode
+	ingestBuf []byte              // random payload for ingest ops (largest the script needs)
 }
 
 func main() {
 	var c cfg
-	var endpoint, serverName, caFile, credBundle string
+	var endpoint, serverName, caFile, credBundle, checkScript string
+	flag.StringVar(&checkScript, "check-script", "", "validate this agent-session script (built-in name or YAML path), print its shape, and exit; nothing else runs")
 	flag.StringVar(&endpoint, "api-endpoint", ateclient.DefaultEndpoint, "ateapi gRPC dial target")
 	flag.StringVar(&serverName, "server-name", ateclient.DefaultServerName, "TLS server name of ateapi")
 	flag.StringVar(&caFile, "ca-file", ateclient.DefaultCAFile, "CA bundle verifying ateapi")
@@ -126,10 +146,19 @@ func main() {
 	flag.Float64Var(&c.failTurnP99Ms, "fail-turn-p99-ms", 2000, "load-test: a wave fails if in-session turn p99 exceeds this (0 disables)")
 	flag.IntVar(&c.probeBytes, "probe-bytes", 8<<20, "fixed-work CPU probe: sha256 over this many bytes once per activation; drift = CPU throttling (0 disables)")
 	flag.BoolVar(&c.setupSuspend, "setup-suspend", true, "suspend each agent right after setup (snapshot design); false keeps agents resident on their workers (parking design: workers >= agents, long idle timeout)")
+	flag.StringVar(&c.script, "script", "", "agent-session script: a built-in name ("+strings.Join(agentscript.Names(), ", ")+") or a path to a YAML file; sessions then play the script (one task each) instead of personal-agent turns; empty = personal-agent workload")
+	flag.Float64Var(&c.thinkScale, "think-scale", 1, "script mode: multiplier on every think gap (LLM latency); gaps get ±20% jitter and are NOT time-compressed")
+	flag.StringVar(&c.scriptSuspend, "script-suspend", "driver", "script mode: who suspends between steps — driver (SuspendActor right after each step, like the upstream benchmark) or idle (the autosuspender's idle timeout decides, like a production gateway)")
+	flag.IntVar(&c.pingActorsPerUser, "ping-actors-per-user", 0, "one-ping workload (substrate benchmarking's GluttonUser loop, the Prow 200K run): group agents into virtual users of this many actors; each user serially wakes an actor with a ping, holds it for --ping-live, suspends it, sleeps --ping-wait, then moves to its next actor; no memory fill, no other work. 0 = disabled")
+	flag.DurationVar(&c.pingWait, "ping-wait", 10*time.Second, "one-ping: gap between an actor's suspend and the user's next wake (wall clock, not compressed)")
+	flag.DurationVar(&c.pingLive, "ping-live", 0, "one-ping: how long the actor stays awake after its first ping (0 = suspend right after the ping)")
 	flag.Float64Var(&c.failRefusalPct, "fail-refusal-pct", 5, "load-test: stop when router refusals exceed this % of activations in a wave")
 	flag.Float64Var(&c.failErrPct, "fail-error-pct", 2, "load-test: stop when request errors exceed this % of activations in a wave")
 	flag.Parse()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+	if checkScript != "" {
+		os.Exit(checkScriptFile(checkScript))
+	}
 
 	conn, api, err := ateclient.Dial(endpoint, caFile, credBundle, serverName)
 	if err != nil {
@@ -149,6 +178,12 @@ func main() {
 	}}
 	ctx := context.Background()
 
+	if err := s.loadScript(ctx); err != nil {
+		slog.Error("script", "err", err)
+		os.Exit(1)
+	}
+	s.printProfile()
+
 	if err := s.setup(ctx); err != nil {
 		slog.Error("setup", "err", err)
 		os.Exit(1)
@@ -161,7 +196,9 @@ func main() {
 	deadline := time.Now().Add(c.duration)
 	progressCtx, stopProgress := context.WithCancel(ctx)
 	go s.progressLoop(progressCtx)
-	if c.loadTest {
+	if c.pingActorsPerUser > 0 {
+		s.runPing(ctx, deadline)
+	} else if c.loadTest {
 		s.runLoadTest(ctx, deadline)
 	} else {
 		var wg sync.WaitGroup
@@ -356,6 +393,10 @@ func (s *sim) agentLoop(ctx context.Context, id int, deadline time.Time) {
 // resumes a suspended actor (its latency is the activation cost), sessions
 // then keep pinging at the turn cadence for the session length.
 func (s *sim) activation(ctx context.Context, id int, name, kind string, rng *rand.Rand, deadline time.Time) {
+	if kind == "session" && s.script != nil {
+		s.runTask(ctx, id, name, rng, deadline) // script mode: a session is one task
+		return
+	}
 	r := result{unixMs: time.Now().UnixMilli(), agent: id, kind: kind}
 	s.touch(name, "begin")
 	// A saturated pool answers 503 (no free worker, request parked at most
@@ -618,7 +659,7 @@ func appendVarint(b []byte, field int, v uint64) []byte {
 func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 	type waveStat struct {
 		level, acts, refusals, errors int
-		wakeP50, wakeP99              float64
+		wakeP50, wakeP90, wakeP99     float64
 	}
 	loopCtx, cancelLoops := context.WithCancel(ctx)
 	defer cancelLoops()
@@ -660,7 +701,7 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 			st.acts++
 			st.refusals += r.refusals
 			st.errors += r.errors
-			if r.kind == "wake" {
+			if isWake(r) {
 				wakes = append(wakes, r.firstReqMs)
 			}
 		}
@@ -679,7 +720,7 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 		sort.Float64s(wakes)
 		sort.Float64s(turns)
 		sort.Float64s(probes)
-		st.wakeP50, st.wakeP99 = q(wakes, 0.5), q(wakes, 0.99)
+		st.wakeP50, st.wakeP90, st.wakeP99 = q(wakes, 0.5), q(wakes, 0.9), q(wakes, 0.99)
 		turnP99, probeP50 := q(turns, 0.99), q(probes, 0.5)
 		waves = append(waves, st)
 		refPct, errPct := 0.0, 0.0
@@ -705,16 +746,16 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 		failed := len(reasons) > 0
 		slog.Info("wave result", "active_agents", st.level, "activations", st.acts,
 			"refusal_pct", fmt.Sprintf("%.1f", refPct), "error_pct", fmt.Sprintf("%.1f", errPct),
-			"wake_p50_ms", int(st.wakeP50), "wake_p99_ms", int(st.wakeP99),
+			"wake_p50_ms", int(st.wakeP50), "wake_p90_ms", int(st.wakeP90), "wake_p99_ms", int(st.wakeP99),
 			"turn_p99_ms", int(turnP99), "probe_p50_ms", int(probeP50),
 			"failed", failed, "failed_on", strings.Join(reasons, "+"))
 		if failed || st.level >= len(s.ready) || time.Now().After(deadline) {
 			cancelLoops()
 			fmt.Println("=== loadtest waves ===")
-			fmt.Println("active_agents,activations,refusals,errors,wake_p50_ms,wake_p99_ms")
+			fmt.Println("active_agents,activations,refusals,errors,wake_p50_ms,wake_p90_ms,wake_p99_ms")
 			for _, w := range waves {
-				fmt.Printf("%d,%d,%d,%d,%.0f,%.0f\n",
-					w.level, w.acts, w.refusals, w.errors, w.wakeP50, w.wakeP99)
+				fmt.Printf("%d,%d,%d,%d,%.0f,%.0f,%.0f\n",
+					w.level, w.acts, w.refusals, w.errors, w.wakeP50, w.wakeP90, w.wakeP99)
 			}
 			fmt.Println("=== end loadtest ===")
 			if failed {
@@ -745,7 +786,7 @@ func (s *sim) progressLoop(ctx context.Context) {
 		var wake, sess []float64
 		errs, refs := 0, 0
 		for _, r := range s.results {
-			if r.kind == "wake" {
+			if isWake(r) {
 				wake = append(wake, r.firstReqMs)
 			} else {
 				sess = append(sess, r.firstReqMs)
@@ -776,6 +817,7 @@ func (s *sim) progressLoop(ctx context.Context) {
 		slog.Info("progress",
 			"activations", len(wake)+len(sess),
 			"wake_p50_ms", qi(wake, 0.5),
+			"wake_p90_ms", qi(wake, 0.9),
 			"wake_p99_ms", qi(wake, 0.99),
 			"session_p50_ms", qi(sess, 0.5),
 			"turn_p99_ms", qi(turns, 0.99),
@@ -837,14 +879,39 @@ func (s *sim) report() {
 		fmt.Printf("CPU probe ms p50=%.0f p90=%.0f p99=%.0f (fixed work; drift = throttling)\n",
 			q(probesAll, 0.5), q(probesAll, 0.9), q(probesAll, 0.99))
 	}
+	if tbl := s.stepTable(rs); tbl != "" {
+		var stepsAll, suspAll []float64
+		for _, r := range rs {
+			if r.kind == "step" && r.stepMs > 0 {
+				stepsAll = append(stepsAll, r.stepMs)
+			}
+			if r.suspendMs > 0 {
+				suspAll = append(suspAll, r.suspendMs)
+			}
+		}
+		sortFloats(stepsAll)
+		sortFloats(suspAll)
+		if len(stepsAll) > 0 {
+			fmt.Printf("step work ms p50=%.0f p90=%.0f p99=%.0f (the agent's own ops, wake excluded)\n",
+				q(stepsAll, 0.5), q(stepsAll, 0.9), q(stepsAll, 0.99))
+		}
+		if len(suspAll) > 0 {
+			fmt.Printf("driver suspend ms p50=%.0f p90=%.0f p99=%.0f (SuspendActor after each step)\n",
+				q(suspAll, 0.5), q(suspAll, 0.9), q(suspAll, 0.99))
+		}
+		fmt.Print(tbl)
+	}
 	fmt.Println("=== agentsim csv ===")
-	fmt.Println("unix_ms,agent,kind,first_req_ms,readram_ms,pings,errors,refusals")
+	fmt.Println("unix_ms,agent,kind,first_req_ms,readram_ms,pings,errors,refusals,step,step_ms,suspend_ms,was_suspended")
 	for _, r := range rs {
-		fmt.Printf("%d,%d,%s,%.1f,%.1f,%d,%d,%d\n",
-			r.unixMs, r.agent, r.kind, r.firstReqMs, r.readRAMMs, r.pings, r.errors, r.refusals)
+		fmt.Printf("%d,%d,%s,%.1f,%.1f,%d,%d,%d,%s,%.1f,%.1f,%d\n",
+			r.unixMs, r.agent, r.kind, r.firstReqMs, r.readRAMMs, r.pings, r.errors, r.refusals,
+			r.step, r.stepMs, r.suspendMs, r.wasSuspended)
 	}
 	fmt.Println("=== end csv ===")
 }
+
+func sortFloats(v []float64) { sort.Float64s(v) }
 
 func q(sorted []float64, p float64) float64 {
 	if len(sorted) == 0 {

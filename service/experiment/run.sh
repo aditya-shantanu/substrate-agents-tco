@@ -2,6 +2,7 @@
 # ONE COMMAND, WHOLE SHOW:
 #   ./run.sh                          # sets up whatever is missing, then runs
 #   ./run.sh --duration 10m           # shorter test (also --agents/--compress/--workers)
+#   ./run.sh --workload coding-session --think-scale 4   # coding-agent script (README: Workloads)
 #   ./run.sh --force                  # redo every setup stage even if present
 #
 # Setup stages self-detect: a running cluster, an installed control plane and
@@ -20,6 +21,8 @@ while [[ $# -gt 0 ]]; do
     --agents)     AGENTS="$2"; shift 2 ;;
     --compress)   COMPRESS="$2"; shift 2 ;;
     --workers)    WORKER_COUNT="$2"; shift 2 ;;
+    --workload)   WORKLOAD="$2"; shift 2 ;;      # personal | coding-session | script.yaml
+    --think-scale) THINK_SCALE="$2"; shift 2 ;;
     --load-test)  LOAD_TEST=true; shift ;;
     --force)      FORCE=1; shift ;;
     --skip-setup) shift ;;  # legacy no-op: stages now self-detect
@@ -158,8 +161,8 @@ for line in sys.stdin:
         except Exception:
             pass
 if last:
-    print("           sim: %d activations | wake p50 %.1fs p99 %.1fs | in-session req p50 %dms | refusals %d errors %d"
-          % (last.get("activations", 0), last.get("wake_p50_ms", 0) / 1000,
+    print("           sim: %d activations | resume p50/p90/p99 %.1f/%.1f/%.1fs | in-session req p50 %dms | refusals %d errors %d"
+          % (last.get("activations", 0), last.get("wake_p50_ms", 0) / 1000, last.get("wake_p90_ms", 0) / 1000,
              last.get("wake_p99_ms", 0) / 1000, last.get("session_p50_ms", 0),
              last.get("refusals", 0), last.get("errors", 0)))' 2>/dev/null || true
 }
@@ -199,7 +202,7 @@ python3 "${SERVICE_DIR}/analysis/final_report.py" \
   --run-log "${OUT}/run.log" --occupancy "${OUT}/occupancy.csv" \
   --metrics "${OUT}/metrics.txt" --compress "${COMPRESS}" \
   --machine-type "${MACHINE_TYPE}" --pool-workers "${WORKER_COUNT}" \
-  --pool-nodes "${POOL_NODES}" --snap-gib "${SNAP_GIB}" \
+  --pool-nodes "${POOL_NODES}" --snap-gib "${SNAP_GIB}" --idle-timeout-run "${IDLE_TIMEOUT}" \
   ${PRICE_MODEL:+--price-model ${PRICE_MODEL}} --peak-model "${PEAK_MODEL:-mult}" --peak-value "${PEAK_VALUE:-2}" \
   | tee "${OUT}/report.txt"
 

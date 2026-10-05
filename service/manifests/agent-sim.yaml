@@ -93,10 +93,19 @@ spec:
         - --agents=${AGENTS}
         - --compress=${COMPRESS}  # 60 = a day of behavior in 24 wall-clock minutes
         - --duration=${DURATION}
-        - --sessions-per-day=3
+        - --sessions-per-day=${SESSIONS_PER_DAY}  # script mode: tasks per day
         - --session-minutes=8
         - --session-ping-seconds=30
-        - --wakes-per-day=40
+        - --wakes-per-day=${WAKES_PER_DAY}
+        # Workload: empty = personal-agent turns; a built-in script name or
+        # the ConfigMap-mounted file = agent-session script (see lib.sh).
+        - --script=${SCRIPT_ARG}
+        - --think-scale=${THINK_SCALE}
+        - --script-suspend=${SCRIPT_SUSPEND}
+        # One-ping (GluttonUser loop) workload; 0 actors per user = off.
+        - --ping-actors-per-user=${PING_ACTORS_PER_USER}
+        - --ping-wait=${PING_WAIT}
+        - --ping-live=${PING_LIVE}
         - --mem-target=${MEM_TARGET}   # working set filled at boot, snapshotted after
         - --mem-read=all               # page the working set back in on every wake
         - --mem-churn=${MEM_CHURN}     # dirty a rotating window every turn
@@ -112,12 +121,17 @@ spec:
         volumeMounts:
         - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
         - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }
+        - { name: agent-script, mountPath: /etc/agentscript, readOnly: true }
         resources:
           # Reservation only; the client is light. Keep it small so it still
           # schedules on a node whose CPU is reserved by a dense worker pool.
           requests: { cpu: 50m, memory: 256Mi }
           limits: { cpu: "2", memory: 1Gi }
       volumes:
+      # A user-supplied agent-session script (WORKLOAD=<path>.yaml); absent
+      # for built-in workloads, hence optional.
+      - name: agent-script
+        configMap: { name: agent-script, optional: true }
       - name: servicedns-ca
         projected:
           sources:

@@ -29,7 +29,21 @@ echo "agentsim:      ${AGENTSIM_IMAGE}"
 # Jobs are immutable; drop a previous run before re-applying.
 kubectl -n agent-sim delete job agentsim --ignore-not-found
 
+# A script of your own (WORKLOAD=<path>.yaml) rides to the Job in a
+# ConfigMap mounted at /etc/agentscript/script.yaml. Validate it here with
+# the same loader agentsim uses, so a bad file fails now, not in pod logs.
+kubectl create namespace agent-sim --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+if [[ "${SCRIPT_ARG}" == /etc/agentscript/* ]]; then
+  go run ./cmd/agentsim --check-script "${WORKLOAD}"
+  kubectl -n agent-sim create configmap agent-script --from-file=script.yaml="${WORKLOAD}" \
+    --dry-run=client -o yaml | kubectl apply -f -
+else
+  kubectl -n agent-sim delete configmap agent-script --ignore-not-found >/dev/null
+fi
+echo "workload: ${WORKLOAD} (script=${SCRIPT_ARG:-none}, think ×${THINK_SCALE}, suspend=${SCRIPT_SUSPEND}, ${SESSIONS_PER_DAY} sessions/tasks + ${WAKES_PER_DAY} wakes per day, actor memory ${ACTOR_MEMORY})"
+
 export AGENTS COMPRESS DURATION IDLE_TIMEOUT UNWEDGE_AFTER MAX_RUNNING SETUP_SUSPEND LOAD_TEST WAVE_START WAVE_STEP WAVE_INTERVAL MEM_TARGET MEM_CHURN
+export SESSIONS_PER_DAY WAKES_PER_DAY SCRIPT_ARG THINK_SCALE SCRIPT_SUSPEND PING_ACTORS_PER_USER PING_WAIT PING_LIVE
 envsubst < manifests/agent-sim.yaml | kubectl apply -f -
 
 kubectl -n agent-sim rollout status deploy/autosuspender --timeout=120s
