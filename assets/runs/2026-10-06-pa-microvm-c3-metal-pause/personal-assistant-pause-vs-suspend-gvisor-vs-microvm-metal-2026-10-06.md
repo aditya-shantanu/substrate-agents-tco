@@ -4,35 +4,35 @@ Workload: the **personal-assistant** agent-session script from substrate's bench
 
 Host: `agents-tco-east` (us-east4-a, one c3-standard-192-metal bare-metal node, native KVM, 3 TB Hyperdisk), 50 unsized workers, 30 agents with starts staggered over 20 minutes (so parks do not align), 55-minute windows (≥ 1 full lap per agent). Actor memory limit 1.5 GiB for the microVM legs and **3 GiB for the gVisor legs** (see the OOM note below; the resident set is the same). Every latency as P50 / P90 / P99 with n. Substrate: perf-resume-latency @ b98e7189 (main + docs).
 
-| Step | gVisor bare metal · pause | microVM bare metal · pause | microVM bare metal · suspend |
-|---|---|---|---|
-| Host, 3-yr CUD | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) |
-| Workers per host → $ per worker-month | 50 → $63.58 | 50 → $63.58 | 50 → $63.58 |
-| Agent profile | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors |
-| Run | 30 agents, time ×1, 54 min; 1897 activations, 0 errors, 0 refusals | 30 agents, time ×1, 53 min; 1362 activations, 9 errors, 35 refusals | 30 agents, time ×1, 54 min; 1737 activations, 0 errors, 1 refusals |
-| Resume P50 / P90 / P99 | 423 / 537 / 890 ms (n=1897) ← T_r | 593 / 724 / 3,094 ms (n=1362) ← T_r | 679 / 834 / 1,366 ms (n=1737) ← T_r |
-| Park P50 / P90 / P99 (pause = node-local, suspend = bucket) | **pause** 1,131 / 3,619 / 5,157 ms (n=1897) ← T_s; avg 1,810 ms (driver, n=1897) | **pause** 5,850 / 53,906 / 82,301 ms (n=1354) ← T_s; avg 18,912 ms (driver, n=1354) | **suspend** 3,286 / 15,261 / 55,333 ms (n=1737) ← T_s; avg 6,831 ms (driver, n=1737) |
-| Step work P50 / P90 / P99 | 4,449 / 15,837 / 47,192 ms (n=1897) | 4,858 / 17,198 / 47,448 ms (n=1355) | 4,566 / 16,065 / 47,336 ms (n=1737) |
-| Snapshot per agent (measured) and its parts | 1,050 MiB mean per agent (p50 1,050 MiB, max 1,056 MiB), node-local checkpoint, n=30: pages.img 1,048 MiB + checkpoint.img 2 MiB + pages_meta.img 0 MiB + manifest.json 0 MiB | 1,435 MiB mean per agent (p50 1,437 MiB, max 1,440 MiB), node-local checkpoint, n=30: memory-ranges 1,408 MiB + rootfs-upper.tar 27 MiB + state.json 0 MiB + config.json 0 MiB | 1,083 MiB mean per agent (p50 1,083 MiB, max 1,091 MiB), bucket snapshot, n=30: memory-ranges.zstd 1,054 MiB + rootfs-upper.tar.zstd 29 MiB + state.json.zstd 0 MiB + manifest.json 0 MiB |
-| Worker time per wake-up | 2.2 s (wait + T_s + T_r) | 19.5 s (wait + T_s + T_r) | 7.5 s (wait + T_s + T_r) |
-| Occupancy (worker time per agent) | 0.77 %  (1 tasks × 61 steps = 61 steps, 8.6s work each (measured)) | 2.01 %  (1 tasks × 61 steps = 61 steps, 9.0s work each (measured)) | 1.15 %  (1 tasks × 61 steps = 61 steps, 8.8s work each (measured)) |
-| Measured density | 4.7:1 mean · 2.0:1 at P99 (busy workers mean 6.4, P99 15, peak 16 of 50) | 2.7:1 mean · 1.2:1 at P99 (busy workers mean 11.1, P99 25, peak 27 of 50) | 3.6:1 mean · 1.2:1 at P99 (busy workers mean 8.4, P99 25, peak 26 of 50) |
-| Agents per worker (overcommit) | 45.6 = 0.70 ÷ (0.77 % × 2 peak) | 17.4 = 0.70 ÷ (2.01 % × 2 peak) | 30.4 = 0.70 ÷ (1.15 % × 2 peak) |
-| Agents per host | 2280 | 868 | 1520 |
-| $ / agent-month | $63.58 ÷ 45.6 = $1.39 compute + $0.00 GCS ops + $0.000 snapshots = **$1.39** | $63.58 ÷ 17.4 = $3.66 compute + $0.00 GCS ops + $0.000 snapshots = **$3.66** | $63.58 ÷ 30.4 = $2.09 compute + $0.07 GCS ops + $0.021 snapshots = **$2.18** |
-| Multi-actor projection (roadmap) | ≈25136 agents/host → ≈$0.13 | ≈9346 agents/host → ≈$0.34 | ≈15933 agents/host → ≈$0.29 |
+| Step | gVisor bare metal · pause | gVisor bare metal · suspend | microVM bare metal · pause | microVM bare metal · suspend |
+|---|---|---|---|---|
+| Host, 3-yr CUD | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) |
+| Workers per host → $ per worker-month | 50 → $63.58 | 50 → $63.58 | 50 → $63.58 | 50 → $63.58 |
+| Agent profile | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors |
+| Run | 30 agents, time ×1, 54 min; 1897 activations, 0 errors, 0 refusals | 30 agents, time ×1, 54 min; 1826 activations, 0 errors, 0 refusals | 30 agents, time ×1, 53 min; 1362 activations, 9 errors, 35 refusals | 30 agents, time ×1, 54 min; 1737 activations, 0 errors, 1 refusals |
+| Resume P50 / P90 / P99 | 423 / 537 / 890 ms (n=1897) ← T_r | 439 / 554 / 786 ms (n=1826) ← T_r | 593 / 724 / 3,094 ms (n=1362) ← T_r | 679 / 834 / 1,366 ms (n=1737) ← T_r |
+| Park P50 / P90 / P99 (pause = node-local, suspend = bucket) | **pause** 1,131 / 3,619 / 5,157 ms (n=1897) ← T_s; avg 1,810 ms (driver, n=1897) | **suspend** 3,456 / 6,032 / 9,206 ms (n=1826) ← T_s; avg 4,092 ms (driver, n=1826) | **pause** 5,850 / 53,906 / 82,301 ms (n=1354) ← T_s; avg 18,912 ms (driver, n=1354) | **suspend** 3,286 / 15,261 / 55,333 ms (n=1737) ← T_s; avg 6,831 ms (driver, n=1737) |
+| Step work P50 / P90 / P99 | 4,449 / 15,837 / 47,192 ms (n=1897) | 4,450 / 15,845 / 47,196 ms (n=1826) | 4,858 / 17,198 / 47,448 ms (n=1355) | 4,566 / 16,065 / 47,336 ms (n=1737) |
+| Snapshot per agent (measured) and its parts | 1,050 MiB mean per agent (p50 1,050 MiB, max 1,056 MiB), node-local checkpoint, n=30: pages.img 1,048 MiB + checkpoint.img 2 MiB + pages_meta.img 0 MiB + manifest.json 0 MiB | 1,021 MiB mean per agent (p50 1,020 MiB, max 1,029 MiB), bucket snapshot, n=30: pages.img.zstd 1,020 MiB + checkpoint.img.zstd 0 MiB + pages_meta.img.zstd 0 MiB + manifest.json 0 MiB | 1,435 MiB mean per agent (p50 1,437 MiB, max 1,440 MiB), node-local checkpoint, n=30: memory-ranges 1,408 MiB + rootfs-upper.tar 27 MiB + state.json 0 MiB + config.json 0 MiB | 1,083 MiB mean per agent (p50 1,083 MiB, max 1,091 MiB), bucket snapshot, n=30: memory-ranges.zstd 1,054 MiB + rootfs-upper.tar.zstd 29 MiB + state.json.zstd 0 MiB + manifest.json 0 MiB |
+| Worker time per wake-up | 2.2 s (wait + T_s + T_r) | 4.5 s (wait + T_s + T_r) | 19.5 s (wait + T_s + T_r) | 7.5 s (wait + T_s + T_r) |
+| Occupancy (worker time per agent) | 0.77 %  (1 tasks × 61 steps = 61 steps, 8.6s work each (measured)) | 0.93 %  (1 tasks × 61 steps = 61 steps, 8.6s work each (measured)) | 2.01 %  (1 tasks × 61 steps = 61 steps, 9.0s work each (measured)) | 1.15 %  (1 tasks × 61 steps = 61 steps, 8.8s work each (measured)) |
+| Measured density | 4.7:1 mean · 2.0:1 at P99 (busy workers mean 6.4, P99 15, peak 16 of 50) | 4.1:1 mean · 1.8:1 at P99 (busy workers mean 7.3, P99 17, peak 19 of 50) | 2.7:1 mean · 1.2:1 at P99 (busy workers mean 11.1, P99 25, peak 27 of 50) | 3.6:1 mean · 1.2:1 at P99 (busy workers mean 8.4, P99 25, peak 26 of 50) |
+| Agents per worker (overcommit) | 45.6 = 0.70 ÷ (0.77 % × 2 peak) | 37.7 = 0.70 ÷ (0.93 % × 2 peak) | 17.4 = 0.70 ÷ (2.01 % × 2 peak) | 30.4 = 0.70 ÷ (1.15 % × 2 peak) |
+| Agents per host | 2280 | 1883 | 868 | 1520 |
+| $ / agent-month | $63.58 ÷ 45.6 = $1.39 compute + $0.00 GCS ops + $0.000 snapshots = **$1.39** | $63.58 ÷ 37.7 = $1.69 compute + $0.07 GCS ops + $0.020 snapshots = **$1.78** | $63.58 ÷ 17.4 = $3.66 compute + $0.00 GCS ops + $0.000 snapshots = **$3.66** | $63.58 ÷ 30.4 = $2.09 compute + $0.07 GCS ops + $0.021 snapshots = **$2.18** |
+| Multi-actor projection (roadmap) | ≈25136 agents/host → ≈$0.13 | ≈20629 agents/host → ≈$0.24 | ≈9346 agents/host → ≈$0.34 | ≈15933 agents/host → ≈$0.29 |
 
 ## The bare-metal 2×2 at a glance
 
 | | Pause (node-local) | Suspend (bucket) |
 |---|---|---|
-| **gVisor** resume | 423 / 537 / 890 (n=1,897) | not run |
-| **gVisor** park | 1,131 / 3,619 / 5,157 (n=1,897) | not run |
+| **gVisor** resume | 423 / 537 / 890 (n=1,897) | 439 / 554 / 786 (n=1,826) |
+| **gVisor** park | 1,131 / 3,619 / 5,157 (n=1,897) | 3,456 / 6,032 / 9,206 (n=1,826) |
 | **microVM** resume | 593 / 724 / 3,094 (n=1,362) | 679 / 834 / 1,366 (n=1,737) |
 | **microVM** park | 5,850 / 53,906 / 82,301 (n=1,354) | 3,286 / 15,261 / 55,333 (n=1,737) |
-| snapshot per agent (mean, measured) | gVisor 1,050 MiB (pages.img 1,048 MiB + checkpoint.img 2 MiB + pages_meta.img 0 MiB) · microVM 1,435 MiB (memory-ranges 1,408 MiB + rootfs-upper.tar 27 MiB + state.json 0 MiB) | gVisor not measured · microVM 1,083 MiB (memory-ranges.zstd 1,054 MiB + rootfs-upper.tar.zstd 29 MiB + state.json.zstd 0 MiB) |
-| step work (ops + dwell) P50 / P90 / P99 | gVisor 4,449 / 15,837 / 47,192 (n=1,897) · microVM 4,858 / 17,198 / 47,448 (n=1,355) | gVisor not run · microVM 4,566 / 16,065 / 47,336 (n=1,737) |
-| $ / agent-month, loop as run | gVisor $1.39 · microVM $3.66 | gVisor — · microVM $2.18 |
+| snapshot per agent (mean, measured) | gVisor 1,050 MiB (pages.img 1,048 MiB + checkpoint.img 2 MiB + pages_meta.img 0 MiB) · microVM 1,435 MiB (memory-ranges 1,408 MiB + rootfs-upper.tar 27 MiB + state.json 0 MiB) | gVisor 1,021 MiB (pages.img.zstd 1,020 MiB + checkpoint.img.zstd 0 MiB + pages_meta.img.zstd 0 MiB) · microVM 1,083 MiB (memory-ranges.zstd 1,054 MiB + rootfs-upper.tar.zstd 29 MiB + state.json.zstd 0 MiB) |
+| step work (ops + dwell) P50 / P90 / P99 | gVisor 4,449 / 15,837 / 47,192 (n=1,897) · microVM 4,858 / 17,198 / 47,448 (n=1,355) | gVisor 4,450 / 15,845 / 47,196 (n=1,826) · microVM 4,566 / 16,065 / 47,336 (n=1,737) |
+| $ / agent-month, loop as run | gVisor $1.39 · microVM $3.66 | gVisor $1.78 · microVM $2.18 |
 
 ## Reading the numbers
 
@@ -64,7 +64,10 @@ Worked, with each run's numbers (from `summary.json`):
 - occupancy = (527 s + 61 × 2.2 s) ÷ 86,400 = 0.77 %; agents/worker = 0.70 ÷ (0.77 % × 2) = 45.6
 - node c3-standard-192-metal: $3,179/mo ÷ 50 workers = $63.58/worker-mo; compute $63.58 ÷ 45.6 = $1.39; GCS ops $0.00; snapshot $0.000 → **$1.39**; agents per host at that share 2,280
 
-**gVisor bare metal · suspend**: not run
+**gVisor bare metal · suspend**
+- 1 tasks × 61 steps = 61 steps, 8.6s work each (measured); T_s 4.09 s (suspend, mean), T_r 0.44 s (P50); overhead per wake 4.5 s
+- occupancy = (527 s + 61 × 4.5 s) ÷ 86,400 = 0.93 %; agents/worker = 0.70 ÷ (0.93 % × 2) = 37.7
+- node c3-standard-192-metal: $3,179/mo ÷ 50 workers = $63.58/worker-mo; compute $63.58 ÷ 37.7 = $1.69; GCS ops $0.07; snapshot $0.020 → **$1.78**; agents per host at that share 1,883
 
 **microVM bare metal · pause**
 - 1 tasks × 61 steps = 61 steps, 9.0s work each (measured); T_s 18.91 s (pause, mean), T_r 0.59 s (P50); overhead per wake 19.5 s

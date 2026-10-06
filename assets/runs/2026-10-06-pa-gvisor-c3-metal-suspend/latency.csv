@@ -1,0 +1,4 @@
+latency,n,p50_ms,p90_ms,p99_ms,max_ms
+resume_wake,1826,439,554,786,1378
+suspend_driver,1826,3456,6032,9206,26235
+step_work,1826,4450,15845,47196,47324

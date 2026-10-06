@@ -1,0 +1,40 @@
+{
+ "actors": 30,
+ "total_mean": 1070122941.4666667,
+ "total_p50": 1069463173,
+ "total_p90": 1073965428,
+ "total_max": 1078811416,
+ "breakdown": {
+  "pages.img.zstd": {
+   "mean": 1069947641.5666667,
+   "p50": 1069288727,
+   "max": 1078636804,
+   "n": 30
+  },
+  "checkpoint.img.zstd": {
+   "mean": 168790.83333333334,
+   "p50": 168468,
+   "max": 172449,
+   "n": 30
+  },
+  "pages_meta.img.zstd": {
+   "mean": 5918.066666666667,
+   "p50": 5866,
+   "max": 6656,
+   "n": 30
+  },
+  "manifest.json": {
+   "mean": 591.0,
+   "p50": 591,
+   "max": 591,
+   "n": 30
+  }
+ },
+ "prefix": "pa-1791323054-gvisor-suspend-3gi",
+ "lifecycle": "suspend",
+ "states": {
+  "ACTOR_STATE_SUSPENDED": 30
+ },
+ "files_or_generations_per_actor_mean": 1.0,
+ "measured_at": "2026-10-06T22:43:39Z"
+}
