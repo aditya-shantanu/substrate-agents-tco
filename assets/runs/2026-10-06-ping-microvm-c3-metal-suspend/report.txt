@@ -1,0 +1,39 @@
+
+[1m┌──────────────────────────────────────────────────────────────────┐[0m
+[1m│  SUBSTRATE DENSITY RUN — RESULTS                                 │[0m
+[1m└──────────────────────────────────────────────────────────────────┘[0m
+
+  What ran
+    agents simulated        1000   (one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, time ×1)
+    worker pool             50 workers on 1 × c3-standard-192-metal
+    window                  20.0 min wall = 0.3 h of agent-life
+    activations served      5160  (5.2/agent; errors 0, router refusals 0)
+
+  What it measured
+    resume P50 / P90 / P99  160 / 234 / 434 ms  (n=5160)   ← T_r, user-visible wake-up
+    suspend (avg)           1,456 ms                ← T_s, from 5160 suspends (driver)
+    suspend P50 / P90 / P99 1,172 / 2,404 / 4,466 ms  (n=5160)
+
+    workers busy            mean 6.32 · p99 26 · peak 30 of 50
+    density (this run)      158.2:1 mean · 38.5:1 at p99 ← bankable
+
+  Real-world cost per agent (measured T_s/T_r plugged into the model)
+    one agent/day           372 wakes/day of 1 ping; an actor's period = 20 × (1.6 s cycle + 10 s wait) = 232 s
+    overhead per wake-up    0s wait (driver suspends after the ping) + 1.5s suspend + 0.2s resume = 1.6s
+    worker-time per agent   (0s + 372×1.6s)/86400 = 0.70%  (≈ cycle ÷ period; 20:1 by construction)
+    agents per worker       0.70 ÷ (0.70% × 2.0 peak) = 50.3
+    worker cost             $4.3547/hr ÷ 50.0 per node × 730h = $63.58/mo (cud3)
+    compute [2m$63.58 ÷ 50.3[0m   $1.26
+    snapshot at rest        $0.001   (0.03 GiB × $0.02/GiB-mo)
+    GCS ops                 $0.414
+  [1m╔──────────────────────────────────────────────────────────────────╗
+  ║   COST PER AGENT PER MONTH  ≈  $1.68                          ║
+  ╚──────────────────────────────────────────────────────────────────╝[0m
+  [2mvs $63.58/mo for a dedicated always-on worker — 38× cheaper.
+  Multi-actor workers (roadmap, CPU-packed): ≈20986 agents/machine →
+  ≈$0.57/agent/mo — a projection, not today's price.
+  Excludes LLM tokens and amortized cluster fee/control plane (add
+  ~$573/mo ÷ fleet size). Utilization/peak are assumptions; T_s, T_r,
+  snapshot size and density above are measured.
+  Latency percentiles (P50/P90/P99/max, with n): /Users/adityashantanu/repos/substrate-agents-tco/service/experiment/results/20261006-062927/latency.csv[0m
+

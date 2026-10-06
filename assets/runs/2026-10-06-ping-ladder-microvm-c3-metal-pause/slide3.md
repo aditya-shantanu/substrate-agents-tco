@@ -2,35 +2,37 @@
 
 Workload: the GluttonUser loop of substrate's benchmarking suite (the Prow 200K run's workload): a virtual user owns 20 actors and serves them one at a time — wake by ping through the router (implicit resume), **PauseActor** (node-local checkpoint) right after the ping, 10 s wait, next actor. No memory fill, no other work. Overcommit is 20:1 by construction; what is measured is the switch cost. Every latency as P50 / P90 / P99 with n.
 
-Hosts: gVisor on `agents-tco` (us-central1, c3-standard-4 pool, 10 workers, 200 agents). microVM on `agents-tco-east` (us-east4-a, one c3-standard-192-metal bare-metal node, native KVM, 1 TB Hyperdisk boot, 50 workers, 1,000 agents). Reference column: the same loop on the same bare-metal host with gVisor and durable **SuspendActor** (bucket), run earlier the same day. Substrate: main @ 01e299f9 (central) / perf-resume-latency @ b98e7189 (east; same code plus docs).
+The 2×2 on bare metal: gVisor and microVM × PauseActor (node-local checkpoint) and SuspendActor (durable checkpoint in the bucket), all on `agents-tco-east` (us-east4-a, one c3-standard-192-metal node, native KVM, 50 unsized workers, 1,000 agents, 20-minute windows). Last column: the same loop with gVisor + pause on `agents-tco` (us-central1, c3-standard-4 pool, 10 workers over 4 nodes, 200 agents) as the small-node reference. Substrate: main @ 01e299f9 (central) / perf-resume-latency @ b98e7189 (east; same code plus docs). Actor template 256 MiB; workers carry no CPU/memory requests or limits in these four runs.
 
-| Step | gVisor c3-standard-4 · pause | microVM bare metal · pause | gVisor bare metal · suspend (reference) |
-|---|---|---|---|
-| Host, 3-yr CUD | c3-standard-4, $66.2/mo (cud3) · 4 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) |
-| Workers per host → $ per worker-month | 2 → $26.49 | 50 → $63.58 | 50 → $63.58 |
-| Agent profile | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill |
-| Run | 200 agents, time ×1, 20 min; 1168 activations, 0 errors, 0 refusals | 1000 agents, time ×1, 20 min; 5659 activations, 0 errors, 0 refusals | 1000 agents, time ×1, 20 min; 5407 activations, 0 errors, 0 refusals |
-| Resume P50 / P90 / P99 | 157 / 188 / 215 ms (n=1168) ← T_r | 160 / 231 / 797 ms (n=5659) ← T_r | 371 / 769 / 1,239 ms (n=5407) ← T_r |
-| Park P50 / P90 / P99 (pause = node-local, suspend = bucket) | **pause** 120 / 139 / 161 ms (n=1168) ← T_s; avg 122 ms (driver, n=1168) | **pause** 214 / 577 / 3,688 ms (n=5659) ← T_s; avg 396 ms (driver, n=5659) | **suspend** 585 / 923 / 1,331 ms (n=5407) ← T_s; avg 645 ms (driver, n=5407) |
-| Step work P50 / P90 / P99 | — | — | — |
-| Worker time per wake-up | 0.3 s (wait + T_s + T_r) | 0.6 s (wait + T_s + T_r) | 1.0 s (wait + T_s + T_r) |
-| Occupancy (worker time per agent) | 0.14 %  (420 wakes/day of 1 ping; an actor's period = 20 × (0.3 s cycle + 10 s wait) = 206 s) | 0.26 %  (409 wakes/day of 1 ping; an actor's period = 20 × (0.6 s cycle + 10 s wait) = 211 s) | 0.46 %  (392 wakes/day of 1 ping; an actor's period = 20 × (1.0 s cycle + 10 s wait) = 220 s) |
-| Measured density | 716.4:1 mean · 100.0:1 at P99 (busy workers mean 0.3, P99 2, peak 3 of 10) | 399.7:1 mean · 45.5:1 at P99 (busy workers mean 2.5, P99 22, peak 37 of 50) | n/a (no occupancy samples in the window) |
-| Agents per worker (overcommit) | 257.7 = 0.70 ÷ (0.14 % × 2 peak) | 132.9 = 0.70 ÷ (0.26 % × 2 peak) | 75.9 = 0.70 ÷ (0.46 % × 2 peak) |
-| Agents per host | 644 | 6646 | 3793 |
-| $ / agent-month | $26.49 ÷ 257.7 = $0.10 compute + $0.00 GCS ops + $0.000 snapshots = **$0.10** | $63.58 ÷ 132.9 = $0.48 compute + $0.00 GCS ops + $0.000 snapshots = **$0.48** | $63.58 ÷ 75.9 = $0.84 compute + $0.44 GCS ops + $0.000 snapshots = **$1.28** |
-| Multi-actor projection (roadmap) | ≈1071 agents/host → ≈$0.06 | ≈38418 agents/host → ≈$0.08 | ≈19474 agents/host → ≈$0.60 |
+| Step | gVisor bare metal · pause | gVisor bare metal · suspend | microVM bare metal · pause | microVM bare metal · suspend | gVisor c3-standard-4 · pause (small-node reference) |
+|---|---|---|---|---|---|
+| Host, 3-yr CUD | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-4, $66.2/mo (cud3) · 4 node(s) |
+| Workers per host → $ per worker-month | 50 → $63.58 | 50 → $63.58 | 50 → $63.58 | 50 → $63.58 | 2 → $26.49 |
+| Agent profile | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill | one-ping GluttonUser loop: 20 actors/user, 10 s wait, 0 s live, no memory fill |
+| Run | 1000 agents, time ×1, 20 min; 5701 activations, 0 errors, 0 refusals | 1000 agents, time ×1, 20 min; 5407 activations, 0 errors, 0 refusals | 1000 agents, time ×1, 20 min; 5659 activations, 0 errors, 0 refusals | 1000 agents, time ×1, 20 min; 5160 activations, 0 errors, 0 refusals | 200 agents, time ×1, 20 min; 1168 activations, 0 errors, 0 refusals |
+| Resume P50 / P90 / P99 | 275 / 318 / 400 ms (n=5701) ← T_r | 371 / 769 / 1,239 ms (n=5407) ← T_r | 160 / 231 / 797 ms (n=5659) ← T_r | 160 / 234 / 434 ms (n=5160) ← T_r | 157 / 188 / 215 ms (n=1168) ← T_r |
+| Park P50 / P90 / P99 (pause = node-local, suspend = bucket) | **pause** 241 / 292 / 388 ms (n=5701) ← T_s; avg 249 ms (driver, n=5701) | **suspend** 585 / 923 / 1,331 ms (n=5407) ← T_s; avg 645 ms (driver, n=5407) | **pause** 214 / 577 / 3,688 ms (n=5659) ← T_s; avg 396 ms (driver, n=5659) | **suspend** 1,172 / 2,404 / 4,466 ms (n=5160) ← T_s; avg 1,456 ms (driver, n=5160) | **pause** 120 / 139 / 161 ms (n=1168) ← T_s; avg 122 ms (driver, n=1168) |
+| Step work P50 / P90 / P99 | — | — | — | — | — |
+| Worker time per wake-up | 0.5 s (wait + T_s + T_r) | 1.0 s (wait + T_s + T_r) | 0.6 s (wait + T_s + T_r) | 1.6 s (wait + T_s + T_r) | 0.3 s (wait + T_s + T_r) |
+| Occupancy (worker time per agent) | 0.25 %  (410 wakes/day of 1 ping; an actor's period = 20 × (0.5 s cycle + 10 s wait) = 210 s) | 0.46 %  (392 wakes/day of 1 ping; an actor's period = 20 × (1.0 s cycle + 10 s wait) = 220 s) | 0.26 %  (409 wakes/day of 1 ping; an actor's period = 20 × (0.6 s cycle + 10 s wait) = 211 s) | 0.70 %  (372 wakes/day of 1 ping; an actor's period = 20 × (1.6 s cycle + 10 s wait) = 232 s) | 0.14 %  (420 wakes/day of 1 ping; an actor's period = 20 × (0.3 s cycle + 10 s wait) = 206 s) |
+| Measured density | 399.3:1 mean · 166.7:1 at P99 (busy workers mean 2.5, P99 6, peak 7 of 50) | n/a (no occupancy samples in the window) | 399.7:1 mean · 45.5:1 at P99 (busy workers mean 2.5, P99 22, peak 37 of 50) | 158.2:1 mean · 38.5:1 at P99 (busy workers mean 6.3, P99 26, peak 30 of 50) | 716.4:1 mean · 100.0:1 at P99 (busy workers mean 0.3, P99 2, peak 3 of 10) |
+| Agents per worker (overcommit) | 140.4 = 0.70 ÷ (0.25 % × 2 peak) | 75.9 = 0.70 ÷ (0.46 % × 2 peak) | 132.9 = 0.70 ÷ (0.26 % × 2 peak) | 50.3 = 0.70 ÷ (0.70 % × 2 peak) | 257.7 = 0.70 ÷ (0.14 % × 2 peak) |
+| Agents per host | 7022 | 3793 | 6646 | 2516 | 644 |
+| $ / agent-month | $63.58 ÷ 140.4 = $0.45 compute + $0.00 GCS ops + $0.000 snapshots = **$0.45** | $63.58 ÷ 75.9 = $0.84 compute + $0.44 GCS ops + $0.000 snapshots = **$1.28** | $63.58 ÷ 132.9 = $0.48 compute + $0.00 GCS ops + $0.000 snapshots = **$0.48** | $63.58 ÷ 50.3 = $1.26 compute + $0.41 GCS ops + $0.001 snapshots = **$1.68** | $26.49 ÷ 257.7 = $0.10 compute + $0.00 GCS ops + $0.000 snapshots = **$0.10** |
+| Multi-actor projection (roadmap) | ≈29285 agents/host → ≈$0.11 | ≈19474 agents/host → ≈$0.60 | ≈38418 agents/host → ≈$0.08 | ≈20986 agents/host → ≈$0.57 | ≈1071 agents/host → ≈$0.06 |
 
 ## Reading the numbers
 
-- **Pause is the fast path.** Node-local pause/resume on gVisor c3-standard-4: resume 157 / 188 / 215 ms, pause 120 / 139 / 161 ms. The same loop with durable suspend on bare-metal gVisor: resume 371 / 769 / 1,239 ms, suspend 585 / 923 / 1,331 ms. The bucket round trip is 2–3× on resume and 4–5× on the park.
-- **microVM on bare metal with pause: resume 160 / 231 / 797 ms, pause 214 / 577 / 3,688 ms** (n = 5,659, zero errors). Median resume matches gVisor's; the tails are wider, and pause has a long tail (P99 3.7 s) — 20 % of cycles land on a busy host (busy workers peaked at 37 of 50 while mean was 2.5), which is where pause's CPU cost shows.
-- **No nested-virt microVM ping run exists yet** (the nested-virt microVM measurement today was the coding-session workload with suspend: resume 1,906 / 3,278 / 9,603 ms). The bare-metal-vs-nested comparison for microVM needs the same ping+pause loop on the c3-standard-4 pool next.
-- **$ lines are for the loop as run and are not the point here.** Pause has no GCS operations and no snapshot at rest (node-local), hence the lower totals; the "agents per host" extrapolates the measured per-worker share to the whole machine. The gVisor c3-standard-4 column's workers were spread over 4 nodes (2 per node) after the zone expansion, so its worker cost is $26.49 rather than the $13.25 of the earlier 2-node runs.
-- **Pause pins the actor to its node** (resume must happen where the checkpoint lives). On a single-node bare-metal cluster that costs nothing; on a multi-node pool it limits placement, which the suspend path does not.
+- **Park mode dominates, runtime second.** On the same bare-metal host, pause vs suspend: gVisor resume 275 / 318 / 400 vs 371 / 769 / 1,239 ms and park 241 / 292 / 388 vs 585 / 923 / 1,331 ms; microVM resume 160 / 231 / 797 vs 160 / 234 / 434 ms and park 214 / 577 / 3,688 vs 1,172 / 2,404 / 4,466 ms. The bucket round trip is what the user feels most.
+- **gVisor vs microVM with pause (same host, same loop):** microVM has the faster median resume (160 vs 275 ms) and gVisor the tighter tails (resume P99 400 vs 797 ms; pause P99 388 vs 3688 ms).
+- **gVisor vs microVM with suspend (same host, same loop):** resume 371 / 769 / 1,239 vs 160 / 234 / 434 ms; suspend 585 / 923 / 1,331 vs 1,172 / 2,404 / 4,466 ms.
+- **Small node vs bare metal for gVisor pause:** c3-standard-4 resume 157 / 188 / 215 ms vs bare metal 275 / 318 / 400 ms. The small node had 2 workers per 4-vCPU node and 200 agents; the metal host 50 workers and 1,000 agents.
+- **Bare metal vs nested virtualization for microVM is still open:** no nested-virt microVM run of this ping loop exists yet (the nested microVM measurement so far is the coding-session workload with suspend: resume 1,906 / 3,278 / 9,603 ms).
+- **$ lines are for the loop as run and are not the point here.** Pause has no GCS operations and no snapshot at rest (node-local); "agents per host" extrapolates the measured per-worker share to the whole machine under the model's utilization and peak assumptions; the bare-metal columns price 50 workers on a 192-vCPU host that was otherwise empty, the c3-standard-4 column 2 workers per node ($26.49 per worker rather than $13.25 at 5 per node). The ladder section is the measured, non-extrapolated view of the host.
+- **Pause pins the actor to its node** and keeps a checkpoint on local disk (~230 MB per parked 256 MiB microVM actor; deleted actors' directories are not reclaimed — see the ladder section). Suspend costs the round trip but frees the node entirely.
 - Excludes LLM tokens and the amortized cluster fee / control plane. Utilization 0.7 and peak ×2 are assumptions; T_s, T_r and density are measured.
 
-Artifacts: `assets/runs/2026-10-05-ping-{gvisor-c3-standard-4-pause,microvm-c3-metal-pause,gvisor-c3-metal-suspend}/` (report.txt, latency.csv, summary.json, run.log, occupancy.csv, metrics.txt).
+Artifacts: `assets/runs/2026-10-05-ping-{gvisor-c3-standard-4-pause,microvm-c3-metal-pause,gvisor-c3-metal-suspend}/`, `assets/runs/2026-10-06-ping-{gvisor-c3-metal-pause,microvm-c3-metal-suspend}/`, ladder `assets/runs/2026-10-06-ping-ladder-microvm-c3-metal-pause/` (report.txt, latency.csv, summary.json, run.log, occupancy.csv, metrics.txt, waves.csv).
 
 ## How $ / agent-month is calculated
 
@@ -54,17 +56,11 @@ Excluded on purpose: LLM tokens, and the cluster fee + control plane (≈ $573 /
 
 Worked, with each run's numbers (from `summary.json`):
 
-**gVisor c3-standard-4 · pause**
-- cycle = 0.00 + 0.122 (pause, mean) + 0.157 (resume P50) = 0.28 s; period = 20 × (0.28 + 10) = 206 s; wakes/day = 86,400 ÷ 206 = 420
-- occupancy = 420 × 0.28 ÷ 86,400 = 0.14 %; agents/worker = 0.70 ÷ (0.14 % × 2) = 257.7
-- node c3-standard-4: $0.0907/h × 730 = $66/mo; 2 workers per node → worker $26.49/mo; compute = $26.49 ÷ 257.7 = $0.10
-- pause: GCS ops $0, snapshot $0 → **$ / agent-month = $0.10**; agents per host at that share = 257.7 × 2 = 644
-
-**microVM bare metal · pause**
-- cycle = 0.00 + 0.396 (pause, mean) + 0.160 (resume P50) = 0.56 s; period = 20 × (0.56 + 10) = 211 s; wakes/day = 86,400 ÷ 211 = 409
-- occupancy = 409 × 0.56 ÷ 86,400 = 0.26 %; agents/worker = 0.70 ÷ (0.26 % × 2) = 132.9
-- node c3-standard-192-metal: $4.3547/h × 730 = $3,179/mo; 50 workers per node → worker $63.58/mo; compute = $63.58 ÷ 132.9 = $0.48
-- pause: GCS ops $0, snapshot $0 → **$ / agent-month = $0.48**; agents per host at that share = 132.9 × 50 = 6,646
+**gVisor bare metal · pause**
+- cycle = 0.00 + 0.249 (pause, mean) + 0.275 (resume P50) = 0.52 s; period = 20 × (0.52 + 10) = 210 s; wakes/day = 86,400 ÷ 210 = 410
+- occupancy = 410 × 0.52 ÷ 86,400 = 0.25 %; agents/worker = 0.70 ÷ (0.25 % × 2) = 140.4
+- node c3-standard-192-metal: $4.3547/h × 730 = $3,179/mo; 50 workers per node → worker $63.58/mo; compute = $63.58 ÷ 140.4 = $0.45
+- pause: GCS ops $0, snapshot $0 → **$ / agent-month = $0.45**; agents per host at that share = 140.4 × 50 = 7,022
 
 **gVisor bare metal · suspend**
 - cycle = 0.00 + 0.645 (suspend, mean) + 0.371 (resume P50) = 1.02 s; period = 20 × (1.02 + 10) = 220 s; wakes/day = 86,400 ÷ 220 = 392
@@ -72,30 +68,22 @@ Worked, with each run's numbers (from `summary.json`):
 - node c3-standard-192-metal: $4.3547/h × 730 = $3,179/mo; 50 workers per node → worker $63.58/mo; compute = $63.58 ÷ 75.9 = $0.84
 - GCS ops = 392 × 30.44 × (7 × $5e-6 + 4 × $4e-7) = $0.44; snapshot = 0.02 GiB × $0.02 = $0.000 → **$ / agent-month = $1.28**; agents per host at that share = 75.9 × 50 = 3,793
 
-Two cautions on reading these dollar figures: the gVisor c3-standard-4 column's 10 workers sat on 4 nodes (2 per node) after the zone expansion, so its worker costs $26.49 rather than the $13.25 of a 5-per-node pool, and the bare-metal columns price 50 workers on a 192-vCPU host that was otherwise empty — in production the same host would carry several hundred workers, which is what the "agents per host" line extrapolates.
+**microVM bare metal · pause**
+- cycle = 0.00 + 0.396 (pause, mean) + 0.160 (resume P50) = 0.56 s; period = 20 × (0.56 + 10) = 211 s; wakes/day = 86,400 ÷ 211 = 409
+- occupancy = 409 × 0.56 ÷ 86,400 = 0.26 %; agents/worker = 0.70 ÷ (0.26 % × 2) = 132.9
+- node c3-standard-192-metal: $4.3547/h × 730 = $3,179/mo; 50 workers per node → worker $63.58/mo; compute = $63.58 ÷ 132.9 = $0.48
+- pause: GCS ops $0, snapshot $0 → **$ / agent-month = $0.48**; agents per host at that share = 132.9 × 50 = 6,646
 
-## Measured overcommit on the bare-metal microVM host (no extrapolation), 2026-10-06
+**microVM bare metal · suspend**
+- cycle = 0.00 + 1.456 (suspend, mean) + 0.160 (resume P50) = 1.62 s; period = 20 × (1.62 + 10) = 232 s; wakes/day = 86,400 ÷ 232 = 372
+- occupancy = 372 × 1.62 ÷ 86,400 = 0.70 %; agents/worker = 0.70 ÷ (0.70 % × 2) = 50.3
+- node c3-standard-192-metal: $4.3547/h × 730 = $3,179/mo; 50 workers per node → worker $63.58/mo; compute = $63.58 ÷ 50.3 = $1.26
+- GCS ops = 372 × 30.44 × (7 × $5e-6 + 4 × $4e-7) = $0.41; snapshot = 0.03 GiB × $0.02 = $0.001 → **$ / agent-month = $1.68**; agents per host at that share = 50.3 × 50 = 2,516
 
-Question: how many agents can the c3-standard-192-metal host really serve with microVM + PauseActor? Method: fix a worker shape and fill the host, park a large fleet, let agents wake **independently** (Poisson, not the serialized 20-per-user loop, which can never saturate anything), and add agents in waves until wakes fail. Setup: 200 microVM workers shaped 0.4 vCPU request / 2 vCPU limit / 1 GiB (node pool recreated with `--max-pods-per-node 256`; GKE's default 110 caps the pool), 2,000 parked 256 MiB actors, each agent waking every 25 s on average, +50 agents every 3 minutes, failure gate refusals > 5 % or errors > 2 % or resume P99 > 10 s. Pause = node-local checkpoint; boot disk Hyperdisk Balanced 3 TB at 100,000 IOPS / 2,400 MiB/s.
+**gVisor c3-standard-4 · pause (small-node reference)**
+- cycle = 0.00 + 0.122 (pause, mean) + 0.157 (resume P50) = 0.28 s; period = 20 × (0.28 + 10) = 206 s; wakes/day = 86,400 ÷ 206 = 420
+- occupancy = 420 × 0.28 ÷ 86,400 = 0.14 %; agents/worker = 0.70 ÷ (0.14 % × 2) = 257.7
+- node c3-standard-4: $0.0907/h × 730 = $66/mo; 2 workers per node → worker $26.49/mo; compute = $26.49 ÷ 257.7 = $0.10
+- pause: GCS ops $0, snapshot $0 → **$ / agent-month = $0.10**; agents per host at that share = 257.7 × 2 = 644
 
-| Active agents | Wakes/s (host) | Wakes in window | Refusals | Errors | Resume P50 / P90 / P99 |
-|---|---|---|---|---|---|
-| 50 | 2 | 295 | 0 % | 0 % | 149 / 255 / 470 ms |
-| 100 | 4 | 633 | 0 % | 0 % | 149 / 226 / 426 ms |
-| 150 | 6 | 1,015 | 0 % | 0 % | 156 / 284 / 521 ms |
-| 200 | 8 | 1,377 | 0 % | 0 % | 174 / 444 / 1,169 ms |
-| 250 | 10 | 1,565 | 0 % | 0 % | 210 / 1,040 / 3,028 ms |
-| **300** | **12** | 1,673 | 0.1 % | 0 % | **382 / 2,729 / 4,778 ms** ← last sustainable |
-| 350 | 14 | 1,412 | 36.8 % | 0.1 % | 5,080 / 17,581 / 31,400 ms ← collapse |
-
-**What the host can do:** about **12 wakes per second** with pause/resume on microVM before the router starts refusing (its 5 s park budget) and resume P99 passes 5 s; at 14 wakes/s it collapses. Host CPU stayed under 5 % throughout, but the workers did fill up: busy workers climbed to a P99 of 142 and a peak of 154 of 200 as each cycle's pause and restore stretched (worker-side VM checkpoint P90 32 s, VM restore P90 17 s during the collapse, every other phase at milliseconds). So the pool saturates not because 12 wakes/s is a lot of work, but because the per-node checkpoint/restore path slows down under concurrency and each slowed cycle holds a worker — over the whole ladder, mean pause was 2.8 s and resume P50/P90/P99 209 / 4,392 / 21,389 ms (n = 8,115).
-
-**Translating 12 wakes/s into agents per host** (this is the only place arithmetic enters, and it is division, not a model):
-
-- at the hot rate of this ladder, one wake per 25 s per agent: **300 agents** per host, i.e. 1.5 per worker;
-- at the Prow loop's effective rate, one wake per ~220 s per agent: ≈ **2,600 agents** per host (12 × 220), ≈ 13 per worker;
-- at the coding-session rate measured on 2026-10-05 (160 wakes per agent-day = one per 540 s): ≈ 6,500 agents per host.
-
-**The second bound is disk, not CPU.** A node-local pause checkpoint of a 256 MiB microVM guest is on the order of its memory: 4,000 parked actors filled the original 1 TB boot disk (904 GiB), tainted the node and evicted everything, including Substrate's control plane. Deleting actors does not reclaim their node directories (9,082 stale actor dirs, 894 GiB, after the fleet had been deleted through the API). With the 3 TB disk the 2,000-actor ladder used ~1.3 TB including the leftovers. Any pause-based density claim has to carry a GB-per-parked-agent figure next to it.
-
-Other things this ladder cost to learn: a 0.8 vCPU worker cap makes a third of microVM boots time out under concurrent setup (fixed at 2 vCPU); 16 wakes/s on the stock 9,000-IOPS Hyperdisk collapsed immediately (restores queued to P90 69 s) before the disk was raised.
+Two cautions on reading these dollar figures: the gVisor c3-standard-4 column's 10 workers sat on 4 nodes (2 per node) after the zone expansion, so its worker costs $26.49 rather than the $13.25 of a 5-per-node pool, and the bare-metal columns price 50 workers on a 192-vCPU host that was otherwise empty — in production the same host would carry several hundred workers, which is what the "agents per host" line extrapolates. The ladder section above is the measured, non-extrapolated view of that host.
