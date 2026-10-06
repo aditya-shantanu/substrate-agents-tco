@@ -83,6 +83,11 @@ type cfg struct {
 	// suspend (durable checkpoint to the bucket) or pause (node-local
 	// checkpoint; the actor must resume on the same node)
 	lifecycle string
+
+	// coldStartOnly: time every actor's first life (CreateActor → first
+	// ResumeActor from the golden snapshot → first answered ping), print the
+	// percentiles, and exit without running a workload.
+	coldStartOnly bool
 }
 
 // tsample is a timestamped latency sample (for windowed wave scoring).
@@ -121,6 +126,7 @@ type sim struct {
 
 	script    *agentscript.Script // non-nil in script mode
 	ingestBuf []byte              // random payload for ingest ops (largest the script needs)
+	colds     []coldStart         // every actor's first life, timed (cold.go)
 }
 
 func main() {
@@ -166,6 +172,8 @@ func main() {
 	flag.BoolVar(&c.pingIndependent, "ping-independent", false, "one-ping without the user loop: every agent wakes on its own Poisson schedule with mean gap --ping-wait, pings, is parked by the driver; concurrency is random, so with --load-test the waves find the pool's real ceiling")
 	flag.IntVar(&c.setupConcurrency, "setup-concurrency", 8, "actors booted and parked concurrently during setup")
 	flag.StringVar(&c.lifecycle, "lifecycle-mode", "suspend", "how the driver parks an actor it has finished with (script driver mode, one-ping, and the first park after setup): suspend = SuspendActor, durable checkpoint in the bucket; pause = PauseActor, node-local checkpoint, resumes on the same node (upstream's --lifecycle-mode)")
+	flag.StringVar(&actorPrefix, "actor-prefix", "sim", "actor name prefix (<prefix>-NNNN); use a unique one per run so leftovers of a previous fleet cannot be mistaken for this run's actors")
+	flag.BoolVar(&c.coldStartOnly, "cold-start-only", false, "measure cold starts only: create every agent, time CreateActor, the first ResumeActor (golden-snapshot restore) and the first answered ping, print P50/P90/P99 and the per-actor CSV, then exit (no workload)")
 	flag.Float64Var(&c.failRefusalPct, "fail-refusal-pct", 5, "load-test: stop when router refusals exceed this % of activations in a wave")
 	flag.Float64Var(&c.failErrPct, "fail-error-pct", 2, "load-test: stop when request errors exceed this % of activations in a wave")
 	flag.Parse()
@@ -203,6 +211,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	s.printColdStarts()
+	if c.coldStartOnly {
+		slog.Info("cold-start-only: done", "agents", len(s.ready))
+		return
+	}
+
 	slog.Info("starting load", "agents", c.agents, "duration", c.duration.String(),
 		"compress", c.compress, "duty_cycle_uncompressed",
 		fmt.Sprintf("%.2f%%", 100*(c.sessionsPerDay*c.sessionMin*60+c.wakesPerDay*15)/86400))
@@ -230,7 +244,13 @@ func main() {
 	s.report()
 }
 
-func actorName(id int) string { return fmt.Sprintf("sim-%04d", id) }
+// actorPrefix names the fleet's actors (<prefix>-NNNN). A unique prefix per
+// run guarantees CreateActor never hits AlreadyExists on leftovers of a
+// previous fleet still being deleted — which would silently skip the boot
+// (and the cold-start measurement) for those actors.
+var actorPrefix = "sim"
+
+func actorName(id int) string { return fmt.Sprintf("%s-%04d", actorPrefix, id) }
 
 /* ---------------- setup: atespace, actors, first boot, RAM fill ---------------- */
 
@@ -306,11 +326,13 @@ func (s *sim) setupSuspend() bool { return s.cfg.setupSuspend }
 func (s *sim) setupOne(ctx context.Context, id int) error {
 	name := actorName(id)
 	ref := &ateapipb.ObjectRef{Atespace: s.cfg.atespace, Name: name}
+	t0 := time.Now()
 	_, err := s.api.CreateActor(ctx, &ateapipb.CreateActorRequest{Actor: &ateapipb.Actor{
 		Metadata:      &ateapipb.ResourceMetadata{Atespace: s.cfg.atespace, Name: name},
 		ActorTemplate: &ateapipb.ObjectRef{Atespace: s.cfg.tmplAtespace, Name: s.cfg.tmpl},
 	}})
 	created := err == nil
+	cs := coldStart{unixMs: t0.UnixMilli(), agent: id, createMs: msSince(t0)}
 	if err != nil && status.Code(err) != codes.AlreadyExists {
 		return fmt.Errorf("CreateActor %s: %w", name, err)
 	}
@@ -326,8 +348,11 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 			// No boot flag: the glutton template has a golden snapshot, so a
 			// plain ResumeActor cold-starts a fresh actor from it on old and
 			// new control planes alike (Boot was removed from the API).
+			cs.resumeAttempts++
+			tr := time.Now()
 			_, err := s.api.ResumeActor(cctx, &ateapipb.ResumeActorRequest{Actor: ref})
 			if err == nil {
+				cs.resumeMs = msSince(tr) // the successful restore call only
 				break
 			}
 			switch status.Code(err) {
@@ -341,6 +366,26 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 				return fmt.Errorf("boot %s: %w", name, err)
 			}
 		}
+		// First answered ping: the actor is serving (the spawn benchmark's
+		// "ready"). Retried on transient router errors; the whole wait counts.
+		tp := time.Now()
+		for attempt := 0; ; attempt++ {
+			_, perr := s.post(cctx, name, "/ping", nil)
+			if perr == nil || attempt >= 30 {
+				if perr != nil {
+					cs.pingErr = perr.Error()
+				}
+				break
+			}
+			cs.pingAttempts++
+			time.Sleep(time.Duration(200+rand.IntN(300)) * time.Millisecond)
+		}
+		cs.pingMs = msSince(tp)
+		cs.readyMs = msSince(t0)
+		s.mu.Lock()
+		s.colds = append(s.colds, cs)
+		s.mu.Unlock()
+
 		// Setup is not the measurement: a router 502/503/504 while a big
 		// working set is being written (upstream timeout, "another operation
 		// is in progress") must not cost the run an agent. Retry with backoff.

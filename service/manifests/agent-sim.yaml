@@ -109,6 +109,8 @@ spec:
         - --lifecycle-mode=${LIFECYCLE_MODE}   # suspend (bucket) | pause (node-local)
         - --ping-independent=${PING_INDEPENDENT}
         - --setup-concurrency=${SETUP_CONCURRENCY}
+        - --cold-start-only=${COLD_START_ONLY}
+        - --actor-prefix=${ACTOR_PREFIX}
         - --mem-target=${MEM_TARGET}   # working set filled at boot, snapshotted after
         - --mem-read=all               # page the working set back in on every wake
         - --mem-churn=${MEM_CHURN}     # dirty a rotating window every turn

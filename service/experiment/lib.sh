@@ -101,6 +101,15 @@ export PING_LIVE="${PING_LIVE:-0s}"
 # bounds concurrent boots during setup (raise for fleets of thousands).
 export PING_INDEPENDENT="${PING_INDEPENDENT:-false}"
 export SETUP_CONCURRENCY="${SETUP_CONCURRENCY:-8}"
+# COLD_START_ONLY=true: agentsim creates the fleet, times every actor's first
+# life (CreateActor → golden-snapshot restore → first answered ping), prints
+# P50/P90/P99 + per-actor CSV, and exits without running a workload.
+export COLD_START_ONLY="${COLD_START_ONLY:-false}"
+# ACTOR_PREFIX names this run's actors (<prefix>-NNNN). Give each run a fresh
+# one (e.g. cold-$(date +%s)) when a previous fleet may still be deleting:
+# CreateActor on an existing name returns AlreadyExists and the boot — and
+# any cold-start measurement — is silently skipped for that actor.
+export ACTOR_PREFIX="${ACTOR_PREFIX:-sim}"
 if [[ "${WORKLOAD}" == "personal" ]]; then
   export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-3}"
   export WAKES_PER_DAY="${WAKES_PER_DAY:-40}"
