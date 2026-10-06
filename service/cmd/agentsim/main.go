@@ -921,6 +921,10 @@ func (s *sim) progressLoop(ctx context.Context) {
 /* ---------------- report ---------------- */
 
 func (s *sim) report() {
+	// The profile block again, next to the results: the kubelet rotates
+	// long container logs and `kubectl logs` then returns only the newest
+	// segment, which would lose the block printed at startup.
+	s.printProfile()
 	s.mu.Lock()
 	rs := s.results
 	s.mu.Unlock()

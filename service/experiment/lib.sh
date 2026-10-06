@@ -84,6 +84,8 @@ export WORKLOAD="${WORKLOAD:-coding-session}"   # the default workload since 202
 # remember what the caller set before defaults apply (workload branches below pick their own)
 USER_THINK_SCALE="${THINK_SCALE-}"
 USER_SCRIPT_LOOP="${SCRIPT_LOOP-}"
+USER_RAMP_SECONDS="${RAMP_SECONDS-}"
+export RAMP_SECONDS="${RAMP_SECONDS:-60}"   # agent start offsets are spread over this many seconds
 export THINK_SCALE="${THINK_SCALE:-4}"
 export SCRIPT_SUSPEND="${SCRIPT_SUSPEND:-driver}"
 export SCRIPT_LOOP="${SCRIPT_LOOP:-false}"
@@ -131,6 +133,10 @@ elif [[ "${WORKLOAD}" == "personal-assistant" ]]; then
   export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
   export THINK_SCALE="${USER_THINK_SCALE:-0.02}"
   export SCRIPT_LOOP="${USER_SCRIPT_LOOP:-true}"
+  # Stagger each agent's start of day over most of a lap (24 h × 0.02 =
+  # 1,728 s): assistants' days are not aligned, and aligned ones herd every
+  # agent into the same 07:30 message cluster at once.
+  export RAMP_SECONDS="${USER_RAMP_SECONDS:-1200}"
   export SCRIPT_ARG="personal-assistant"
 else
   export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-8}"   # tasks per agent-day
