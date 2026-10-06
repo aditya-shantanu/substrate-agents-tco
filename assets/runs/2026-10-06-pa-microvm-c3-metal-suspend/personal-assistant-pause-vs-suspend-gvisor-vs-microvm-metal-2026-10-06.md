@@ -46,6 +46,29 @@ Host: `agents-tco-east` (us-east4-a, one c3-standard-192-metal bare-metal node, 
 
 Artifacts: `assets/runs/2026-10-06-pa-{gvisor,microvm}-c3-metal-{pause,suspend}/` (report.txt, latency.csv, summary.json, run.log, occupancy.csv, metrics.txt; `=== agentsim steps ===` per-step table in run.log).
 
+## Why microVM pause ($3.66) costs more than microVM suspend ($2.18)
+
+This is counter-intuitive — a node-local pause should be the cheap park — so here is the arithmetic. Both cells use the same identity; the only input that differs materially is the park time, and it enters 61 times per agent-day.
+
+| | microVM · pause | microVM · suspend |
+|---|---|---|
+| live work per day (61 steps × measured step work) | 551 s | 537 s |
+| T_park, mean | 18.9 s | 6.8 s |
+| T_park P50 / P90 / P99 | 5,850 / 53,906 / 82,301 ms | 3,286 / 15,261 / 55,333 ms |
+| T_resume, P50 | 0.6 s | 0.7 s |
+| (T_park + T_resume) × 61 wakes | 1,190 s | 458 s |
+| occupancy | 2.01 % | 1.15 % |
+| agents per worker | 17.4 | 30.4 |
+| compute ($63.58 per worker-month ÷ agents per worker) | $3.66 | $2.09 |
+| GCS ops + snapshot at rest | $0 | $0.07 + $0.021 |
+| **$ / agent-month** | **$3.66** | **$2.18** |
+
+- **Park time dominates the bill.** The worker is held for the whole checkpoint. With pause, the 61 parks cost 1,154 s of worker time per agent-day — about twice the 551 s the agent spends doing its own work. A second shaved off the park is worth as much as a second of the agent's compute.
+- **Pause writes more bytes, uncompressed, to one disk.** A microVM pause writes the whole 1.4 GiB guest memory raw to the node's Hyperdisk (memory-ranges 1,408 MiB). Suspend zstd-compresses it first (1,054 MiB) and streams it to the bucket over the network, which scales with the number of concurrent parks in a way the single disk does not.
+- **The mean is what the formula uses, and pause's mean is its tail.** Pause P50 is 5.8 s but P90 is 54 s and P99 is 82 s, so the mean lands at 18.9 s. When several agents park within the same minute they contend for the one disk (2,400 MiB/s provisioned); the 30-agent stagger spreads this out but does not remove it. Suspend's tail is much shorter (P90 15 s, P99 55 s), mean 6.8 s. Host CPU stayed under 8 % throughout — bandwidth, not compute, is the limiter.
+- **What would flip it back.** If pause's tail matched its median (T_park ≈ 6 s) the pause cell would land near $1.98, below suspend. That is the engineering target for microVM pause: a compressed or incremental node-local checkpoint, or more local write bandwidth. gVisor pause shows what that buys — it writes only the ~1 GiB resident set, parks in 1.8 s mean, and comes out at $1.39.
+- **Caveat on absolutes.** Dividing the node across only 50 workers is the loop as run; with a fuller pool every cell scales down together. The ratios between cells are the durable result.
+
 ## How $ / agent-month is calculated
 
 Same identity as the one-ping file, with the script's structure supplying the counts: `S` = 61 steps per lap, one lap per agent-day, `W` = measured mean step work (ops + dwell), `T_s` = measured park (pause or suspend, mean), `T_r` = measured resume (P50 of the wake), `U` = 0.70, `P` = 2.
