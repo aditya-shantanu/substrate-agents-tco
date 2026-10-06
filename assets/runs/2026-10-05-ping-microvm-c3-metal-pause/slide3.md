@@ -31,3 +31,45 @@ Hosts: gVisor on `agents-tco` (us-central1, c3-standard-4 pool, 10 workers, 200 
 - Excludes LLM tokens and the amortized cluster fee / control plane. Utilization 0.7 and peak ×2 are assumptions; T_s, T_r and density are measured.
 
 Artifacts: `assets/runs/2026-10-05-ping-{gvisor-c3-standard-4-pause,microvm-c3-metal-pause,gvisor-c3-metal-suspend}/` (report.txt, latency.csv, summary.json, run.log, occupancy.csv, metrics.txt).
+
+## How $ / agent-month is calculated
+
+The card prices the loop the way the calculator and MODEL.md do: the whole bill divided by the agents it serves, built bottom-up from measured switch times. Symbols: `N_u` actors per user (20), `wait` the sleep after each park (10 s), `W` the live window actually held (0 here: the actor is parked right after its ping), `T_s` the measured park time (pause or suspend, mean), `T_r` the measured resume time (P50 of the wake ping), `U` target utilization (0.70), `P` peak-hour multiplier (2).
+
+```
+cycle            = W + T_s + T_r                       worker time one wake holds
+period           = N_u × (cycle + wait)                 one actor's time between wakes (its user serializes N_u actors)
+wakes/day        = 86,400 ÷ period
+occupancy  d'    = wakes/day × cycle ÷ 86,400           ≈ cycle ÷ period: share of one worker an agent consumes
+agents/worker N  = U ÷ (d' × P)                         headroom for queueing and for the busiest hour
+node $/mo        = (vCPU × $/vCPU-h + GiB × $/GiB-h) × 0.45 (3-yr CUD) × 730 h    us-central1 price book, MODEL.md App. A
+worker $/mo      = node $/mo ÷ workers per node
+compute          = worker $/mo ÷ N
+GCS ops          = wakes/day × 30.44 × (7 writes × $5/M + 4 reads × $0.40/M)      suspend only; pause is node-local → 0
+snapshot at rest = GiB per agent × $0.02                                          suspend only → 0 for pause
+$ / agent-month  = compute + GCS ops + snapshot at rest
+```
+
+Excluded on purpose: LLM tokens, and the cluster fee + control plane (≈ $573 / mo, divided by the fleet). The 20:1 of the loop itself does not enter the price: `N` comes from measured occupancy, which is why a faster park/resume buys more agents per worker.
+
+Worked, with each run's numbers (from `summary.json`):
+
+**gVisor c3-standard-4 · pause**
+- cycle = 0.00 + 0.122 (pause, mean) + 0.157 (resume P50) = 0.28 s; period = 20 × (0.28 + 10) = 206 s; wakes/day = 86,400 ÷ 206 = 420
+- occupancy = 420 × 0.28 ÷ 86,400 = 0.14 %; agents/worker = 0.70 ÷ (0.14 % × 2) = 257.7
+- node c3-standard-4: $0.0907/h × 730 = $66/mo; 2 workers per node → worker $26.49/mo; compute = $26.49 ÷ 257.7 = $0.10
+- pause: GCS ops $0, snapshot $0 → **$ / agent-month = $0.10**; agents per host at that share = 257.7 × 2 = 644
+
+**microVM bare metal · pause**
+- cycle = 0.00 + 0.396 (pause, mean) + 0.160 (resume P50) = 0.56 s; period = 20 × (0.56 + 10) = 211 s; wakes/day = 86,400 ÷ 211 = 409
+- occupancy = 409 × 0.56 ÷ 86,400 = 0.26 %; agents/worker = 0.70 ÷ (0.26 % × 2) = 132.9
+- node c3-standard-192-metal: $4.3547/h × 730 = $3,179/mo; 50 workers per node → worker $63.58/mo; compute = $63.58 ÷ 132.9 = $0.48
+- pause: GCS ops $0, snapshot $0 → **$ / agent-month = $0.48**; agents per host at that share = 132.9 × 50 = 6,646
+
+**gVisor bare metal · suspend**
+- cycle = 0.00 + 0.645 (suspend, mean) + 0.371 (resume P50) = 1.02 s; period = 20 × (1.02 + 10) = 220 s; wakes/day = 86,400 ÷ 220 = 392
+- occupancy = 392 × 1.02 ÷ 86,400 = 0.46 %; agents/worker = 0.70 ÷ (0.46 % × 2) = 75.9
+- node c3-standard-192-metal: $4.3547/h × 730 = $3,179/mo; 50 workers per node → worker $63.58/mo; compute = $63.58 ÷ 75.9 = $0.84
+- GCS ops = 392 × 30.44 × (7 × $5e-6 + 4 × $4e-7) = $0.44; snapshot = 0.02 GiB × $0.02 = $0.000 → **$ / agent-month = $1.28**; agents per host at that share = 75.9 × 50 = 3,793
+
+Two cautions on reading these dollar figures: the gVisor c3-standard-4 column's 10 workers sat on 4 nodes (2 per node) after the zone expansion, so its worker costs $26.49 rather than the $13.25 of a 5-per-node pool, and the bare-metal columns price 50 workers on a 192-vCPU host that was otherwise empty — in production the same host would carry several hundred workers, which is what the "agents per host" line extrapolates.
