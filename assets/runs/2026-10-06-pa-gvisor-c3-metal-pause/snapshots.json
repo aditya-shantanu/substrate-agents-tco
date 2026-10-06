@@ -1,0 +1,46 @@
+{
+ "actors": 30,
+ "total_mean": 1100986923.7666667,
+ "total_p50": 1100693066,
+ "total_p90": 1104121969,
+ "total_max": 1107340321,
+ "breakdown": {
+  "pages.img": {
+   "mean": 1098962944.0,
+   "p50": 1098661888,
+   "max": 1105321984,
+   "n": 30
+  },
+  "checkpoint.img": {
+   "mean": 2002598.1666666667,
+   "p50": 1998293,
+   "max": 2022394,
+   "n": 30
+  },
+  "pages_meta.img": {
+   "mean": 20482.6,
+   "p50": 20582,
+   "max": 22432,
+   "n": 30
+  },
+  "manifest.json": {
+   "mean": 589.0,
+   "p50": 589,
+   "max": 589,
+   "n": 30
+  },
+  "sandbox-assets.json": {
+   "mean": 310.0,
+   "p50": 310,
+   "max": 310,
+   "n": 30
+  }
+ },
+ "prefix": "pa-1791319505-gvisor-pause-3gi",
+ "lifecycle": "pause",
+ "states": {
+  "ACTOR_STATE_PAUSED": 30
+ },
+ "files_or_generations_per_actor_mean": 5.0,
+ "measured_at": "2026-10-06T21:44:14Z"
+}
