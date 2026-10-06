@@ -1,0 +1,145 @@
+{
+ "actors": 100,
+ "total_mean": 1500988172.7,
+ "total_p50": 1501935791,
+ "total_p90": 1502984370,
+ "total_max": 1529495660,
+ "breakdown": {
+  "memory-ranges": {
+   "mean": 1476395008.0,
+   "p50": 1476395008,
+   "max": 1476395008,
+   "n": 100
+  },
+  "rootfs-upper.tar": {
+   "mean": 23772574.72,
+   "p50": 25339392,
+   "max": 26651648,
+   "n": 100
+  },
+  "cpuprobe": {
+   "mean": 8388608.0,
+   "p50": 8388608,
+   "max": 8388608,
+   "n": 3
+  },
+  "session_db": {
+   "mean": 6291456.0,
+   "p50": 6291456,
+   "max": 6291456,
+   "n": 3
+  },
+  "memory_index": {
+   "mean": 4194304.0,
+   "p50": 4194304,
+   "max": 4194304,
+   "n": 3
+  },
+  "index_snapshot": {
+   "mean": 3145728.0,
+   "p50": 3145728,
+   "max": 3145728,
+   "n": 3
+  },
+  "model_catalog": {
+   "mean": 2097152.0,
+   "p50": 2097152,
+   "max": 2097152,
+   "n": 2
+  },
+  "session_wal": {
+   "mean": 1398101.3333333333,
+   "p50": 1048576,
+   "max": 2097152,
+   "n": 3
+  },
+  "web_fetch": {
+   "mean": 131072.0,
+   "p50": 131072,
+   "max": 131072,
+   "n": 1
+  },
+  "context_window": {
+   "mean": 98304.0,
+   "p50": 98304,
+   "max": 98304,
+   "n": 3
+  },
+  "state.json": {
+   "mean": 65661.01,
+   "p50": 65736,
+   "max": 65971,
+   "n": 100
+  },
+  "memory_notes": {
+   "mean": 32768.0,
+   "p50": 32768,
+   "max": 32768,
+   "n": 3
+  },
+  "bootstrap_files": {
+   "mean": 32768.0,
+   "p50": 32768,
+   "max": 32768,
+   "n": 3
+  },
+  "config.json": {
+   "mean": 1954.0,
+   "p50": 1954,
+   "max": 1954,
+   "n": 100
+  },
+  "rootfs-overlay.json": {
+   "mean": 1793.0,
+   "p50": 1793,
+   "max": 1793,
+   "n": 13
+  },
+  "manifest.json": {
+   "mean": 1131.0,
+   "p50": 1131,
+   "max": 1131,
+   "n": 100
+  },
+  "sandbox-assets.json": {
+   "mean": 829.0,
+   "p50": 829,
+   "max": 829,
+   "n": 100
+  },
+  "resolv.conf": {
+   "mean": 196.0,
+   "p50": 196,
+   "max": 196,
+   "n": 13
+  },
+  "uri": {
+   "mean": 184.0,
+   "p50": 184,
+   "max": 184,
+   "n": 3
+  },
+  "base-id": {
+   "mean": 36.0,
+   "p50": 36,
+   "max": 36,
+   "n": 100
+  },
+  "dirty": {
+   "mean": 0.0,
+   "p50": 0,
+   "max": 0,
+   "n": 13
+  }
+ },
+ "prefix": "pa-1791306952-microvm-pause",
+ "lifecycle": "pause",
+ "states": {
+  "ACTOR_STATE_PAUSED": 44,
+  "ACTOR_STATE_CRASHED": 52,
+  "ACTOR_STATE_PAUSING": 3,
+  "ACTOR_STATE_RUNNING": 1
+ },
+ "files_or_generations_per_actor_mean": 9.32,
+ "measured_at": "2026-10-06T17:46:10Z"
+}

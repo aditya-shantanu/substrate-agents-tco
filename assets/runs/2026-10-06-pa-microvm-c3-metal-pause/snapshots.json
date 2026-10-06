@@ -1,0 +1,59 @@
+{
+ "actors": 30,
+ "total_mean": 1504926882.8666666,
+ "total_p50": 1506968529,
+ "total_p90": 1506976726,
+ "total_max": 1510121830,
+ "breakdown": {
+  "memory-ranges": {
+   "mean": 1476395008.0,
+   "p50": 1476395008,
+   "max": 1476395008,
+   "n": 30
+  },
+  "rootfs-upper.tar": {
+   "mean": 28461943.466666665,
+   "p50": 30503424,
+   "max": 33657344,
+   "n": 30
+  },
+  "state.json": {
+   "mean": 65981.4,
+   "p50": 66030,
+   "max": 66154,
+   "n": 30
+  },
+  "config.json": {
+   "mean": 1954.0,
+   "p50": 1954,
+   "max": 1954,
+   "n": 30
+  },
+  "manifest.json": {
+   "mean": 1131.0,
+   "p50": 1131,
+   "max": 1131,
+   "n": 30
+  },
+  "sandbox-assets.json": {
+   "mean": 829.0,
+   "p50": 829,
+   "max": 829,
+   "n": 30
+  },
+  "base-id": {
+   "mean": 36.0,
+   "p50": 36,
+   "max": 36,
+   "n": 30
+  }
+ },
+ "prefix": "pa-1791308776-microvm-pause",
+ "lifecycle": "pause",
+ "states": {
+  "ACTOR_STATE_PAUSED": 29,
+  "ACTOR_STATE_CRASHED": 1
+ },
+ "files_or_generations_per_actor_mean": 7.0,
+ "measured_at": "2026-10-06T18:45:42Z"
+}

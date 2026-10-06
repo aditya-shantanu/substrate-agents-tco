@@ -1,0 +1,73 @@
+# $ / agent-month: how we get there — personal-assistant workload on bare metal, measured 2026-10-06
+
+Workload: the **personal-assistant** agent-session script from substrate's benchmarking suite (substrate#2230): one lap is one day of an always-on assistant of the OpenClaw / Hermes kind — 61 steps named by time of day: 30 user messages in 7 clusters, 26 heartbeats, hourly crons folded into them, a morning briefing, four catalog refreshes, a context compaction, a nightly memory sweep. Every model turn reads its files, burns CPU, ships its context out through the router, **dwells** for the model round trip (worker held, no request) and appends to its WAL. Per lap: ~65 CPU-seconds, 440 s of resident dwell, 150 MiB written, resident set 640 → 960 MiB (1.5 GiB actors). Think gaps are the real gaps between events (2 min to 3 h, 24 h per lap); the driver parks the actor in every gap (**PauseActor** = node-local checkpoint, **SuspendActor** = durable checkpoint in the bucket) and the next step's first request wakes it. Played back-to-back at think scale 0.02, so one lap takes ~30 min plus the work.
+
+Host: `agents-tco-east` (us-east4-a, one c3-standard-192-metal bare-metal node, native KVM, 3 TB Hyperdisk), 50 unsized workers, 30 agents with starts staggered over 20 minutes (so parks do not align), 55-minute windows (≥ 1 full lap per agent). Every latency as P50 / P90 / P99 with n. Substrate: perf-resume-latency @ b98e7189 (main + docs).
+
+| Step | microVM bare metal · pause | microVM bare metal · suspend |
+|---|---|---|
+| Host, 3-yr CUD | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) | c3-standard-192-metal, $3,179.0/mo (cud3) · 1 node(s) |
+| Workers per host → $ per worker-month | 50 → $63.58 | 50 → $63.58 |
+| Agent profile | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors | personal-assistant: 1 tasks × 61 steps/day, think ×0.02 (1728 s/task), driver suspend, 1536Mi actors |
+| Run | 30 agents, time ×1, 53 min; 1362 activations, 9 errors, 35 refusals | 30 agents, time ×1, 54 min; 1737 activations, 0 errors, 1 refusals |
+| Resume P50 / P90 / P99 | 593 / 724 / 3,094 ms (n=1362) ← T_r | 679 / 834 / 1,366 ms (n=1737) ← T_r |
+| Park P50 / P90 / P99 (pause = node-local, suspend = bucket) | **pause** 5,850 / 53,906 / 82,301 ms (n=1354) ← T_s; avg 18,912 ms (driver, n=1354) | **suspend** 3,286 / 15,261 / 55,333 ms (n=1737) ← T_s; avg 6,831 ms (driver, n=1737) |
+| Step work P50 / P90 / P99 | 4,858 / 17,198 / 47,448 ms (n=1355) | 4,566 / 16,065 / 47,336 ms (n=1737) |
+| Snapshot per agent (measured) and its parts | 1,435 MiB mean per agent (p50 1,437 MiB, max 1,440 MiB), node-local checkpoint, n=30: memory-ranges 1,408 MiB + rootfs-upper.tar 27 MiB + state.json 0 MiB + config.json 0 MiB | 1,083 MiB mean per agent (p50 1,083 MiB, max 1,091 MiB), bucket snapshot, n=30: memory-ranges.zstd 1,054 MiB + rootfs-upper.tar.zstd 29 MiB + state.json.zstd 0 MiB + manifest.json 0 MiB |
+| Worker time per wake-up | 19.5 s (wait + T_s + T_r) | 7.5 s (wait + T_s + T_r) |
+| Occupancy (worker time per agent) | 2.01 %  (1 tasks × 61 steps = 61 steps, 9.0s work each (measured)) | 1.15 %  (1 tasks × 61 steps = 61 steps, 8.8s work each (measured)) |
+| Measured density | 2.7:1 mean · 1.2:1 at P99 (busy workers mean 11.1, P99 25, peak 27 of 50) | 3.6:1 mean · 1.2:1 at P99 (busy workers mean 8.4, P99 25, peak 26 of 50) |
+| Agents per worker (overcommit) | 17.4 = 0.70 ÷ (2.01 % × 2 peak) | 30.4 = 0.70 ÷ (1.15 % × 2 peak) |
+| Agents per host | 868 | 1520 |
+| $ / agent-month | $63.58 ÷ 17.4 = $3.66 compute + $0.00 GCS ops + $0.000 snapshots = **$3.66** | $63.58 ÷ 30.4 = $2.09 compute + $0.07 GCS ops + $0.021 snapshots = **$2.18** |
+| Multi-actor projection (roadmap) | ≈9346 agents/host → ≈$0.34 | ≈15933 agents/host → ≈$0.29 |
+
+## The bare-metal 2×2 at a glance
+
+| | Pause (node-local) | Suspend (bucket) |
+|---|---|---|
+| **gVisor** resume | not run | not run |
+| **gVisor** park | not run | not run |
+| **microVM** resume | 593 / 724 / 3,094 (n=1,362) | 679 / 834 / 1,366 (n=1,737) |
+| **microVM** park | 5,850 / 53,906 / 82,301 (n=1,354) | 3,286 / 15,261 / 55,333 (n=1,737) |
+| snapshot per agent (mean, measured) | gVisor not measured · microVM 1,435 MiB (memory-ranges 1,408 MiB + rootfs-upper.tar 27 MiB + state.json 0 MiB) | gVisor not measured · microVM 1,083 MiB (memory-ranges.zstd 1,054 MiB + rootfs-upper.tar.zstd 29 MiB + state.json.zstd 0 MiB) |
+| step work (ops + dwell) P50 / P90 / P99 | gVisor not run · microVM 4,858 / 17,198 / 47,448 (n=1,355) | gVisor not run · microVM 4,566 / 16,065 / 47,336 (n=1,737) |
+| $ / agent-month, loop as run | gVisor — · microVM $3.66 | gVisor — · microVM $2.18 |
+
+## Reading the numbers
+
+- **What is being parked is ~1 GiB of resident memory**, not the 256 MiB bare actor of the one-ping runs: compare with `one-ping-pause-gvisor-vs-microvm-metal-2026-10-05.md` for the same host and lifecycle on an empty actor. The difference between the two files is the cost of the assistant's resident set per park and per wake.
+- **Dwell is worker time that no park can reclaim.** The 440 s of model round trips per day are inside steps; the report counts them in "step work" and therefore in occupancy. Only the between-event think gaps (24 h a day) are parked.
+- **Heartbeats and crons are wakes something external must provide**: in a suspended or paused sandbox the assistant's own timers cannot fire. The script models them as driver-initiated wakes, which is what a gateway or scheduler would have to do.
+- **Snapshot size is the hidden half of the park cost.** A node-local pause of a 1.5 GiB microVM guest writes the whole guest memory (≈ 1.4 GiB per agent, uncompressed) to the node's disk; the bucket snapshot of a suspend is the compressed resident set. The row above gives each cell's measured per-agent size and its parts (memory image, root-filesystem upper layer, metadata).
+- **Why 30 agents and not 100.** Two 100-agent legs (aligned and staggered starts) collapsed under their own parking: 100 × 1.4 GiB per pause landing on the one node's disk (≈ 5 GB/s demanded vs 2.4 GB/s of Hyperdisk) wedged the workers. The archived artifacts of those attempts are in `assets/runs/2026-10-06-pa-microvm-c3-metal-pause-ALIGNED-starts/` and `…-pause-100agents-staggered-ARTIFACT/` for reference; the numbers in this file come from the 30-agent legs.
+- **$ lines price the loop as run** (50 workers on an otherwise empty 192-vCPU host; one lap per day; utilization 0.7 and peak ×2 assumptions) and exclude LLM tokens and the amortized cluster fee / control plane. Pause has no GCS operations or snapshot at rest; suspend does.
+
+Artifacts: `assets/runs/2026-10-06-pa-{gvisor,microvm}-c3-metal-{pause,suspend}/` (report.txt, latency.csv, summary.json, run.log, occupancy.csv, metrics.txt; `=== agentsim steps ===` per-step table in run.log).
+
+## How $ / agent-month is calculated
+
+Same identity as the one-ping file, with the script's structure supplying the counts: `S` = 61 steps per lap, one lap per agent-day, `W` = measured mean step work (ops + dwell), `T_s` = measured park (pause or suspend, mean), `T_r` = measured resume (P50 of the wake), `U` = 0.70, `P` = 2.
+
+```
+live             = S × W                                 worker time spent in steps (incl. dwell) per agent-day
+wakes/day  A     = S × f                                 f = share of steps whose actor was parked (driver mode ≈ 1)
+occupancy  d'    = (live + A × (T_s + T_r)) ÷ 86,400
+agents/worker N  = U ÷ (d' × P)
+$ / agent-month  = worker $/mo ÷ N  (+ GCS ops and snapshot at rest for suspend)
+```
+
+Worked, with each run's numbers (from `summary.json`):
+**gVisor bare metal · pause**: not run
+
+**gVisor bare metal · suspend**: not run
+
+**microVM bare metal · pause**
+- 1 tasks × 61 steps = 61 steps, 9.0s work each (measured); T_s 18.91 s (pause, mean), T_r 0.59 s (P50); overhead per wake 19.5 s
+- occupancy = (551 s + 61 × 19.5 s) ÷ 86,400 = 2.01 %; agents/worker = 0.70 ÷ (2.01 % × 2) = 17.4
+- node c3-standard-192-metal: $3,179/mo ÷ 50 workers = $63.58/worker-mo; compute $63.58 ÷ 17.4 = $3.66; GCS ops $0.00; snapshot $0.000 → **$3.66**; agents per host at that share 868
+
+**microVM bare metal · suspend**
+- 1 tasks × 61 steps = 61 steps, 8.8s work each (measured); T_s 6.83 s (suspend, mean), T_r 0.68 s (P50); overhead per wake 7.5 s
+- occupancy = (537 s + 61 × 7.5 s) ÷ 86,400 = 1.15 %; agents/worker = 0.70 ÷ (1.15 % × 2) = 30.4
+- node c3-standard-192-metal: $3,179/mo ÷ 50 workers = $63.58/worker-mo; compute $63.58 ÷ 30.4 = $2.09; GCS ops $0.07; snapshot $0.021 → **$2.18**; agents per host at that share 1,520

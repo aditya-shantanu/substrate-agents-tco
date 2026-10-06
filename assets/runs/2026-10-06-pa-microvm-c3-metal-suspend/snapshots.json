@@ -1,0 +1,52 @@
+{
+ "actors": 30,
+ "total_mean": 1135763846.0666666,
+ "total_p50": 1135312860,
+ "total_p90": 1140833917,
+ "total_max": 1144249074,
+ "breakdown": {
+  "memory-ranges.zstd": {
+   "mean": 1105455405.1333334,
+   "p50": 1105320726,
+   "max": 1114225285,
+   "n": 30
+  },
+  "rootfs-upper.tar.zstd": {
+   "mean": 30299758.633333333,
+   "p50": 29983464,
+   "max": 33129349,
+   "n": 30
+  },
+  "state.json.zstd": {
+   "mean": 6376.8,
+   "p50": 6386,
+   "max": 6427,
+   "n": 30
+  },
+  "manifest.json": {
+   "mean": 1133.0,
+   "p50": 1133,
+   "max": 1133,
+   "n": 30
+  },
+  "config.json.zstd": {
+   "mean": 1092.5,
+   "p50": 1092,
+   "max": 1094,
+   "n": 30
+  },
+  "base-id.zstd": {
+   "mean": 80.0,
+   "p50": 80,
+   "max": 80,
+   "n": 30
+  }
+ },
+ "prefix": "pa-1791312342-microvm-suspend",
+ "lifecycle": "suspend",
+ "states": {
+  "ACTOR_STATE_SUSPENDED": 30
+ },
+ "files_or_generations_per_actor_mean": 1.0,
+ "measured_at": "2026-10-06T19:45:29Z"
+}
