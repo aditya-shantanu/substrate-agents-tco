@@ -21,6 +21,23 @@ The 2×2 on bare metal: gVisor and microVM × PauseActor (node-local checkpoint)
 | $ / agent-month | $63.58 ÷ 140.4 = $0.45 compute + $0.00 GCS ops + $0.000 snapshots = **$0.45** | $63.58 ÷ 75.9 = $0.84 compute + $0.44 GCS ops + $0.000 snapshots = **$1.28** | $63.58 ÷ 132.9 = $0.48 compute + $0.00 GCS ops + $0.000 snapshots = **$0.48** | $63.58 ÷ 50.3 = $1.26 compute + $0.41 GCS ops + $0.001 snapshots = **$1.68** | $26.49 ÷ 257.7 = $0.10 compute + $0.00 GCS ops + $0.000 snapshots = **$0.10** |
 | Multi-actor projection (roadmap) | ≈29285 agents/host → ≈$0.11 | ≈19474 agents/host → ≈$0.60 | ≈38418 agents/host → ≈$0.08 | ≈20986 agents/host → ≈$0.57 | ≈1071 agents/host → ≈$0.06 |
 
+## The bare-metal 2×2 at a glance
+
+Same host (c3-standard-192-metal, native KVM), same loop, 50 unsized workers, 1,000 agents, 20-minute windows, zero errors in all four. Resume = the wake ping through the router; park = PauseActor (node-local) or SuspendActor (bucket). All P50 / P90 / P99 in ms.
+
+| | Pause (node-local) | Suspend (bucket) |
+|---|---|---|
+| **gVisor** resume | 275 / 318 / 400 (n=5,701) | 371 / 769 / 1,239 (n=5,407) |
+| **gVisor** park | 241 / 292 / 388 | 585 / 923 / 1,331 |
+| **microVM** resume | 160 / 231 / 797 (n=5,659) | 160 / 234 / 434 (n=5,160) |
+| **microVM** park | 214 / 577 / 3,688 | 1,172 / 2,404 / 4,466 |
+| $ / agent-month, loop as run | gVisor $0.45 · microVM $0.48 | gVisor $1.28 · microVM $1.68 |
+
+- **Park mode is the bigger lever for gVisor, the runtime for microVM resume.** gVisor pays ~96 ms more on resume and ~344 ms more on park when it goes through the bucket. microVM's resume is the same ~160 ms either way; what suspend costs it is the park, 1.2 s median versus 0.2 s, because the full guest memory goes to the bucket.
+- **microVM resumes faster than gVisor on bare metal at the median, in both modes** (160 vs 275 ms with pause, 160 vs 371 ms with suspend). gVisor's advantage is the tail: with pause its P99 resume is 400 ms against microVM's 797 ms, and its P99 park 388 ms against 3,688 ms.
+- **The suspend run is the cleaner microVM measurement**: microVM's tails under suspend (P99 resume 434 ms) are tighter than under pause (797 ms), the opposite of gVisor. Pause's long tail on microVM is the host-contention effect the ladder section exposes.
+- **The $ lines follow the park mode**: pause has no GCS operations, suspend does; all four price 50 workers on an otherwise empty 192-vCPU host and are not a TCO.
+
 ## Reading the numbers
 
 - **Park mode dominates, runtime second.** On the same bare-metal host, pause vs suspend: gVisor resume 275 / 318 / 400 vs 371 / 769 / 1,239 ms and park 241 / 292 / 388 vs 585 / 923 / 1,331 ms; microVM resume 160 / 231 / 797 vs 160 / 234 / 434 ms and park 214 / 577 / 3,688 vs 1,172 / 2,404 / 4,466 ms. The bucket round trip is what the user feels most.
