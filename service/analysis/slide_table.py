@@ -49,13 +49,16 @@ def rows(s):
         "Run": (f"{s['agents']} agents, time ×{s['compress']:.0f}, {s['window_min']:.0f} min; "
                 f"{s['activations']} activations, {s['errors']} errors, {s['refusals']} refusals"),
         "Resume P50 / P90 / P99": ms3(s["resume_ms"]) + " ← T_r",
-        "Suspend": (f"{s['t_s'] * 1000:,.0f} ms avg ({s['t_s_source']}, n={s['suspends']:.0f})"
-                    + (f"; P50/P90/P99 {ms3(s['suspend_ms'])}" if s.get("suspend_ms") else "")),
+        "Park P50 / P90 / P99 (pause = node-local, suspend = bucket)":
+            (f"**{s.get('lifecycle', 'suspend')}** "
+             + (ms3(s["suspend_ms"]) if s.get("suspend_ms") else "—")
+             + f" ← T_s; avg {s['t_s'] * 1000:,.0f} ms ({s['t_s_source']}, n={s['suspends']:.0f})"),
         "Step work P50 / P90 / P99": ms3(s["step_ms"]) if s.get("step_ms") else "—",
         "Worker time per wake-up": f"{overhead:.1f} s (wait + T_s + T_r)",
         "Occupancy (worker time per agent)": f"{s['occupancy'] * 100:.2f} %  ({s['day']})",
-        "Measured density": f"{s['density_mean']:.1f}:1 mean · {s['density_p99']:.1f}:1 at P99 "
-                            f"(busy workers mean {s['busy_mean']:.1f}, P99 {s['busy_p99']}, peak {s['busy_peak']} of {s['pool_workers']})",
+        "Measured density": (f"{s['density_mean']:.1f}:1 mean · {s['density_p99']:.1f}:1 at P99 "
+                             f"(busy workers mean {s['busy_mean']:.1f}, P99 {s['busy_p99']}, peak {s['busy_peak']} of {s['pool_workers']})"
+                             if s.get("density_mean") else "n/a (no occupancy samples in the window)"),
         "Agents per worker (overcommit)":
             f"{n:.1f} = {s['utilization']:.2f} ÷ ({s['occupancy'] * 100:.2f} % × {s['peak_value']:g} {'peak' if s['peak_model'] == 'mult' else 'herd'})",
         "Agents per host": f"{s['agents_per_host']:.0f}",
@@ -74,7 +77,9 @@ def main():
         if not path:
             name, path = os.path.basename(arg.rstrip("/")), arg
         cols.append((name, rows(load(path))))
-    keys = list(cols[0][1].keys())
+    keys = []
+    for _, r in cols:  # union of rows, first column's order first
+        keys += [k for k in r if k not in keys]
     print("| Step | " + " | ".join(n for n, _ in cols) + " |")
     print("|---|" + "---|" * len(cols))
     for k in keys:

@@ -106,6 +106,7 @@ spec:
         - --ping-actors-per-user=${PING_ACTORS_PER_USER}
         - --ping-wait=${PING_WAIT}
         - --ping-live=${PING_LIVE}
+        - --lifecycle-mode=${LIFECYCLE_MODE}   # suspend (bucket) | pause (node-local)
         - --mem-target=${MEM_TARGET}   # working set filled at boot, snapshotted after
         - --mem-read=all               # page the working set back in on every wake
         - --mem-churn=${MEM_CHURN}     # dirty a rotating window every turn

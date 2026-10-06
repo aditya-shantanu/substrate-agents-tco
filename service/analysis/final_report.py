@@ -204,9 +204,17 @@ def main():
             if v:
                 w.writerow([name, len(v), f"{pct(v, .5):.0f}", f"{pct(v, .9):.0f}", f"{pct(v, .99):.0f}", f"{v[-1]:.0f}"])
 
-    occ = [r for r in csv.DictReader(open(a.occupancy)) if t0 <= int(r["unix_ms"]) <= t1]
+    try:
+        occ = [r for r in csv.DictReader(open(a.occupancy)) if t0 <= int(r["unix_ms"]) <= t1]
+    except (OSError, KeyError, ValueError):
+        occ = []
     busy = sorted(int(r["workers_assigned"]) for r in occ) or [0]
     mean_busy, p99_busy, peak_busy = statistics.fmean(busy), pct(busy, .99), busy[-1]
+    # No occupancy samples inside the window (sampler restarted, collect
+    # failed): say so instead of dividing by zero.
+    density_desc = (f"{agents / mean_busy:.1f}:1 mean · {agents / max(p99_busy, 1e-9):.1f}:1 at p99 ← bankable"
+                    if mean_busy > 0 else "n/a (no worker-occupancy samples inside the window)")
+    hib = "pause" if prof.get("lifecycle") == "pause" else "suspend"
 
     # ---- real-world projection from measured T_s / T_r ----
     if script_mode:
@@ -284,8 +292,13 @@ def main():
     wpn = a.pool_workers / a.pool_nodes
     worker_mo = node_hr * 730 / wpn
     compute = worker_mo / n_real
-    storage = a.snap_gib * GCS_GIB_MO
-    ops = A * 30.44 * (7 * OPS_WRITE + 4 * OPS_READ)
+    if hib == "pause":
+        # Node-local checkpoints: nothing crosses the bucket per cycle, so no
+        # GCS operations and no snapshot at rest (the trade: node pinning).
+        storage, ops = 0.0, 0.0
+    else:
+        storage = a.snap_gib * GCS_GIB_MO
+        ops = A * 30.44 * (7 * OPS_WRITE + 4 * OPS_READ)
     total = compute + storage + ops
 
     B = "\033[1m"; D = "\033[2m"; R = "\033[0m"
@@ -303,13 +316,13 @@ def main():
 
   What it measured
     resume P50 / P90 / P99  {p3(wake_ms)} ms  (n={len(wake_ms)})   ← T_r, user-visible wake-up
-    suspend (avg)           {t_s * 1000:,.0f} ms                ← T_s, from {suspends:.0f} suspends ({t_s_src})""" + (f"""
-    suspend P50 / P90 / P99 {p3(susp_ms)} ms  (n={len(susp_ms)})""" if susp_ms else "") + f"""
+    {hib:7s} (avg)           {t_s * 1000:,.0f} ms                ← T_s, from {suspends:.0f} {hib}s ({t_s_src})""" + (f"""
+    {hib:7s} P50 / P90 / P99 {p3(susp_ms)} ms  (n={len(susp_ms)})""" if susp_ms else "") + f"""
 """ + (f"""
     RAM walk P50 / P90 / P99 {p3(walk_ms)} ms  (demand paging)""" if walk_ms else "") + (f"""
     step work P50 / P90 / P99 {p3(step_ms)} ms  ← the agent's own ops per step""" if step_ms else "") + f"""
     workers busy            mean {mean_busy:.2f} · p99 {p99_busy} · peak {peak_busy} of {a.pool_workers}
-    density (this run)      {agents / max(mean_busy, 1e-9):.1f}:1 mean · {agents / max(p99_busy, 1e-9):.1f}:1 at p99 ← bankable
+    density (this run)      {density_desc}
 
   Real-world cost per agent (measured T_s/T_r plugged into the model)
     one agent/day           {day_desc}
@@ -318,8 +331,8 @@ def main():
     agents per worker       {peak_desc}
     worker cost             ${node_hr:.4f}/hr ÷ {wpn:.1f} per node × 730h = ${worker_mo:.2f}/mo ({a.price_model})
     compute {D}${worker_mo:.2f} ÷ {n_real:.1f}{R}   ${compute:.2f}
-    snapshot at rest        ${storage:.3f}   ({a.snap_gib:.2f} GiB × ${GCS_GIB_MO}/GiB-mo)
-    GCS ops                 ${ops:.3f}""")
+    snapshot at rest        ${storage:.3f}   ({'node-local pause: nothing in the bucket' if hib == 'pause' else f'{a.snap_gib:.2f} GiB × ${GCS_GIB_MO}/GiB-mo'})
+    GCS ops                 ${ops:.3f}{'   (pause: no bucket round trip)' if hib == 'pause' else ''}""")
     # Multi-actor projection: pack by CPU (per-phase weights, restore is the
     # peak); suspended agents hold no RAM. Roadmap upside, not today's price.
     cpu_avg = (live * a.cpu_active + A * (t_s * a.cpu_suspend + t_r * a.cpu_restore)) / 86400
@@ -349,9 +362,10 @@ def main():
         "node_mo": node_hr * 730, "pool_workers": a.pool_workers, "pool_nodes": a.pool_nodes,
         "workers_per_node": wpn, "worker_mo": worker_mo, "snap_gib": a.snap_gib,
         "resume_ms": q3(wake_ms), "suspend_ms": q3(susp_ms), "step_ms": q3(step_ms), "ram_walk_ms": q3(walk_ms),
-        "t_s": t_s, "t_s_source": t_s_src, "t_r": t_r, "suspends": suspends,
+        "t_s": t_s, "t_s_source": t_s_src, "t_r": t_r, "suspends": suspends, "lifecycle": hib,
         "busy_mean": mean_busy, "busy_p99": p99_busy, "busy_peak": peak_busy,
-        "density_mean": agents / max(mean_busy, 1e-9), "density_p99": agents / max(p99_busy, 1e-9),
+        "density_mean": (agents / mean_busy) if mean_busy > 0 else None,
+        "density_p99": (agents / p99_busy) if p99_busy > 0 else None,
         "day": day_desc, "wakes_per_day": A, "live_s": live, "overhead_s": overhead,
         "occupancy": occ_real, "agents_per_worker": n_real, "agents_per_host": n_real * wpn,
         "peak_model": a.peak_model, "peak_value": a.peak_value, "utilization": a.utilization,

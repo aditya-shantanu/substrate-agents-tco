@@ -72,6 +72,11 @@ type cfg struct {
 	// one-ping mode (see ping.go): the benchmarking suite's GluttonUser loop
 	pingActorsPerUser  int // 0 = disabled
 	pingWait, pingLive time.Duration
+
+	// lifecycle: how the driver parks an actor between activations —
+	// suspend (durable checkpoint to the bucket) or pause (node-local
+	// checkpoint; the actor must resume on the same node)
+	lifecycle string
 }
 
 // tsample is a timestamped latency sample (for windowed wave scoring).
@@ -152,6 +157,7 @@ func main() {
 	flag.IntVar(&c.pingActorsPerUser, "ping-actors-per-user", 0, "one-ping workload (substrate benchmarking's GluttonUser loop, the Prow 200K run): group agents into virtual users of this many actors; each user serially wakes an actor with a ping, holds it for --ping-live, suspends it, sleeps --ping-wait, then moves to its next actor; no memory fill, no other work. 0 = disabled")
 	flag.DurationVar(&c.pingWait, "ping-wait", 10*time.Second, "one-ping: gap between an actor's suspend and the user's next wake (wall clock, not compressed)")
 	flag.DurationVar(&c.pingLive, "ping-live", 0, "one-ping: how long the actor stays awake after its first ping (0 = suspend right after the ping)")
+	flag.StringVar(&c.lifecycle, "lifecycle-mode", "suspend", "how the driver parks an actor it has finished with (script driver mode, one-ping, and the first park after setup): suspend = SuspendActor, durable checkpoint in the bucket; pause = PauseActor, node-local checkpoint, resumes on the same node (upstream's --lifecycle-mode)")
 	flag.Float64Var(&c.failRefusalPct, "fail-refusal-pct", 5, "load-test: stop when router refusals exceed this % of activations in a wave")
 	flag.Float64Var(&c.failErrPct, "fail-error-pct", 2, "load-test: stop when request errors exceed this % of activations in a wave")
 	flag.Parse()
@@ -348,7 +354,7 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 			return nil
 		}
 		for attempt := 0; ; attempt++ {
-			_, err := s.api.SuspendActor(cctx, &ateapipb.SuspendActorRequest{Actor: ref})
+			err := s.hibernateRPC(cctx, ref)
 			if err == nil || status.Code(err) == codes.FailedPrecondition {
 				break
 			}

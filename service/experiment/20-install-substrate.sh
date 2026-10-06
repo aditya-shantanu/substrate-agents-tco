@@ -15,6 +15,26 @@ kubectl create namespace buildkit --dry-run=client -o yaml | kubectl apply -f - 
 # (the label substrate's benchmarking setup puts on worker nodes); a fresh
 # pool has none, so label ours.
 kubectl label nodes --all ate.dev/benchmark-workers=true --overwrite >/dev/null
+# Bare-metal machine types (C3/C4 *-metal) take Hyperdisk only; Substrate's
+# Postgres claims the cluster's default StorageClass, which GKE sets to
+# pd-balanced. On a metal cluster make Hyperdisk Balanced the default first.
+if kubectl get nodes -o jsonpath='{.items[*].metadata.labels.node\.kubernetes\.io/instance-type}' | grep -q -- '-metal'; then
+  kubectl apply -f - >/dev/null <<'SC'
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: hyperdisk-balanced
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: hyperdisk-balanced
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+SC
+  kubectl annotate storageclass standard-rwo storageclass.kubernetes.io/is-default-class=false --overwrite >/dev/null 2>&1 || true
+  echo "bare-metal node(s): default StorageClass set to hyperdisk-balanced"
+fi
 # Since 2026-10 install-ate requires an egress credential-provider choice.
 # The benchmark actors call no external APIs, so injection stays off (the
 # bundled k8s.io provider would also force the envoy dataplane).

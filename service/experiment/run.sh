@@ -185,8 +185,15 @@ done
 
 # ---- collect + the finale ----
 kubectl -n agent-sim logs job/agentsim > "${OUT}/run.log"
-curl -sf localhost:18080/occupancy.csv > "${OUT}/occupancy.csv"
-curl -sf localhost:18080/metrics > "${OUT}/metrics.txt"
+# The long-lived port-forward often dies during a run (kubectl does not
+# reconnect); open a fresh one for the collect and never let a curl failure
+# abort the finale (set -e): the card can be re-rendered from run.log.
+kill "${PF_PID}" 2>/dev/null || true
+kubectl -n agent-sim port-forward svc/autosuspender 18080:8080 >/dev/null 2>&1 &
+PF_PID=$!
+sleep 3
+curl -sf --retry 3 localhost:18080/occupancy.csv > "${OUT}/occupancy.csv" || echo "warning: occupancy.csv not collected"
+curl -sf --retry 3 localhost:18080/metrics > "${OUT}/metrics.txt" || echo "warning: metrics.txt not collected"
 
 # Price the machine the workers actually ran on (multi-pool clusters).
 WORKER_NODE=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool -o jsonpath='{.items[0].spec.nodeName}' 2>/dev/null)
@@ -194,7 +201,7 @@ MACHINE_TYPE=$(kubectl get node "${WORKER_NODE:-}" -o jsonpath='{.metadata.label
   || kubectl get nodes -o jsonpath='{.items[0].metadata.labels.node\.kubernetes\.io/instance-type}')
 POOL_NODES=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool \
   -o jsonpath='{range .items[*]}{.spec.nodeName}{"\n"}{end}' 2>/dev/null | sort -u | grep -c . || echo 1)
-SNAP_GIB=$(gcloud storage du -s "gs://${BUCKET_NAME}/benchmark-workloads/glutton/atespaces/agents-sim/**" 2>/dev/null \
+SNAP_GIB=$({ gcloud storage du -s "gs://${BUCKET_NAME}/benchmark-workloads/glutton/atespaces/agents-sim/**" 2>/dev/null || true; } \
   | awk -v n="${AGENTS}" '$1>0 {printf "%.3f", $1/n/1073741824}')
 SNAP_GIB=${SNAP_GIB:-0.05}
 

@@ -87,6 +87,11 @@ export SCRIPT_SUSPEND="${SCRIPT_SUSPEND:-driver}"
 # suite (the Prow 200K run): PING_ACTORS_PER_USER actors per virtual user,
 # served one at a time — wake by ping, PING_LIVE awake, suspend, PING_WAIT —
 # no memory fill, no other work. Overcommit is N:1 by construction.
+# LIFECYCLE_MODE: how agentsim parks an actor it has finished with (script
+# driver mode, one-ping, the first park after setup): suspend = durable
+# checkpoint in the bucket; pause = node-local checkpoint (PauseActor), the
+# actor resumes on the same node. Pause skips the bucket round trip.
+export LIFECYCLE_MODE="${LIFECYCLE_MODE:-suspend}"
 export PING_ACTORS_PER_USER="${PING_ACTORS_PER_USER:-0}"
 export PING_WAIT="${PING_WAIT:-10s}"
 export PING_LIVE="${PING_LIVE:-0s}"

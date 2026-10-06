@@ -60,6 +60,11 @@ func checkScriptFile(source string) int {
 // against the script's floor (the upstream driver's guard), and switches
 // off the personal-agent per-turn work, which the script replaces.
 func (s *sim) loadScript(ctx context.Context) error {
+	switch s.cfg.lifecycle {
+	case "suspend", "pause":
+	default:
+		return fmt.Errorf("--lifecycle-mode must be suspend or pause, got %q", s.cfg.lifecycle)
+	}
 	if s.cfg.pingActorsPerUser > 0 {
 		if s.cfg.script != "" {
 			return fmt.Errorf("--script and --ping-actors-per-user are mutually exclusive")
@@ -142,6 +147,7 @@ func (s *sim) printProfile() {
 	fmt.Printf("compress=%g\n", s.cfg.compress)
 	fmt.Printf("wakes_per_day=%g\n", s.cfg.wakesPerDay)
 	fmt.Println("wake_seconds=15")
+	fmt.Printf("lifecycle=%s\n", s.cfg.lifecycle)
 	if s.cfg.pingActorsPerUser > 0 {
 		fmt.Println("workload=ping")
 		fmt.Printf("actors_per_user=%d\n", s.cfg.pingActorsPerUser)
@@ -271,7 +277,7 @@ func (s *sim) actorSuspended(ctx context.Context, name string) int {
 		return -1
 	}
 	switch a.GetStatus().GetState() {
-	case ateapipb.ActorState_ACTOR_STATE_SUSPENDED:
+	case ateapipb.ActorState_ACTOR_STATE_SUSPENDED, ateapipb.ActorState_ACTOR_STATE_PAUSED:
 		return 1
 	case ateapipb.ActorState_ACTOR_STATE_RUNNING:
 		return 0
@@ -279,16 +285,28 @@ func (s *sim) actorSuspended(ctx context.Context, name string) int {
 	return -1
 }
 
-// suspendNow is the driver-mode suspend after a step. It retries transient
-// control-plane conflicts; an actor already suspended (FailedPrecondition)
-// counts as success without a timing. Returns the suspend call's wall ms.
+// hibernateRPC parks an actor per --lifecycle-mode: SuspendActor (durable,
+// bucket) or PauseActor (node-local checkpoint). Both are re-entrant.
+func (s *sim) hibernateRPC(ctx context.Context, ref *ateapipb.ObjectRef) error {
+	if s.cfg.lifecycle == "pause" {
+		_, err := s.api.PauseActor(ctx, &ateapipb.PauseActorRequest{Actor: ref})
+		return err
+	}
+	_, err := s.api.SuspendActor(ctx, &ateapipb.SuspendActorRequest{Actor: ref})
+	return err
+}
+
+// suspendNow is the driver-mode park after a step or ping cycle (suspend or
+// pause per --lifecycle-mode). It retries transient control-plane
+// conflicts; an actor already parked (FailedPrecondition) counts as success
+// without a timing. Returns the call's wall ms.
 func (s *sim) suspendNow(ctx context.Context, name string) (float64, error) {
 	ref := &ateapipb.ObjectRef{Atespace: s.cfg.atespace, Name: name}
 	var err error
 	for attempt := 0; attempt < 5; attempt++ {
 		cctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 		t := time.Now()
-		_, err = s.api.SuspendActor(cctx, &ateapipb.SuspendActorRequest{Actor: ref})
+		err = s.hibernateRPC(cctx, ref)
 		cancel()
 		if err == nil {
 			return float64(time.Since(t).Microseconds()) / 1000, nil

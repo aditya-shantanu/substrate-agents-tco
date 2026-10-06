@@ -34,7 +34,7 @@ MACHINE_TYPE=$(kubectl get node "${WORKER_NODE:-}" -o jsonpath='{.metadata.label
   || kubectl get nodes -o jsonpath='{.items[0].metadata.labels.node\.kubernetes\.io/instance-type}')
 POOL_NODES=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool \
   -o jsonpath='{range .items[*]}{.spec.nodeName}{"\n"}{end}' 2>/dev/null | sort -u | grep -c . || echo 1)
-SNAP_GIB=$(gcloud storage du -s "gs://${BUCKET_NAME}/benchmark-workloads/glutton/atespaces/agents-sim/**" 2>/dev/null \
+SNAP_GIB=$({ gcloud storage du -s "gs://${BUCKET_NAME}/benchmark-workloads/glutton/atespaces/agents-sim/**" 2>/dev/null || true; } \
   | awk -v n="${AGENTS}" '$1>0 {printf "%.3f", $1/n/1073741824}')
 python3 "${SERVICE_DIR}/analysis/final_report.py" \
   --run-log "${OUT}/run.log" --occupancy "${OUT}/occupancy.csv" \
