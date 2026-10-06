@@ -68,6 +68,7 @@ type cfg struct {
 	script        string  // built-in name or YAML path; empty = personal-agent turns
 	thinkScale    float64 // multiplier on every think gap
 	scriptSuspend string  // driver | idle
+	scriptLoop    bool    // play the script back-to-back instead of as Poisson tasks (a one-day script)
 
 	// one-ping mode (see ping.go): the benchmarking suite's GluttonUser loop
 	pingActorsPerUser  int // 0 = disabled
@@ -165,6 +166,7 @@ func main() {
 	flag.BoolVar(&c.setupSuspend, "setup-suspend", true, "suspend each agent right after setup (snapshot design); false keeps agents resident on their workers (parking design: workers >= agents, long idle timeout)")
 	flag.StringVar(&c.script, "script", "", "agent-session script: a built-in name ("+strings.Join(agentscript.Names(), ", ")+") or a path to a YAML file; sessions then play the script (one task each) instead of personal-agent turns; empty = personal-agent workload")
 	flag.Float64Var(&c.thinkScale, "think-scale", 1, "script mode: multiplier on every think gap (LLM latency); gaps get ±20% jitter and are NOT time-compressed")
+	flag.BoolVar(&c.scriptLoop, "script-loop", false, "script mode: each agent plays the script back-to-back for the whole run (for scripts that are one day of life, e.g. personal-assistant with --think-scale 0.02) instead of one task per Poisson session")
 	flag.StringVar(&c.scriptSuspend, "script-suspend", "driver", "script mode: who suspends between steps — driver (SuspendActor right after each step, like the upstream benchmark) or idle (the autosuspender's idle timeout decides, like a production gateway)")
 	flag.IntVar(&c.pingActorsPerUser, "ping-actors-per-user", 0, "one-ping workload (substrate benchmarking's GluttonUser loop, the Prow 200K run): group agents into virtual users of this many actors; each user serially wakes an actor with a ping, holds it for --ping-live, suspends it, sleeps --ping-wait, then moves to its next actor; no memory fill, no other work. 0 = disabled")
 	flag.DurationVar(&c.pingWait, "ping-wait", 10*time.Second, "one-ping: gap between an actor's suspend and the user's next wake (wall clock, not compressed)")
@@ -430,6 +432,14 @@ func (s *sim) agentLoop(ctx context.Context, id int, deadline time.Time) {
 	name := actorName(id)
 	rng := rand.New(rand.NewPCG(uint64(id), 0xa9e1))
 	time.Sleep(time.Duration(rng.Float64() * s.cfg.rampSec * float64(time.Second)))
+
+	if s.script != nil && s.cfg.scriptLoop {
+		// One lap after another until the deadline (runTask stops at it).
+		for time.Now().Before(deadline) && ctx.Err() == nil {
+			s.runTask(ctx, id, name, rng, deadline)
+		}
+		return
+	}
 
 	if s.cfg.pingIndependent {
 		// Independent one-ping: exponential gaps with mean --ping-wait (wall

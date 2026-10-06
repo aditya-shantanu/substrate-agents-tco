@@ -41,21 +41,39 @@ type config struct {
 	// workload: personal-agent turns, or the coding-session script
 	workload      string // personal | coding-session
 	tasksPerDay   int    // script mode: tasks per agent-day
-	thinkScale    int    // script mode: × every LLM think gap
+	thinkScale    float64 // script mode: × every LLM think gap (fractional for one-day scripts)
 	scriptSuspend string // script mode: driver | idle
 }
 
-// codingSum is the shape of the built-in coding-session script, for the
-// load estimate and cost preview in script mode.
-var codingSum = func() agentscript.Summary {
-	s, err := agentscript.Load(agentscript.DefaultScript)
+// scriptSums caches the shape of each built-in script, for the load
+// estimate and cost preview in script mode.
+var scriptSums = map[string]agentscript.Summary{}
+
+func scriptSum(name string) agentscript.Summary {
+	if sum, ok := scriptSums[name]; ok {
+		return sum
+	}
+	s, err := agentscript.Load(name)
 	if err != nil {
 		panic(err)
 	}
-	return agentscript.Summarize(s)
-}()
+	scriptSums[name] = agentscript.Summarize(s)
+	return scriptSums[name]
+}
 
-func (c config) coding() bool { return c.workload == "coding-session" }
+// scripted says whether the workload is an agent-session script.
+func (c config) scripted() bool { return c.workload == "coding-session" || c.workload == "personal-assistant" }
+func (c config) coding() bool   { return c.workload == "coding-session" }
+func (c config) assistant() bool { return c.workload == "personal-assistant" }
+
+// scriptTasksPerDay is laps per agent-day: the coding task count the user
+// picks, or exactly one for the personal-assistant's one-day script.
+func (c config) scriptTasksPerDay() float64 {
+	if c.assistant() {
+		return 1
+	}
+	return float64(c.tasksPerDay)
+}
 func (c config) ping() bool   { return c.workload == "ping" }
 
 // pingShape is the one-ping loop in model units: lib.sh defaults of 20
@@ -152,7 +170,7 @@ func (c config) env() []string {
 		fmt.Sprintf("WAVE_STEP=%d", c.waveStep),
 		"WAVE_INTERVAL=" + c.waveIntvl,
 		"WORKLOAD=" + c.workload,
-		fmt.Sprintf("THINK_SCALE=%d", c.thinkScale),
+		fmt.Sprintf("THINK_SCALE=%g", c.thinkScale),
 		"SCRIPT_SUSPEND=" + c.scriptSuspend,
 	}
 	if c.coding() {
@@ -160,6 +178,8 @@ func (c config) env() []string {
 		// lib.sh also raises ACTOR_MEMORY to the script's 1Gi floor.
 		env = append(env, fmt.Sprintf("SESSIONS_PER_DAY=%d", c.tasksPerDay), "WAKES_PER_DAY=0")
 	}
+	// personal-assistant: lib.sh defaults apply (one lap per day, played
+	// back-to-back, 1536Mi actors); only the think scale is ours to send.
 	return env
 }
 
@@ -204,13 +224,14 @@ func parseSec(s string) float64 {
 // the measured switch times (2.46s/1.43s).
 const demandCalibration = 1.49
 
-// scriptShape is the coding-session workload in model units: steps per
-// task, estimated work per step (burn_cpu wall + ~1 s of I/O), and the
-// scaled think gap per step.
+// scriptShape is the chosen script in model units: steps per lap,
+// estimated work per step (burn_cpu wall + resident dwell + ~1 s of I/O),
+// and the scaled think gap per step.
 func (c config) scriptShape() (steps, workSec, gapSec float64) {
-	steps = float64(codingSum.Steps)
-	workSec = codingSum.BurnWall.Seconds()/steps + 1.0
-	gapSec = codingSum.Think.Seconds() * float64(c.thinkScale) / steps
+	sum := scriptSum(c.workload)
+	steps = float64(sum.Steps)
+	workSec = (sum.BurnWall.Seconds()+sum.Dwell.Seconds())/steps + 1.0
+	gapSec = sum.Think.Seconds() * c.thinkScale / steps
 	return
 }
 
@@ -221,12 +242,16 @@ func (c config) demand() float64 {
 		cycle := c.pingCycleSec()
 		return float64(c.agents) / pingActorsPerUser * cycle / (cycle + pingWaitSec) * demandCalibration
 	}
-	if c.coding() {
-		// Tasks arrive Poisson at the compressed rate; think gaps and switch
-		// times do not compress. Driver mode frees the worker for every gap;
-		// idle mode holds it until the idle wait elapses.
+	if c.scripted() {
+		// Tasks arrive Poisson at the compressed rate (the one-day assistant
+		// script plays back-to-back: one lap per scaled day); think gaps and
+		// switch times do not compress. Driver mode frees the worker for
+		// every gap; idle mode holds it until the idle wait elapses.
 		steps, work, gap := c.scriptShape()
-		tasksPerSec := float64(c.agents) * float64(c.tasksPerDay) * float64(c.compress) / 86400
+		tasksPerSec := float64(c.agents) * c.scriptTasksPerDay() * float64(c.compress) / 86400
+		if c.assistant() {
+			tasksPerSec = float64(c.agents) / (scriptSum(c.workload).Think.Seconds() * c.thinkScale) // laps per second at this think scale
+		}
 		hold := steps * (work + estSuspend + estResume)
 		if c.scriptSuspend == "idle" {
 			hold += steps * math.Min(gap, parseSec(c.idle)+estSuspend)
@@ -255,7 +280,7 @@ func (c config) costPreview() (perAgent, workerMo float64, agentsPerWorker float
 		cycle := c.pingCycleSec()
 		occ = cycle / (pingActorsPerUser * (cycle + pingWaitSec)) // worker held for the cycle, once per period
 	}
-	if c.coding() {
+	if c.scripted() {
 		// per step: the work, plus (driver) suspend+resume with no wait, or
 		// (idle) the run's idle wait before the suspend as well.
 		steps, work, _ := c.scriptShape()
@@ -263,7 +288,7 @@ func (c config) costPreview() (perAgent, workerMo float64, agentsPerWorker float
 		if c.scriptSuspend == "idle" {
 			wait = parseSec(c.idle)
 		}
-		occ = float64(c.tasksPerDay) * steps * (work + wait + estSuspend + estResume) / 86400
+		occ = c.scriptTasksPerDay() * steps * (work + wait + estSuspend + estResume) / 86400
 	}
 	model, v := c.peakParams()
 	var n float64
@@ -288,6 +313,15 @@ type field struct {
 }
 
 func cycleStr(cur string, opts []string, dir int) string {
+	for i, o := range opts {
+		if o == cur {
+			return opts[(i+dir+len(opts))%len(opts)]
+		}
+	}
+	return opts[0]
+}
+
+func cycleFloat(cur float64, opts []float64, dir int) float64 {
 	for i, o := range opts {
 		if o == cur {
 			return opts[(i+dir+len(opts))%len(opts)]
@@ -344,26 +378,39 @@ var fields = []field{
 	{"Workload", func(c *config) string {
 		switch {
 		case c.coding():
-			return fmt.Sprintf("coding agent — %d-step task script (substrate#1934)", codingSum.Steps)
+			return fmt.Sprintf("coding agent — %d-step task script (substrate#1934)", scriptSum(c.workload).Steps)
+		case c.assistant():
+			return fmt.Sprintf("personal assistant — one day in %d steps, ~1 GiB resident (substrate#2230)", scriptSum(c.workload).Steps)
 		case c.ping():
 			return "one-ping — GluttonUser loop (wake · ping · suspend · 10 s wait; 20 actors/user)"
 		}
 		return "personal agent — 3 chats + 40 check-ins a day"
-	}, func(c *config, d int) { c.workload = cycleStr(c.workload, []string{"personal", "coding-session", "ping"}, d) }, nil, nil},
+	}, func(c *config, d int) {
+		c.workload = cycleStr(c.workload, []string{"personal", "coding-session", "personal-assistant", "ping"}, d)
+		if c.assistant() && c.thinkScale >= 1 {
+			c.thinkScale = 0.02 // a day in ~30 min
+		} else if c.coding() && c.thinkScale < 1 {
+			c.thinkScale = 4
+		}
+	}, nil, nil},
 	{"  tasks per agent-day", func(c *config) string { return fmt.Sprintf("%d", c.tasksPerDay) },
 		func(c *config, d int) { c.tasksPerDay = cycleInt(c.tasksPerDay, []int{1, 2, 4, 8, 16, 32}, d) },
 		func(c *config) bool { return !c.coding() }, nil},
 	{"  LLM think scale", func(c *config) string {
-		return fmt.Sprintf("×%d — think gaps %d–%d s between steps", c.thinkScale, 2*c.thinkScale, 8*c.thinkScale)
-	}, func(c *config, d int) { c.thinkScale = cycleInt(c.thinkScale, []int{1, 2, 4, 8, 10, 20}, d) },
-		func(c *config) bool { return !c.coding() }, nil},
+		if c.assistant() {
+			return fmt.Sprintf("×%g — a day of the assistant's life every %s", c.thinkScale, dayIn(int(1/c.thinkScale+0.5)))
+		}
+		return fmt.Sprintf("×%g — think gaps %.0f–%.0f s between steps", c.thinkScale, 2*c.thinkScale, 8*c.thinkScale)
+	}, func(c *config, d int) {
+		c.thinkScale = cycleFloat(c.thinkScale, []float64{0.02, 0.05, 0.1, 1, 2, 4, 8, 10, 20}, d)
+	}, func(c *config) bool { return !c.scripted() }, nil},
 	{"  suspend between steps", func(c *config) string {
 		if c.scriptSuspend == "idle" {
 			return "idle wait decides (production-like)"
 		}
 		return "driver, right after each step (benchmark-like)"
 	}, func(c *config, d int) { c.scriptSuspend = cycleStr(c.scriptSuspend, []string{"driver", "idle"}, d) },
-		func(c *config) bool { return !c.coding() }, nil},
+		func(c *config) bool { return !c.scripted() }, nil},
 	{"Time compression", func(c *config) string {
 		return fmt.Sprintf("×%d — a day of agent-life every %s", c.compress, dayIn(c.compress))
 	},
@@ -425,7 +472,7 @@ func (a *App) viewConfig() string {
 		case dim:
 			why := "  (enabled in load-test mode)"
 			if !strings.HasPrefix(f.label, "  wave") {
-				why = "  (coding-agent workload only)"
+				why = "  (scripted workloads only)"
 			}
 			b.WriteString(sFaint.Render(label+"  "+val) + sFaint.Render(why) + "\n")
 		case i == a.cursor:

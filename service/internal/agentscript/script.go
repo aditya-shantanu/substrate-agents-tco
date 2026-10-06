@@ -54,6 +54,9 @@ const (
 	KindWalkRAM
 	// KindPing is a minimal round-trip through the router.
 	KindPing
+	// KindDwell keeps the actor resident and idle for Millis without any
+	// request: a gateway sitting in a model round trip or a typing gap.
+	KindDwell
 )
 
 // Op is one resource effect inside a step, executed as a single glutton
@@ -152,6 +155,7 @@ var opSpecs = map[string]opSpec{
 	"churn_ram":        {kind: KindChurnRAM, key: true, size: true},
 	"walk_ram":         {kind: KindWalkRAM, key: true},
 	"ping":             {kind: KindPing},
+	"dwell":            {kind: KindDwell, millis: true},
 }
 
 var kindNames = func() map[Kind]string {
@@ -267,6 +271,9 @@ func decodeOp(od opDoc) (Op, error) {
 	if spec.millis {
 		if args.Millis <= 0 {
 			return Op{}, fmt.Errorf("%s: millis must be positive", name)
+		}
+		if spec.kind == KindDwell && args.Parallel != 0 {
+			return Op{}, fmt.Errorf("%s: takes no parallel", name)
 		}
 		if args.Parallel < 0 {
 			return Op{}, fmt.Errorf("%s: parallel cannot be negative", name)

@@ -26,7 +26,20 @@ def fmt_machine(s):
     return f"{s['machine_type']}, ${s['node_mo']:,.1f}/mo ({s['price_model']})"
 
 
-def rows(s):
+def snapshot_cell(path):
+    """Per-agent snapshot size and breakdown from snapshots.json, if measured."""
+    p = os.path.join(path, "snapshots.json")
+    if not os.path.exists(p):
+        return None
+    d = json.load(open(p))
+    mib = lambda b: f"{b / 2**20:,.0f} MiB"
+    parts = " + ".join(f"{name} {mib(v['mean'])}" for name, v in list(d["breakdown"].items())[:4])
+    where = "node-local checkpoint" if d["lifecycle"] == "pause" else "bucket snapshot"
+    return (f"{mib(d['total_mean'])} mean per agent (p50 {mib(d['total_p50'])}, max {mib(d['total_max'])}), "
+            f"{where}, n={d['actors']}: {parts}")
+
+
+def rows(s, path=None):
     prof = s["profile"]
     script = prof.get("workload") == "script"
     if script:
@@ -57,6 +70,8 @@ def rows(s):
              + (ms3(s["suspend_ms"]) if s.get("suspend_ms") else "—")
              + f" ← T_s; avg {s['t_s'] * 1000:,.0f} ms ({s['t_s_source']}, n={s['suspends']:.0f})"),
         "Step work P50 / P90 / P99": ms3(s["step_ms"]) if s.get("step_ms") else "—",
+        "Snapshot per agent (measured) and its parts": (snapshot_cell(path) if path else None)
+            or (f"{s['snap_gib']:.2f} GiB bucket average" if s.get("snap_gib") and s.get("lifecycle") != "pause" else "—"),
         "Worker time per wake-up": f"{overhead:.1f} s (wait + T_s + T_r)",
         "Occupancy (worker time per agent)": f"{s['occupancy'] * 100:.2f} %  ({s['day']})",
         "Measured density": (f"{s['density_mean']:.1f}:1 mean · {s['density_p99']:.1f}:1 at P99 "
@@ -79,7 +94,7 @@ def main():
         name, _, path = arg.partition("=")
         if not path:
             name, path = os.path.basename(arg.rstrip("/")), arg
-        cols.append((name, rows(load(path))))
+        cols.append((name, rows(load(path), path if os.path.isdir(path) else os.path.dirname(path))))
     keys = []
     for _, r in cols:  # union of rows, first column's order first
         keys += [k for k in r if k not in keys]

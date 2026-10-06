@@ -102,6 +102,7 @@ spec:
         - --script=${SCRIPT_ARG}
         - --think-scale=${THINK_SCALE}
         - --script-suspend=${SCRIPT_SUSPEND}
+        - --script-loop=${SCRIPT_LOOP}
         # One-ping (GluttonUser loop) workload; 0 actors per user = off.
         - --ping-actors-per-user=${PING_ACTORS_PER_USER}
         - --ping-wait=${PING_WAIT}

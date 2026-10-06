@@ -177,6 +177,8 @@ func (s *sim) printProfile() {
 		fmt.Printf("burn_wall_s=%.3f\n", sum.BurnWall.Seconds())
 		fmt.Printf("burn_cpu_s=%.3f\n", sum.BurnCPU.Seconds())
 		fmt.Printf("tasks_per_day=%g\n", s.cfg.sessionsPerDay)
+		fmt.Printf("dwell_s=%.3f\n", sum.Dwell.Seconds())
+		fmt.Printf("script_loop=%t\n", s.cfg.scriptLoop)
 		fmt.Printf("suspend_mode=%s\n", s.cfg.scriptSuspend)
 		fmt.Printf("min_actor_memory=%s\n", agentscript.FormatSize(s.script.MinActorMemory))
 	}
@@ -355,6 +357,14 @@ func (s *sim) execOp(ctx context.Context, name string, o agentscript.Op) error {
 		_, err = s.post(ctx, name, "/readram", readRAMBody(o.Key, ""))
 	case agentscript.KindPing:
 		_, err = s.post(ctx, name, "/ping", nil)
+	case agentscript.KindDwell:
+		// No request: the actor stays resident while the driver waits, the
+		// way a gateway sits in a model round trip or a typing gap.
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		case <-time.After(time.Duration(o.Millis) * time.Millisecond):
+		}
 	default:
 		return fmt.Errorf("unknown op kind %d", o.Kind)
 	}

@@ -81,6 +81,8 @@ type Summary struct {
 	BurnWall time.Duration
 	// BurnCPU is burn wall × parallelism: CPU-seconds per task.
 	BurnCPU time.Duration
+	// Dwell is resident idle time inside steps (worker held, no request).
+	Dwell time.Duration
 	// Ingest, DiskWrite and RAMFill are the bytes moved per task.
 	Ingest, DiskWrite, RAMFill int64
 	// MaxIngest is the largest single ingest payload (the driver's buffer).
@@ -99,6 +101,8 @@ func Summarize(s *Script) Summary {
 				w := time.Duration(o.Millis) * time.Millisecond
 				sum.BurnWall += w
 				sum.BurnCPU += w * time.Duration(max(o.Parallel, 1))
+			case KindDwell:
+				sum.Dwell += time.Duration(o.Millis) * time.Millisecond
 			case KindIngest:
 				sum.Ingest += o.Bytes
 				sum.MaxIngest = max(sum.MaxIngest, o.Bytes)

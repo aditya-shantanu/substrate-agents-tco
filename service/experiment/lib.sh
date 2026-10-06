@@ -81,8 +81,12 @@ export MEM_CHURN="${MEM_CHURN:-16Mi}"            # dirtied every turn (snapshots
 # autosuspender's IDLE_TIMEOUT decides (production-like; gaps shorter than
 # the wait keep the worker).
 export WORKLOAD="${WORKLOAD:-coding-session}"   # the default workload since 2026-10-05
+# remember what the caller set before defaults apply (workload branches below pick their own)
+USER_THINK_SCALE="${THINK_SCALE-}"
+USER_SCRIPT_LOOP="${SCRIPT_LOOP-}"
 export THINK_SCALE="${THINK_SCALE:-4}"
 export SCRIPT_SUSPEND="${SCRIPT_SUSPEND:-driver}"
+export SCRIPT_LOOP="${SCRIPT_LOOP:-false}"
 # WORKLOAD=ping: the one-ping GluttonUser loop of substrate's benchmarking
 # suite (the Prow 200K run): PING_ACTORS_PER_USER actors per virtual user,
 # served one at a time — wake by ping, PING_LIVE awake, suspend, PING_WAIT —
@@ -119,6 +123,15 @@ elif [[ "${WORKLOAD}" == "ping" ]]; then
   export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
   export SCRIPT_ARG=""
   [[ "${PING_ACTORS_PER_USER}" -gt 0 || "${PING_INDEPENDENT}" == "true" ]] || export PING_ACTORS_PER_USER=20
+elif [[ "${WORKLOAD}" == "personal-assistant" ]]; then
+  # substrate#2230: one lap = one day of an always-on assistant (61 steps,
+  # 24 h of think gaps, 440 s of resident dwell, 640→960 MiB resident).
+  # Played back-to-back at THINK_SCALE 0.02 (a day in ~30 min); tasks/day = 1.
+  export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-1}"
+  export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
+  export THINK_SCALE="${USER_THINK_SCALE:-0.02}"
+  export SCRIPT_LOOP="${USER_SCRIPT_LOOP:-true}"
+  export SCRIPT_ARG="personal-assistant"
 else
   export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-8}"   # tasks per agent-day
   export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
@@ -137,7 +150,8 @@ fi
 # shmem pages can page out and mask an undersized limit — badly. The
 # coding-session script declares a 1Gi floor (agentsim refuses a smaller
 # template), so script workloads default to 1Gi.
-export ACTOR_MEMORY="${ACTOR_MEMORY:-$([[ "${WORKLOAD}" == "personal" || "${WORKLOAD}" == "ping" ]] && echo 256Mi || echo 1Gi)}"
+actor_mem_default() { case "${WORKLOAD}" in personal|ping) echo 256Mi ;; personal-assistant) echo 1536Mi ;; *) echo 1Gi ;; esac; }
+export ACTOR_MEMORY="${ACTOR_MEMORY:-$(actor_mem_default)}"
 
 # --- worker pod shape (used by the Burstable patch; requests<limits) ---
 # Under kubelet LimitedSwap a pod may swap at most request/nodeRAM × swap,

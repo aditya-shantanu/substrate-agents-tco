@@ -51,6 +51,22 @@ func TestCodingSessionShape(t *testing.T) {
 	}
 }
 
+// The personal-assistant script (substrate#2230): one day in 61 steps,
+// 24 h of think, 440 s of dwell, 1.5 GiB floor.
+func TestPersonalAssistantShape(t *testing.T) {
+	s, err := Load("personal-assistant")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := Summarize(s)
+	if sum.Steps != 61 || sum.Think != 24*time.Hour || sum.Dwell != 440*time.Second {
+		t.Errorf("steps %d think %s dwell %s", sum.Steps, sum.Think, sum.Dwell)
+	}
+	if s.MinActorMemory != 1536<<20 {
+		t.Errorf("min_actor_memory = %s", FormatSize(s.MinActorMemory))
+	}
+}
+
 func TestResolveFileVsName(t *testing.T) {
 	if _, err := Resolve("coding-session"); err != nil {
 		t.Errorf("built-in by name: %v", err)
@@ -74,6 +90,7 @@ func TestDecodeRejects(t *testing.T) {
 		"read before write": {base("      - read_disk_digest: {key: f}\n"), "before any ingest or write_disk"},
 		"walk before fill":  {base("      - walk_ram: {key: r}\n"), "before any fill_ram"},
 		"bad millis":        {base("      - burn_cpu: {millis: 0}\n"), "millis must be positive"},
+		"dwell parallel":    {base("      - dwell: {millis: 100, parallel: 2}\n"), "takes no parallel"},
 		"no think": {"name: t\nmin_actor_memory: 1Gi\nsteps:\n  - name: a\n    agent: x\n    ops:\n      - ping: {}\n",
 			"think time must be positive"},
 		"duplicate step": {base("      - ping: {}\n  - name: a\n    agent: y\n    think: 1s\n    ops:\n      - ping: {}\n"),
