@@ -67,8 +67,12 @@ def extract_sim_csv(path):
             active = True
         elif line == "=== end csv ===":
             break
-        elif active:
-            rows.append(line)
+        elif active and line and not line.startswith("{"):
+            # In-flight goroutines may still log JSON lines while the CSV is
+            # being printed (a cancelled load-test wave); keep only rows with
+            # the header's field count.
+            if not rows or line.count(",") == rows[0].count(","):
+                rows.append(line)
     if len(rows) < 2:
         sys.exit(f"no agentsim csv section in {path} — did the job finish?")
     return list(csv.DictReader(io.StringIO("\n".join(rows))))
@@ -255,21 +259,29 @@ def main():
         # wakes every N × (cycle + wait) seconds and holds a worker for the
         # cycle only. The driver suspends at once; there is no idle wait.
         N = int(prof["actors_per_user"])
+        independent = prof.get("independent") == "true" or N == 0
         wait = float(prof["wait_s"])
         W = statistics.fmean(step_ms) / 1000 if step_ms else float(prof.get("live_s", 0))
         cycle = W + t_s + t_r
-        period = N * (cycle + wait)
+        # user loop: N actors share one serial loop; independent: each
+        # agent's own Poisson schedule with mean gap `wait`
+        period = (cycle + wait) if independent else N * (cycle + wait)
         wakes_day = 86400 / period
         A = wakes_day * f_susp
         live = wakes_day * W
         overhead = t_s + t_r
         occ_real = (live + A * overhead) / 86400
-        ran_desc = (f"one-ping GluttonUser loop: {N} actors/user, {wait:.0f} s wait, "
-                    f"{float(prof.get('live_s', 0)):g} s live, time ×{a.compress:.0f}")
-        day_desc = (f"{wakes_day:.0f} wakes/day of 1 ping; an actor's period = {N} × ({cycle:.1f} s cycle + {wait:.0f} s wait) = {period:.0f} s")
+        if independent:
+            ran_desc = f"one-ping, independent Poisson wakes every {wait:.0f} s mean, {float(prof.get('live_s', 0)):g} s live, time ×{a.compress:.0f}"
+            day_desc = f"{wakes_day:.0f} wakes/day of 1 ping; an agent's period = {cycle:.1f} s cycle + {wait:.0f} s mean gap = {period:.0f} s"
+            occ_desc = f"({live:.0f}s + {A:.0f}×{overhead:.1f}s)/86400 = {occ_real * 100:.2f}%  (≈ cycle ÷ period)"
+        else:
+            ran_desc = (f"one-ping GluttonUser loop: {N} actors/user, {wait:.0f} s wait, "
+                        f"{float(prof.get('live_s', 0)):g} s live, time ×{a.compress:.0f}")
+            day_desc = (f"{wakes_day:.0f} wakes/day of 1 ping; an actor's period = {N} × ({cycle:.1f} s cycle + {wait:.0f} s wait) = {period:.0f} s")
+            occ_desc = f"({live:.0f}s + {A:.0f}×{overhead:.1f}s)/86400 = {occ_real * 100:.2f}%  (≈ cycle ÷ period; {N}:1 by construction)"
         think_desc = ""
         wait_desc = "0s wait (driver suspends after the ping)"
-        occ_desc = f"({live:.0f}s + {A:.0f}×{overhead:.1f}s)/86400 = {occ_real * 100:.2f}%  (≈ cycle ÷ period; {N}:1 by construction)"
     else:
         live = a.sessions_per_day * a.session_minutes * 60 + a.wakes_per_day * a.wake_seconds
         A = a.sessions_per_day + a.wakes_per_day

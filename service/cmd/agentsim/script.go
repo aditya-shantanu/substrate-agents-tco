@@ -65,9 +65,12 @@ func (s *sim) loadScript(ctx context.Context) error {
 	default:
 		return fmt.Errorf("--lifecycle-mode must be suspend or pause, got %q", s.cfg.lifecycle)
 	}
-	if s.cfg.pingActorsPerUser > 0 {
+	if s.cfg.pingActorsPerUser > 0 || s.cfg.pingIndependent {
 		if s.cfg.script != "" {
-			return fmt.Errorf("--script and --ping-actors-per-user are mutually exclusive")
+			return fmt.Errorf("--script and the one-ping modes are mutually exclusive")
+		}
+		if s.cfg.pingActorsPerUser > 0 && s.cfg.pingIndependent {
+			return fmt.Errorf("--ping-actors-per-user and --ping-independent are mutually exclusive")
 		}
 		// "nomem": the one-ping agent is a bare glutton process. No RAM
 		// fill, no per-turn work, no CPU-probe file.
@@ -148,9 +151,10 @@ func (s *sim) printProfile() {
 	fmt.Printf("wakes_per_day=%g\n", s.cfg.wakesPerDay)
 	fmt.Println("wake_seconds=15")
 	fmt.Printf("lifecycle=%s\n", s.cfg.lifecycle)
-	if s.cfg.pingActorsPerUser > 0 {
+	if s.cfg.pingActorsPerUser > 0 || s.cfg.pingIndependent {
 		fmt.Println("workload=ping")
 		fmt.Printf("actors_per_user=%d\n", s.cfg.pingActorsPerUser)
+		fmt.Printf("independent=%t\n", s.cfg.pingIndependent)
 		fmt.Printf("wait_s=%.3f\n", s.cfg.pingWait.Seconds())
 		fmt.Printf("live_s=%.3f\n", s.cfg.pingLive.Seconds())
 		fmt.Println("suspend_mode=driver")

@@ -95,6 +95,12 @@ export LIFECYCLE_MODE="${LIFECYCLE_MODE:-suspend}"
 export PING_ACTORS_PER_USER="${PING_ACTORS_PER_USER:-0}"
 export PING_WAIT="${PING_WAIT:-10s}"
 export PING_LIVE="${PING_LIVE:-0s}"
+# PING_INDEPENDENT=true drops the user loop: every agent wakes on its own
+# Poisson schedule (mean gap PING_WAIT), so the pool can saturate; with
+# LOAD_TEST=true the waves find the host's real ceiling. SETUP_CONCURRENCY
+# bounds concurrent boots during setup (raise for fleets of thousands).
+export PING_INDEPENDENT="${PING_INDEPENDENT:-false}"
+export SETUP_CONCURRENCY="${SETUP_CONCURRENCY:-8}"
 if [[ "${WORKLOAD}" == "personal" ]]; then
   export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-3}"
   export WAKES_PER_DAY="${WAKES_PER_DAY:-40}"
@@ -103,7 +109,7 @@ elif [[ "${WORKLOAD}" == "ping" ]]; then
   export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-0}"   # unused: the loop is continuous
   export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
   export SCRIPT_ARG=""
-  [[ "${PING_ACTORS_PER_USER}" -gt 0 ]] || export PING_ACTORS_PER_USER=20
+  [[ "${PING_ACTORS_PER_USER}" -gt 0 || "${PING_INDEPENDENT}" == "true" ]] || export PING_ACTORS_PER_USER=20
 else
   export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-8}"   # tasks per agent-day
   export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
@@ -132,8 +138,12 @@ export WORKER_REQ_MEM="${WORKER_REQ_MEM:-512Mi}"
 export WORKER_LIM_CPU="${WORKER_LIM_CPU:-1}"
 export WORKER_LIM_MEM="${WORKER_LIM_MEM:-1Gi}"
 worker_resources_patch() {
-  printf '{"spec":{"template":{"resources":{"requests":{"cpu":"%s","memory":"%s"},"limits":{"cpu":"%s","memory":"%s"}}}}}' \
-    "${WORKER_REQ_CPU}" "${WORKER_REQ_MEM}" "${WORKER_LIM_CPU}" "${WORKER_LIM_MEM}"
+  # The patch replaces the whole resources block: microVM workers must keep
+  # their ate.dev/kvm device request or they never get /dev/kvm.
+  local kvm=""
+  [[ "${SANDBOX_CLASS:-gvisor}" == "microvm" ]] && kvm=',"ate.dev/kvm":"1"'
+  printf '{"spec":{"template":{"resources":{"requests":{"cpu":"%s","memory":"%s"%s},"limits":{"cpu":"%s","memory":"%s"%s}}}}}' \
+    "${WORKER_REQ_CPU}" "${WORKER_REQ_MEM}" "${kvm}" "${WORKER_LIM_CPU}" "${WORKER_LIM_MEM}" "${kvm}"
 }
 
 # --- node swap: RESEARCH-ONLY, not exposed in the TUI and not part of the

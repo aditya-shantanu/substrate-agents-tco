@@ -72,6 +72,12 @@ type cfg struct {
 	// one-ping mode (see ping.go): the benchmarking suite's GluttonUser loop
 	pingActorsPerUser  int // 0 = disabled
 	pingWait, pingLive time.Duration
+	// pingIndependent: every agent wakes on its own Poisson schedule with
+	// mean gap pingWait (no user serializing N actors), so concurrency is
+	// random and the pool can saturate — the mode for finding a host's
+	// real ceiling with load-test waves.
+	pingIndependent  bool
+	setupConcurrency int
 
 	// lifecycle: how the driver parks an actor between activations —
 	// suspend (durable checkpoint to the bucket) or pause (node-local
@@ -157,6 +163,8 @@ func main() {
 	flag.IntVar(&c.pingActorsPerUser, "ping-actors-per-user", 0, "one-ping workload (substrate benchmarking's GluttonUser loop, the Prow 200K run): group agents into virtual users of this many actors; each user serially wakes an actor with a ping, holds it for --ping-live, suspends it, sleeps --ping-wait, then moves to its next actor; no memory fill, no other work. 0 = disabled")
 	flag.DurationVar(&c.pingWait, "ping-wait", 10*time.Second, "one-ping: gap between an actor's suspend and the user's next wake (wall clock, not compressed)")
 	flag.DurationVar(&c.pingLive, "ping-live", 0, "one-ping: how long the actor stays awake after its first ping (0 = suspend right after the ping)")
+	flag.BoolVar(&c.pingIndependent, "ping-independent", false, "one-ping without the user loop: every agent wakes on its own Poisson schedule with mean gap --ping-wait, pings, is parked by the driver; concurrency is random, so with --load-test the waves find the pool's real ceiling")
+	flag.IntVar(&c.setupConcurrency, "setup-concurrency", 8, "actors booted and parked concurrently during setup")
 	flag.StringVar(&c.lifecycle, "lifecycle-mode", "suspend", "how the driver parks an actor it has finished with (script driver mode, one-ping, and the first park after setup): suspend = SuspendActor, durable checkpoint in the bucket; pause = PauseActor, node-local checkpoint, resumes on the same node (upstream's --lifecycle-mode)")
 	flag.Float64Var(&c.failRefusalPct, "fail-refusal-pct", 5, "load-test: stop when router refusals exceed this % of activations in a wave")
 	flag.Float64Var(&c.failErrPct, "fail-error-pct", 2, "load-test: stop when request errors exceed this % of activations in a wave")
@@ -237,7 +245,7 @@ func (s *sim) setup(ctx context.Context) error {
 		id  int
 		err error
 	}
-	sem := make(chan struct{}, 8)
+	sem := make(chan struct{}, max(1, s.cfg.setupConcurrency))
 	outCh := make(chan outcome, s.cfg.agents)
 	var wg sync.WaitGroup
 	for i := 0; i < s.cfg.agents; i++ {
@@ -378,6 +386,25 @@ func (s *sim) agentLoop(ctx context.Context, id int, deadline time.Time) {
 	rng := rand.New(rand.NewPCG(uint64(id), 0xa9e1))
 	time.Sleep(time.Duration(rng.Float64() * s.cfg.rampSec * float64(time.Second)))
 
+	if s.cfg.pingIndependent {
+		// Independent one-ping: exponential gaps with mean --ping-wait (wall
+		// clock, not compressed), one wake+park per activation. Stop as soon
+		// as the context is cancelled (load-test waves cancel the loops when a
+		// wave fails) instead of spinning on failed requests until the deadline.
+		for {
+			gap := time.Duration(rng.ExpFloat64() * float64(s.cfg.pingWait))
+			if time.Now().Add(gap).After(deadline) {
+				return
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(gap):
+			}
+			s.pingCycle(ctx, id, rng)
+		}
+	}
+
 	ratePerSec := (s.cfg.sessionsPerDay + s.cfg.wakesPerDay) / 86400.0 * s.cfg.compress
 	pSession := s.cfg.sessionsPerDay / (s.cfg.sessionsPerDay + s.cfg.wakesPerDay)
 
@@ -386,7 +413,11 @@ func (s *sim) agentLoop(ctx context.Context, id int, deadline time.Time) {
 		if time.Now().Add(gap).After(deadline) {
 			return
 		}
-		time.Sleep(gap)
+		select {
+		case <-ctx.Done(): // a failed load-test wave cancels the loops
+			return
+		case <-time.After(gap):
+		}
 		if rng.Float64() < pSession {
 			s.activation(ctx, id, name, "session", rng, deadline)
 		} else {

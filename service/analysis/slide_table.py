@@ -33,6 +33,9 @@ def rows(s):
         profile = (f"{prof['script']}: {float(prof['tasks_per_day']):g} tasks × {prof['steps']} steps/day, "
                    f"think ×{float(prof['think_scale']):g} ({float(prof['think_scaled_s']):.0f} s/task), "
                    f"{prof.get('suspend_mode')} suspend, {prof.get('min_actor_memory')} actors")
+    elif prof.get("workload") == "ping" and (prof.get("independent") == "true" or prof.get("actors_per_user") == "0"):
+        profile = (f"one-ping, independent Poisson wakes every {float(prof['wait_s']):.0f} s mean, "
+                   f"{float(prof.get('live_s', 0)):g} s live, no memory fill")
     elif prof.get("workload") == "ping":
         profile = (f"one-ping GluttonUser loop: {prof['actors_per_user']} actors/user, {float(prof['wait_s']):.0f} s wait, "
                    f"{float(prof.get('live_s', 0)):g} s live, no memory fill")

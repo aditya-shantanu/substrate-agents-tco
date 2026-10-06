@@ -1,0 +1,12 @@
+autosuspend_suspends_total 56
+autosuspend_suspend_errors_total 0
+autosuspend_suspend_seconds_sum 57.809344
+autosuspend_suspend_seconds_count 56
+autosuspend_wedged_suspending 0
+autosuspend_unwedged_total 0
+autosuspend_actors{state="CRASHED"} 1
+autosuspend_actors{state="RESUMING"} 1
+autosuspend_actors_total 1989
+autosuspend_actors{state="PAUSED"} 1911
+autosuspend_actors{state="SUSPENDED"} 64
+autosuspend_actors{state="PAUSING"} 12
