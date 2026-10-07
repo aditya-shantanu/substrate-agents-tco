@@ -4,6 +4,17 @@ Test per `Workload TCO Calculations.md`: same host, same assistant actor (substr
 
 Stop rules, evaluated per leg: **literal** = resume P90 ≤ GA bar (150 ms gVisor / 300 ms microVM) ∧ host memory ≤ 90 % ∧ errors+refusals ≤ 0.5 %; **degradation** = same but resume P90 ≤ 2 × the cell's own 60-agent control. The ladder bisects on the degradation rule.
 
+## Ceilings at a glance (degradation rule)
+
+| Cell | Last pass (agents) | First fail (agents) | Peak live actors at the ceiling | Resume P50 / P90 / P99 at the ceiling (ms) | Park P50 / P90 / P99 at the ceiling (s) | Hyperdisk write p90 at the ceiling | What broke at the first fail |
+|---|---|---|---|---|---|---|---|
+| **gvisor · pause** | 90 | 120 | 29 | 404 / 546 / 985 | 2.0 / 57.0 / 88.2 | 1,578 MiB/s | err+ref 95 %, park P90 82 s, resume P90 31.5 s, disk write max 1,867 MiB/s |
+| **gvisor · suspend** | 90 | 120 | 69 | 423 / 546 / 756 | 10.4 / 31.7 / 40.5 | 1,508 MiB/s | err+ref 117 %, park P90 70 s, resume P90 31.7 s, disk write max 2,079 MiB/s |
+| **microvm · pause** | 60 | 90 | 23 | 572 / 621 / 794 | 1.2 / 58.0 / 109.4 | 975 MiB/s | err+ref 133 %, park P90 33 s, resume P90 31.7 s, disk write max 1,970 MiB/s |
+| **microvm · suspend** | 60 | 90 | 59 | 633 / 699 / 843 | 3.1 / 40.8 / 73.9 | 1,032 MiB/s | err+ref 31 %, park P90 75 s, resume P90 0.7 s, disk write max 2,397 MiB/s |
+
+Host memory never exceeded 163 GB of 768 and host CPU P90 never exceeded 34 % in any leg; the node's Hyperdisk write throughput (2,400 MiB/s provisioned) is the limiter in every cell. Agent counts are at think ×0.02: 60 agents park as often as ~3,000 real-time assistants (see Reading the ladders).
+
 ## gvisor · pause
 
 | Agents (50 workers) | Peak live actors | Resume P50 / P90 / P99 ms | Park P50 / P90 / P99 s | Err + refusals | Host mem GB (%) | Host CPU p90 | Hyperdisk write p90 / max MiB/s | Net tx max MiB/s | Literal | Degradation |
@@ -37,8 +48,9 @@ Stop rules, evaluated per leg: **literal** = resume P90 ≤ GA bar (150 ms gViso
 | 45 | 19 (5) | 572 / 621 / 743 | 1.0 / 48.1 / 69.8 | 0.00 % (0+0 of 565) | 58 (8 %) | 2 % | 738 / 2,180 | 5 | fail | pass |
 | 60 | 21 (6) | 572 / 626 / 934 | 1.0 / 62.7 / 108.2 | 2.07 % (4+10 of 676) | 76 (10 %) | 3 % | 780 / 1,751 | 19 | fail | fail |
 | 60 (rerun) | 23 (6) | 572 / 621 / 794 | 1.2 / 58.0 / 109.4 | 0.40 % (3+0 of 743) | 73 (10 %) | 3 % | 975 / 1,841 | 6 | fail | pass |
+| 90 | 33 (7) | 574 / 31,653 / 32,052 | 0.9 / 33.1 / 111.7 | 133.41 % (303+835 of 853) | 89 (12 %) | 4 % | 796 / 1,970 | 12 | fail | fail |
 
-- **Ceiling (degradation rule):** 60 agents pass, no failing rung yet → measured peak live actors at the ceiling **23**; live mean 6.1.
+- **Ceiling (degradation rule):** 60 agents pass, 90 fails → measured peak live actors at the ceiling **23**; live mean 6.1.
 - **Ceiling (literal GA bars):** 0 agents — the GA resume bars are not met by this 1 GiB-resident actor at any rung.
 - **Step 8, ACE's basis:** active per node = 23; runnable = 23 × 17 (Oct 6 agents/worker for microvm pause) = 391; memory overcommit = 391 × 1.0 GiB ÷ 768 = 0.5×; $ at 100 % active = $3179 ÷ 23 = **$138.22** per active agent-month; on our basis ($3179 ÷ 23) ÷ 17 + $0.09 = **$8.22** per runnable agent-month.
 
