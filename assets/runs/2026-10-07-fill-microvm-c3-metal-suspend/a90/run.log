@@ -1,0 +1,1032 @@
+{"time":"2026-10-07T21:10:03.810350935Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0078","steps":8,"errors":0,"wall":"16m52s"}
+{"time":"2026-10-07T21:10:03.815739925Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0065","step":"1015_question","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/f2295205-05ca-45c3-bbab-5f733f8703f4/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:03.815755862Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0065","steps":12,"errors":3,"wall":"19m55s"}
+{"time":"2026-10-07T21:10:04.006455047Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0012","steps":9,"errors":0,"wall":"17m13s"}
+{"time":"2026-10-07T21:10:04.095371558Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0015","step":"1015_question","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/64ae50e5-ad3e-48a4-9651-328252a407ed/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:04.095400663Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0015","steps":12,"errors":3,"wall":"18m48s"}
+{"time":"2026-10-07T21:10:04.302732496Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0006","step":"1015_question","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/2df2861d-5dac-4ece-a589-6f0aa8540096/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:04.302768047Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0006","steps":12,"errors":3,"wall":"20m2s"}
+{"time":"2026-10-07T21:10:04.34855438Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0034","steps":10,"errors":0,"wall":"18m17s"}
+{"time":"2026-10-07T21:10:04.425472211Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0066","steps":9,"errors":0,"wall":"17m0s"}
+{"time":"2026-10-07T21:10:06.047948561Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0029","step":"1015_question","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/169cc719-f443-4b3a-a6d3-813b1948453b/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:06.047982827Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0029","steps":12,"errors":3,"wall":"18m47s"}
+{"time":"2026-10-07T21:10:07.349428921Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0004","step":"1015_question","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/cbc002f5-bf08-439d-b33a-a369dddfd73d/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:07.349464179Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0004","steps":12,"errors":3,"wall":"19m17s"}
+{"time":"2026-10-07T21:10:08.433840936Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0013","step":"1015_question","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/c534add1-fc4e-4a5b-a584-32108fa16f07/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:08.433869577Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0013","steps":12,"errors":3,"wall":"19m39s"}
+{"time":"2026-10-07T21:10:09.672291846Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0032","steps":7,"errors":0,"wall":"16m8s"}
+{"time":"2026-10-07T21:10:09.806809426Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0075","steps":13,"errors":0,"wall":"19m57s"}
+{"time":"2026-10-07T21:10:09.853724429Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0026","steps":7,"errors":0,"wall":"16m23s"}
+{"time":"2026-10-07T21:10:10.136802526Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0070","steps":10,"errors":0,"wall":"19m4s"}
+{"time":"2026-10-07T21:10:10.220831871Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0020","steps":7,"errors":0,"wall":"15m47s"}
+{"time":"2026-10-07T21:10:10.27511651Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0040","steps":8,"errors":0,"wall":"16m35s"}
+{"time":"2026-10-07T21:10:11.028078414Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0064","step":"0930_heartbeat","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0064 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0064 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:11.562550083Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0030","step":"1000_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0030 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0030 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:12.427752915Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0023","step":"0900_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0023 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0023 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:14.314495105Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0069","steps":13,"errors":0,"wall":"19m28s"}
+{"time":"2026-10-07T21:10:14.935161218Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0031","steps":9,"errors":0,"wall":"18m21s"}
+{"time":"2026-10-07T21:10:15.022589135Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0011","step":"1000_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0011 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0011 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:15.149753452Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0041","steps":9,"errors":0,"wall":"16m55s"}
+{"time":"2026-10-07T21:10:15.654044989Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0047","steps":7,"errors":0,"wall":"15m35s"}
+{"time":"2026-10-07T21:10:15.659490375Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0054","steps":8,"errors":0,"wall":"16m59s"}
+{"time":"2026-10-07T21:10:15.668173974Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0067","steps":10,"errors":0,"wall":"17m29s"}
+{"time":"2026-10-07T21:10:15.754198197Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0000","steps":8,"errors":0,"wall":"16m28s"}
+{"time":"2026-10-07T21:10:15.773652263Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0001","steps":13,"errors":0,"wall":"19m38s"}
+{"time":"2026-10-07T21:10:15.78930113Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0061","steps":7,"errors":0,"wall":"16m46s"}
+{"time":"2026-10-07T21:10:15.793768261Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0057","steps":13,"errors":0,"wall":"19m52s"}
+{"time":"2026-10-07T21:10:15.794304895Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0046","steps":13,"errors":0,"wall":"19m45s"}
+{"time":"2026-10-07T21:10:15.836915209Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0073","steps":10,"errors":0,"wall":"18m15s"}
+{"time":"2026-10-07T21:10:15.908704122Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0027","steps":7,"errors":0,"wall":"16m20s"}
+{"time":"2026-10-07T21:10:15.914596762Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0019","step":"1000_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0019 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0019 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:15.924461953Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0022","steps":7,"errors":0,"wall":"16m2s"}
+{"time":"2026-10-07T21:10:16.078868678Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0086","step":"0930_heartbeat","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0086 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0086 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:16.165016527Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0045","steps":13,"errors":0,"wall":"19m34s"}
+{"time":"2026-10-07T21:10:16.17377476Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0048","steps":11,"errors":0,"wall":"18m59s"}
+{"time":"2026-10-07T21:10:16.421951019Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0059","steps":7,"errors":0,"wall":"16m0s"}
+{"time":"2026-10-07T21:10:16.497654458Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0085","steps":10,"errors":0,"wall":"18m28s"}
+{"time":"2026-10-07T21:10:16.501331668Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0082","steps":13,"errors":0,"wall":"19m7s"}
+{"time":"2026-10-07T21:10:16.813658695Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0055","steps":7,"errors":0,"wall":"15m29s"}
+{"time":"2026-10-07T21:10:16.977836181Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0024","steps":7,"errors":0,"wall":"16m56s"}
+{"time":"2026-10-07T21:10:17.107086061Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0049","steps":7,"errors":0,"wall":"16m38s"}
+{"time":"2026-10-07T21:10:17.22210385Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0035","steps":7,"errors":0,"wall":"16m1s"}
+{"time":"2026-10-07T21:10:17.47799866Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0068","steps":13,"errors":0,"wall":"20m19s"}
+{"time":"2026-10-07T21:10:17.514172496Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0051","steps":7,"errors":0,"wall":"16m8s"}
+{"time":"2026-10-07T21:10:17.580697383Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0025","steps":7,"errors":0,"wall":"15m30s"}
+{"time":"2026-10-07T21:10:17.757047738Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0062","steps":7,"errors":0,"wall":"17m7s"}
+{"time":"2026-10-07T21:10:17.766410683Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0083","steps":7,"errors":0,"wall":"17m3s"}
+{"time":"2026-10-07T21:10:17.838093809Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0016","steps":7,"errors":0,"wall":"15m57s"}
+{"time":"2026-10-07T21:10:17.888970772Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0042","steps":7,"errors":0,"wall":"16m24s"}
+{"time":"2026-10-07T21:10:18.087581482Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0072","steps":7,"errors":0,"wall":"16m10s"}
+{"time":"2026-10-07T21:10:18.094660549Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0021","steps":7,"errors":0,"wall":"15m53s"}
+{"time":"2026-10-07T21:10:18.120668071Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0008","steps":7,"errors":0,"wall":"15m33s"}
+{"time":"2026-10-07T21:10:18.31075696Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0043","step":"1000_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0043 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0043 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:18.511426395Z","level":"INFO","msg":"progress","activations":848,"wake_p50_ms":635,"wake_p90_ms":712,"wake_p99_ms":31622,"session_p50_ms":0,"turn_p99_ms":0,"probe_p50_ms":0,"errors":57,"refusals":70}
+{"time":"2026-10-07T21:10:18.519436638Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0038","step":"0930_heartbeat","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0038 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0038 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:18.582249153Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0088","step":"0900_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0088 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0088 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:18.628990869Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0005","step":"0900_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0005 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0005 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:18.891710188Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0084","step":"0900_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0084 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0084 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:19.882737964Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0039","step":"1000_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0039 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0039 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:20.046679418Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0052","step":"0900_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0052 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0052 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:20.485165582Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0056","step":"1020_remember_this","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0056 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0056 (got: ACTOR_STATE_CRASHED, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:20.488763852Z","level":"WARN","msg":"abandoning task after 3 failed steps","actor":"fill-1791406046-microvm-suspend-a90-0056","step":"1020_remember_this"}
+{"time":"2026-10-07T21:10:20.488773948Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0056","steps":14,"errors":4,"wall":"20m16s"}
+{"time":"2026-10-07T21:10:20.520039904Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0009","step":"1020_remember_this","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0009 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0009 (got: ACTOR_STATE_CRASHED, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:20.523307572Z","level":"WARN","msg":"abandoning task after 3 failed steps","actor":"fill-1791406046-microvm-suspend-a90-0009","step":"1020_remember_this"}
+{"time":"2026-10-07T21:10:20.523318827Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0009","steps":14,"errors":4,"wall":"19m57s"}
+{"time":"2026-10-07T21:10:21.044806973Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0064","step":"0930_heartbeat","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/9e1ce7f6-398a-4335-b5d0-ef215d48d524/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:21.044828854Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0064","steps":10,"errors":3,"wall":"19m19s"}
+{"time":"2026-10-07T21:10:21.39425722Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0058","step":"1020_remember_this","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0058 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0058 (got: ACTOR_STATE_CRASHED, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:21.397579022Z","level":"WARN","msg":"abandoning task after 3 failed steps","actor":"fill-1791406046-microvm-suspend-a90-0058","step":"1020_remember_this"}
+{"time":"2026-10-07T21:10:21.397587804Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0058","steps":14,"errors":4,"wall":"19m56s"}
+{"time":"2026-10-07T21:10:21.413905149Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0003","step":"0930_heartbeat","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0003 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0003 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:21.529933335Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0014","step":"1000_heartbeat_and_cron","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0014 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0014 (got: ACTOR_STATE_SUSPENDING, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:21.574305612Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0030","step":"1000_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/8ddba998-9c54-4461-bccd-6cc9b1ba6717/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:21.574335313Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0030","steps":11,"errors":3,"wall":"19m30s"}
+{"time":"2026-10-07T21:10:22.113907141Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0036","step":"1020_remember_this","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0036 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0036 (got: ACTOR_STATE_CRASHED, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:22.119022931Z","level":"WARN","msg":"abandoning task after 3 failed steps","actor":"fill-1791406046-microvm-suspend-a90-0036","step":"1020_remember_this"}
+{"time":"2026-10-07T21:10:22.119036848Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0036","steps":14,"errors":4,"wall":"19m40s"}
+{"time":"2026-10-07T21:10:22.436295728Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0023","step":"0900_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/ef5302ea-8375-4a05-b951-96b269ded4f3/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:22.436320139Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0023","steps":9,"errors":3,"wall":"18m8s"}
+{"time":"2026-10-07T21:10:24.775567857Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0080","step":"1020_remember_this","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0080 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0080 (got: ACTOR_STATE_CRASHED, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:24.803941511Z","level":"WARN","msg":"abandoning task after 3 failed steps","actor":"fill-1791406046-microvm-suspend-a90-0080","step":"1020_remember_this"}
+{"time":"2026-10-07T21:10:24.803959005Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0080","steps":14,"errors":4,"wall":"20m11s"}
+{"time":"2026-10-07T21:10:24.887502109Z","level":"WARN","msg":"step wake failed","actor":"fill-1791406046-microvm-suspend-a90-0071","step":"1020_remember_this","err":"/ping: HTTP 503: actor agents-sim/fill-1791406046-microvm-suspend-a90-0071 unavailable: AssignWorker prerequisite not met for Actor: agents-sim/fill-1791406046-microvm-suspend-a90-0071 (got: ACTOR_STATE_CRASHED, want ACTOR_STATE_SUSPENDED or ACTOR_STATE_PAUSED)"}
+{"time":"2026-10-07T21:10:24.89249192Z","level":"WARN","msg":"abandoning task after 3 failed steps","actor":"fill-1791406046-microvm-suspend-a90-0071","step":"1020_remember_this"}
+{"time":"2026-10-07T21:10:24.892503398Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0071","steps":14,"errors":4,"wall":"19m58s"}
+{"time":"2026-10-07T21:10:25.03857997Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0011","step":"1000_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/4cb86670-98ef-4736-a68e-1de73e2c2609/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:25.038602269Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0011","steps":11,"errors":3,"wall":"19m19s"}
+{"time":"2026-10-07T21:10:25.930702952Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0019","step":"1000_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/7e7fa53b-32f0-4d19-859a-f160ee949167/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:25.930731161Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0019","steps":11,"errors":3,"wall":"18m52s"}
+{"time":"2026-10-07T21:10:26.088192917Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0086","step":"0930_heartbeat","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/b5bbaab1-0fbf-45a0-8f67-267d506f95ec/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:26.088207621Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0086","steps":10,"errors":3,"wall":"18m23s"}
+{"time":"2026-10-07T21:10:28.320238483Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0043","step":"1000_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/25ae5e99-50bc-48a1-ab34-8e26e9e691af/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:28.320273633Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0043","steps":11,"errors":3,"wall":"19m38s"}
+{"time":"2026-10-07T21:10:28.530315889Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0038","step":"0930_heartbeat","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/94eca4cf-32b1-4000-943c-5f97b75443ab/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:28.530341503Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0038","steps":10,"errors":3,"wall":"18m44s"}
+{"time":"2026-10-07T21:10:28.593059887Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0088","step":"0900_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/15628019-4ea9-42c8-87f0-e777ca77bc17/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:28.593068479Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0088","steps":9,"errors":3,"wall":"18m1s"}
+{"time":"2026-10-07T21:10:28.637360807Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0005","step":"0900_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/9efd7a10-7ebd-4de5-84d9-a69f42af30c8/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:28.637371943Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0005","steps":9,"errors":3,"wall":"17m0s"}
+{"time":"2026-10-07T21:10:28.901201264Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0084","step":"0900_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/c5c58fbf-a104-4850-8462-103a99543562/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:28.901225975Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0084","steps":9,"errors":3,"wall":"17m30s"}
+{"time":"2026-10-07T21:10:29.897158032Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0039","step":"1000_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/c0b08293-4e11-46e6-a390-9a70b6fa1af6/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:29.897191393Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0039","steps":11,"errors":3,"wall":"19m28s"}
+{"time":"2026-10-07T21:10:30.062693663Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0052","step":"0900_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/8f4127e1-f426-44c1-b654-77a14301098e/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:30.062713229Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0052","steps":9,"errors":3,"wall":"17m2s"}
+{"time":"2026-10-07T21:10:31.424756356Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0003","step":"0930_heartbeat","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/2d6464c5-8a87-4b36-b5f4-34158f6f4e11/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:31.424785641Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0003","steps":10,"errors":3,"wall":"18m6s"}
+{"time":"2026-10-07T21:10:31.545636337Z","level":"WARN","msg":"step suspend failed","actor":"fill-1791406046-microvm-suspend-a90-0014","step":"1000_heartbeat_and_cron","err":"rpc error: code = Internal desc = while calling ateom.CheckpointWorkload: rpc error: code = Internal desc = while waiting for CH api-socket: cloud-hypervisor api socket \"/run/vc/vm/a8000cf7-30f4-4b4a-afb3-134c030cc84f/clh-api.sock\" not ready after 10s"}
+{"time":"2026-10-07T21:10:31.54565631Z","level":"INFO","msg":"task done","actor":"fill-1791406046-microvm-suspend-a90-0014","steps":11,"errors":3,"wall":"19m54s"}
+=== agentsim profile ===
+compress=1
+wakes_per_day=0
+wake_seconds=15
+lifecycle=suspend
+workload=script
+script=personal-assistant
+steps=61
+think_s=86400.000
+think_scale=0.02
+think_scaled_s=1728.000
+burn_wall_s=61.600
+burn_cpu_s=65.300
+tasks_per_day=1
+dwell_s=440.000
+script_loop=true
+suspend_mode=driver
+min_actor_memory=1536Mi
+=== end profile ===
+=== agentsim summary ===
+agents=90 activations=869 pings=9403 errors=93 refusals_503_504=175 compress=1
+step     n=869   first-request ms p50=637 p90=723 p99=31804 max=32229
+step work ms p50=5562 p90=47218 p99=47291 (the agent's own ops, wake excluded)
+driver suspend ms p50=3076 p90=74846 p99=117192 (SuspendActor after each step)
+=== agentsim steps ===
+step,n,suspended_pct,wake_p50_ms,wake_p99_ms,step_p50_ms,step_p99_ms,suspend_p50_ms,errors
+0000_gateway_start,90,100,158,199,4715,4933,2454,0
+0300_dreaming,90,100,509,555,47249,47355,2559,0
+0505_catalog_refresh,90,100,606,663,915,952,2745,0
+0730_morning_hello,90,100,628,797,5568,7080,3443,0
+0732_whats_today,90,100,655,788,12967,22795,3293,1
+0735_quick_followup,90,99,652,4882,4582,8825,4178,2
+0800_briefing,89,100,659,1025,18058,22735,12698,0
+0830_heartbeat,68,100,668,1076,4515,6559,7477,5
+0900_heartbeat_and_cron,57,91,673,31898,4523,7364,20183,14
+0930_heartbeat,43,91,659,31866,4648,6653,36608,14
+1000_heartbeat_and_cron,31,81,708,31567,4841,7955,79851,19
+1015_question,21,67,660,31675,14665,18473,2981,20
+1017_followup,14,57,749,31880,6611,6720,20333,12
+1020_remember_this,6,0,31694,31786,NaN,NaN,NaN,6
+=== end steps ===
+=== agentsim csv ===
+unix_ms,agent,kind,first_req_ms,readram_ms,pings,errors,refusals,step,step_ms,suspend_ms,was_suspended
+1791406264573,56,step,182.7,0.0,9,0,0,0000_gateway_start,4663.4,2358.2,1
+1791406266226,75,step,154.6,0.0,9,0,0,0000_gateway_start,4649.1,2415.3,1
+1791406269941,28,step,182.0,0.0,9,0,0,0000_gateway_start,4765.7,2543.9,1
+1791406272475,6,step,153.9,0.0,9,0,0,0000_gateway_start,4681.6,2506.0,1
+1791406273211,80,step,155.5,0.0,9,0,0,0000_gateway_start,4715.6,2499.0,1
+1791406274355,68,step,162.8,0.0,9,0,0,0000_gateway_start,4763.3,2479.9,1
+1791406275697,65,step,159.4,0.0,9,0,0,0000_gateway_start,4679.3,2501.5,1
+1791406287321,46,step,183.3,0.0,9,0,0,0000_gateway_start,4732.4,2453.6,1
+1791406288087,58,step,162.3,0.0,9,0,0,0000_gateway_start,4692.4,2658.1,1
+1791406290562,1,step,157.2,0.0,9,0,0,0000_gateway_start,4682.6,2350.8,1
+1791406298341,71,step,163.8,0.0,9,0,0,0000_gateway_start,4669.7,2633.2,1
+1791406299835,57,step,153.9,0.0,9,0,0,0000_gateway_start,4741.0,2682.0,1
+1791406300612,9,step,152.0,0.0,9,0,0,0000_gateway_start,4788.3,2704.2,1
+1791406301817,13,step,159.7,0.0,9,0,0,0000_gateway_start,5029.7,2722.1,1
+1791406304156,43,step,152.2,0.0,9,0,0,0000_gateway_start,4727.1,2460.6,1
+1791406305046,14,step,155.1,0.0,9,0,0,0000_gateway_start,4892.2,2686.9,1
+1791406306331,30,step,161.5,0.0,9,0,0,0000_gateway_start,4709.6,2348.3,1
+1791406307376,69,step,181.4,0.0,9,0,0,0000_gateway_start,4844.2,2398.5,1
+1791406308288,45,step,164.3,0.0,9,0,0,0000_gateway_start,4764.7,2427.8,1
+1791406312413,36,step,172.3,0.0,9,0,0,0000_gateway_start,4714.5,2477.4,1
+1791406321216,11,step,168.3,0.0,9,0,0,0000_gateway_start,4637.2,2546.4,1
+1791406323879,4,step,149.9,0.0,9,0,0,0000_gateway_start,4690.6,2565.8,1
+1791406323897,87,step,160.3,0.0,9,0,0,0000_gateway_start,4667.9,2684.5,1
+1791406324239,39,step,149.9,0.0,9,0,0,0000_gateway_start,4657.7,2380.8,1
+1791406329647,18,step,198.8,0.0,9,0,0,0000_gateway_start,4717.5,2463.7,1
+1791406329673,64,step,173.6,0.0,9,0,0,0000_gateway_start,4722.8,2648.3,1
+1791406334628,29,step,213.7,0.0,9,0,0,0000_gateway_start,4750.7,2231.3,1
+1791406340637,15,step,175.2,0.0,9,0,0,0000_gateway_start,4678.5,2382.9,1
+1791406344176,70,step,153.2,0.0,9,0,0,0000_gateway_start,4708.7,2404.3,1
+1791406344668,82,step,155.7,0.0,9,0,0,0000_gateway_start,4748.2,2653.3,1
+1791406355363,48,step,166.6,0.0,9,0,0,0000_gateway_start,4694.1,2384.6,1
+1791406363428,38,step,168.2,0.0,9,0,0,0000_gateway_start,4658.3,2749.2,1
+1791406366079,34,step,149.6,0.0,9,0,0,0000_gateway_start,4609.8,2520.0,1
+1791406368804,19,step,154.5,0.0,9,0,0,0000_gateway_start,4642.5,2235.8,1
+1791406374401,31,step,180.4,0.0,9,0,0,0000_gateway_start,4700.4,2224.5,1
+1791406375069,85,step,156.0,0.0,9,0,0,0000_gateway_start,4692.6,2483.1,1
+1791406386630,86,step,167.5,0.0,9,0,0,0000_gateway_start,4659.4,2254.5,1
+1791406389864,73,step,152.8,0.0,9,0,0,0000_gateway_start,4688.8,2344.8,1
+1791406392932,89,step,153.1,0.0,9,0,0,0000_gateway_start,4626.2,2355.9,1
+1791406398664,53,step,181.5,0.0,9,0,0,0000_gateway_start,4632.7,2613.2,1
+1791406401234,37,step,147.2,0.0,9,0,0,0000_gateway_start,4736.4,2421.0,1
+1791406402855,7,step,159.1,0.0,9,0,0,0000_gateway_start,4807.2,2531.0,1
+1791406403023,23,step,150.6,0.0,9,0,0,0000_gateway_start,4767.3,2514.3,1
+1791406408219,50,step,161.4,0.0,9,0,0,0000_gateway_start,4707.3,2152.1,1
+1791406412994,33,step,157.2,0.0,9,0,0,0000_gateway_start,4772.4,2959.1,1
+1791406415129,88,step,155.3,0.0,9,0,0,0000_gateway_start,4693.8,2622.2,1
+1791406419041,3,step,172.3,0.0,9,0,0,0000_gateway_start,4700.1,2401.2,1
+1791406419876,67,step,168.5,0.0,9,0,0,0000_gateway_start,4750.8,2519.1,1
+1791406425210,12,step,151.1,0.0,9,0,0,0000_gateway_start,4742.0,2325.2,1
+1791406432122,2,step,169.9,0.0,9,0,0,0000_gateway_start,4682.0,2383.7,1
+1791406432730,17,step,150.2,0.0,9,0,0,0000_gateway_start,4672.0,2380.1,1
+1791406443559,79,step,169.4,0.0,9,0,0,0000_gateway_start,4669.1,2617.0,1
+1791406449737,84,step,191.3,0.0,9,0,0,0000_gateway_start,4634.3,2612.5,1
+1791406452985,62,step,159.2,0.0,9,0,0,0000_gateway_start,4678.0,2426.8,1
+1791406458956,78,step,172.1,0.0,9,0,0,0000_gateway_start,4645.5,2347.2,1
+1791406459493,60,step,152.3,0.0,9,0,0,0000_gateway_start,4755.7,2339.2,1
+1791406460785,66,step,159.5,0.0,9,0,0,0000_gateway_start,4796.1,2267.2,1
+1791406463431,24,step,149.4,0.0,9,0,0,0000_gateway_start,4767.3,2630.5,1
+1791406465036,52,step,160.6,0.0,9,0,0,0000_gateway_start,4742.1,2792.7,1
+1791406465316,41,step,161.6,0.0,9,0,0,0000_gateway_start,4799.3,2497.7,1
+1791406468399,61,step,149.2,0.0,9,0,0,0000_gateway_start,4842.0,2496.3,1
+1791406468822,63,step,163.2,0.0,9,0,0,0000_gateway_start,4786.0,2420.1,1
+1791406469917,54,step,155.4,0.0,9,0,0,0000_gateway_start,4798.9,2482.2,1
+1791406472309,83,step,151.3,0.0,9,0,0,0000_gateway_start,4778.6,2425.2,1
+1791406472874,49,step,154.1,0.0,9,0,0,0000_gateway_start,4761.2,2690.8,1
+1791406480916,40,step,157.8,0.0,9,0,0,0000_gateway_start,4681.9,2604.2,1
+1791406484685,5,step,156.9,0.0,9,0,0,0000_gateway_start,4693.2,2258.2,1
+1791406492957,81,step,142.8,0.0,9,0,0,0000_gateway_start,4702.4,2384.8,1
+1791406495209,42,step,147.9,0.0,9,0,0,0000_gateway_start,4667.7,2311.3,1
+1791406496178,0,step,145.8,0.0,9,0,0,0000_gateway_start,4668.3,2336.0,1
+1791406499457,26,step,152.9,0.0,9,0,0,0000_gateway_start,4792.6,2399.0,1
+1791406460740,65,step,465.9,0.0,24,0,0,0300_dreaming,47217.8,2759.8,1
+1791406506850,76,step,160.4,0.0,9,0,0,0000_gateway_start,4672.3,2337.2,1
+1791406508005,32,step,156.5,0.0,9,0,0,0000_gateway_start,4814.2,2340.4,1
+1791406513312,44,step,153.3,0.0,9,0,0,0000_gateway_start,4817.2,2282.5,1
+1791406514137,22,step,170.1,0.0,9,0,0,0000_gateway_start,4741.9,2394.4,1
+1791406515442,27,step,154.9,0.0,9,0,0,0000_gateway_start,4700.7,2316.8,1
+1791406517793,20,step,146.8,0.0,9,0,0,0000_gateway_start,4697.8,2391.9,1
+1791406517555,74,step,157.2,0.0,9,0,0,0000_gateway_start,4810.1,2533.3,1
+1791406476990,1,step,525.3,0.0,24,0,0,0300_dreaming,47254.3,2503.6,1
+1791406522945,72,step,159.3,0.0,9,0,0,0000_gateway_start,4798.1,2475.2,1
+1791406480758,58,step,528.5,0.0,24,0,0,0300_dreaming,47261.8,2802.3,1
+1791406525787,51,step,155.5,0.0,9,0,0,0000_gateway_start,4782.7,2569.7,1
+1791406526182,77,step,151.4,0.0,9,0,0,0000_gateway_start,4657.3,2559.5,1
+1791406528182,10,step,164.4,0.0,9,0,0,0000_gateway_start,4932.7,2283.2,1
+1791406529451,35,step,159.8,0.0,9,0,0,0000_gateway_start,4825.4,2371.9,1
+1791406530091,59,step,159.0,0.0,9,0,0,0000_gateway_start,4829.4,2423.5,1
+1791406487453,75,step,510.3,0.0,24,0,0,0300_dreaming,47270.9,2733.0,1
+1791406488443,9,step,491.7,0.0,24,0,0,0300_dreaming,47241.9,2512.0,1
+1791406534184,16,step,156.0,0.0,9,0,0,0000_gateway_start,4825.6,2273.9,1
+1791406534921,47,step,165.2,0.0,9,0,0,0000_gateway_start,4805.8,2608.2,1
+1791406534993,21,step,162.8,0.0,9,0,0,0000_gateway_start,4787.7,2716.3,1
+1791406495368,80,step,476.9,0.0,24,0,0,0300_dreaming,47223.3,2530.0,1
+1791406499996,69,step,513.3,0.0,24,0,0,0300_dreaming,47233.2,2496.8,1
+1791406500923,46,step,519.0,0.0,24,0,0,0300_dreaming,47249.7,2408.9,1
+1791406503380,13,step,481.2,0.0,24,0,0,0300_dreaming,47298.5,2598.9,1
+1791406547627,25,step,165.5,0.0,9,0,0,0000_gateway_start,4841.8,2510.7,1
+1791406505195,36,step,508.9,0.0,24,0,0,0300_dreaming,47271.4,2769.1,1
+1791406506692,57,step,503.6,0.0,24,0,0,0300_dreaming,47228.9,2371.8,1
+1791406508640,68,step,484.8,0.0,24,0,0,0300_dreaming,47272.6,2536.7,1
+1791406510997,4,step,525.2,0.0,24,0,0,0300_dreaming,47231.0,2576.9,1
+1791406512350,28,step,488.6,0.0,24,0,0,0300_dreaming,47251.7,2441.7,1
+1791406513426,6,step,509.3,0.0,24,0,0,0300_dreaming,47286.8,2446.4,1
+1791406556986,55,step,155.2,0.0,9,0,0,0000_gateway_start,4706.2,2586.1,1
+1791406515972,71,step,526.2,0.0,24,0,0,0300_dreaming,47218.5,2527.4,1
+1791406516994,56,step,462.7,0.0,24,0,0,0300_dreaming,47231.0,2463.0,1
+1791406563081,8,step,155.0,0.0,9,0,0,0000_gateway_start,4700.0,2353.3,1
+1791406521807,43,step,521.2,0.0,24,0,0,0300_dreaming,47230.6,2704.8,1
+1791406528741,87,step,527.2,0.0,24,0,0,0300_dreaming,47232.4,2928.6,1
+1791406529347,14,step,523.3,0.0,24,0,0,0300_dreaming,47258.0,2587.2,1
+1791406538309,29,step,513.3,0.0,24,0,0,0300_dreaming,47214.9,2556.1,1
+1791406552581,82,step,529.1,0.0,24,0,0,0300_dreaming,47239.8,3129.5,1
+1791406553331,45,step,548.5,0.0,24,0,0,0300_dreaming,47271.3,2608.1,1
+1791406559603,19,step,522.2,0.0,24,0,0,0300_dreaming,47216.3,2572.0,1
+1791406562062,64,step,530.7,0.0,24,0,0,0300_dreaming,47228.0,2994.5,1
+1791406563469,30,step,523.5,0.0,24,0,0,0300_dreaming,47243.5,2463.3,1
+1791406566666,39,step,498.5,0.0,24,0,0,0300_dreaming,47242.9,2641.5,1
+1791406567497,11,step,491.5,0.0,24,0,0,0300_dreaming,47280.4,2399.3,1
+1791406570601,48,step,532.5,0.0,24,0,0,0300_dreaming,47243.2,2410.7,1
+1791406574509,73,step,503.0,0.0,24,0,0,0300_dreaming,47213.4,2434.0,1
+1791406575489,86,step,506.8,0.0,24,0,0,0300_dreaming,47216.9,2704.9,1
+1791406576566,70,step,498.8,0.0,24,0,0,0300_dreaming,47324.1,2574.7,1
+1791406581640,89,step,513.2,0.0,24,0,0,0300_dreaming,47232.3,2635.0,1
+1791406583148,37,step,525.1,0.0,24,0,0,0300_dreaming,47234.9,2561.7,1
+1791406592015,18,step,480.9,0.0,24,0,0,0300_dreaming,47230.8,2318.0,1
+1791406592767,15,step,499.8,0.0,24,0,0,0300_dreaming,47240.0,2571.6,1
+1791406598169,38,step,508.5,0.0,24,0,0,0300_dreaming,47229.3,2585.2,1
+1791406600268,31,step,508.7,0.0,24,0,0,0300_dreaming,47272.6,2577.8,1
+1791406607331,3,step,541.0,0.0,24,0,0,0300_dreaming,47254.1,2448.7,1
+1791406614127,85,step,529.0,0.0,24,0,0,0300_dreaming,47223.0,2446.5,1
+1791406616660,7,step,497.8,0.0,24,0,0,0300_dreaming,47248.9,2442.9,1
+1791406617474,17,step,493.4,0.0,24,0,0,0300_dreaming,47275.4,2553.8,1
+1791406666576,80,step,576.6,0.0,4,0,0,0505_catalog_refresh,921.0,2510.3,1
+1791406620223,33,step,487.2,0.0,24,0,0,0300_dreaming,47249.5,2665.1,1
+1791406667471,9,step,594.0,0.0,4,0,0,0505_catalog_refresh,913.9,2846.7,1
+1791406624620,79,step,511.5,0.0,24,0,0,0300_dreaming,47226.9,2306.8,1
+1791406627509,34,step,500.5,0.0,24,0,0,0300_dreaming,47233.7,2521.9,1
+1791406628744,23,step,489.0,0.0,24,0,0,0300_dreaming,47234.8,2501.5,1
+1791406682940,13,step,597.6,0.0,4,0,0,0505_catalog_refresh,910.6,2644.5,1
+1791406637445,84,step,503.8,0.0,24,0,0,0300_dreaming,47265.2,2773.5,1
+1791406685180,4,step,614.0,0.0,4,0,0,0505_catalog_refresh,914.8,2752.7,1
+1791406641429,78,step,501.2,0.0,24,0,0,0300_dreaming,47228.7,2592.5,1
+1791406641979,66,step,504.5,0.0,24,0,0,0300_dreaming,47257.6,2672.6,1
+1791406642103,67,step,481.1,0.0,24,0,0,0300_dreaming,47232.6,2709.2,1
+1791406690990,57,step,625.0,0.0,4,0,0,0505_catalog_refresh,912.6,2641.5,1
+1791406691758,1,step,563.8,0.0,4,0,0,0505_catalog_refresh,960.0,2656.7,1
+1791406691022,65,step,620.3,0.0,4,0,0,0505_catalog_refresh,907.9,3972.5,1
+1791406696087,58,step,574.5,0.0,4,0,0,0505_catalog_refresh,902.6,2693.8,1
+1791406697797,36,step,567.4,0.0,4,0,0,0505_catalog_refresh,912.6,2625.4,1
+1791406700234,56,step,583.3,0.0,4,0,0,0505_catalog_refresh,910.8,2584.4,1
+1791406654923,88,step,483.4,0.0,24,0,0,0300_dreaming,47290.9,2455.8,1
+1791406657003,53,step,504.1,0.0,24,0,0,0300_dreaming,47224.5,2795.7,1
+1791406662007,52,step,524.8,0.0,24,0,0,0300_dreaming,47272.3,2558.8,1
+1791406708596,69,step,586.7,0.0,4,0,0,0505_catalog_refresh,910.0,2689.2,1
+1791406663551,41,step,499.9,0.0,24,0,0,0300_dreaming,47231.6,2528.9,1
+1791406710967,28,step,582.2,0.0,4,0,0,0505_catalog_refresh,916.0,2699.2,1
+1791406711428,71,step,597.0,0.0,4,0,0,0505_catalog_refresh,907.6,2857.9,1
+1791406712386,75,step,627.3,0.0,4,0,0,0505_catalog_refresh,922.4,2633.6,1
+1791406669255,50,step,531.5,0.0,24,0,0,0300_dreaming,47278.3,2786.1,1
+1791406716218,46,step,574.5,0.0,4,0,0,0505_catalog_refresh,946.7,2651.4,1
+1791406670709,12,step,496.1,0.0,24,0,0,0300_dreaming,47271.7,2317.2,1
+1791406673245,81,step,522.2,0.0,24,0,0,0300_dreaming,47301.8,3225.5,1
+1791406674967,63,step,516.9,0.0,24,0,0,0300_dreaming,47234.7,2491.2,1
+1791406724377,6,step,608.9,0.0,4,0,0,0505_catalog_refresh,903.2,2573.4,1
+1791406724596,82,step,633.9,0.0,4,0,0,0505_catalog_refresh,907.7,2645.7,1
+1791406682346,2,step,478.5,0.0,24,0,0,0300_dreaming,47234.4,3102.0,1
+1791406684105,40,step,508.4,0.0,24,0,0,0300_dreaming,47287.4,2493.3,1
+1791406685737,5,step,524.6,0.0,24,0,0,0300_dreaming,47225.8,2512.4,1
+1791406687112,60,step,505.1,0.0,24,0,0,0300_dreaming,47312.6,2501.7,1
+1791406734093,19,step,597.5,0.0,4,0,0,0505_catalog_refresh,952.0,2770.0,1
+1791406688142,76,step,513.4,0.0,24,0,0,0300_dreaming,47243.7,2719.1,1
+1791406734775,68,step,562.7,0.0,4,0,0,0505_catalog_refresh,913.8,2691.4,1
+1791406736652,30,step,597.0,0.0,4,0,0,0505_catalog_refresh,908.5,2630.7,1
+1791406740328,45,step,565.8,0.0,4,0,0,0505_catalog_refresh,900.2,2540.0,1
+1791406695063,83,step,519.2,0.0,24,0,0,0300_dreaming,47278.4,2582.4,1
+1791406696566,54,step,520.5,0.0,24,0,0,0300_dreaming,47269.4,2567.0,1
+1791406742675,14,step,605.3,0.0,4,0,0,0505_catalog_refresh,913.4,2787.4,1
+1791406749755,48,step,594.2,0.0,4,0,0,0505_catalog_refresh,910.0,2542.2,1
+1791406751831,43,step,580.4,0.0,4,0,0,0505_catalog_refresh,910.0,2506.2,1
+1791406708163,44,step,480.2,0.0,24,0,0,0300_dreaming,47269.0,2534.9,1
+1791406755919,64,step,590.4,0.0,4,0,0,0505_catalog_refresh,913.6,2737.8,1
+1791406756138,29,step,607.5,0.0,4,0,0,0505_catalog_refresh,923.4,2741.3,1
+1791406710341,49,step,512.1,0.0,24,0,0,0300_dreaming,47280.7,2577.8,1
+1791406757374,87,step,583.7,0.0,4,0,0,0505_catalog_refresh,919.5,3069.2,1
+1791406713191,61,step,525.0,0.0,24,0,0,0300_dreaming,47279.8,2425.8,1
+1791406713413,24,step,580.1,0.0,24,0,0,0300_dreaming,47268.5,2518.9,1
+1791406713850,77,step,530.2,0.0,24,0,0,0300_dreaming,47243.0,2689.7,1
+1791406714362,32,step,536.9,0.0,24,0,0,0300_dreaming,47255.8,2732.6,1
+1791406715074,62,step,490.3,0.0,24,0,0,0300_dreaming,47354.7,2381.1,1
+1791406715763,47,step,489.3,0.0,24,0,0,0300_dreaming,47240.7,2439.0,1
+1791406717652,10,step,546.1,0.0,24,0,0,0300_dreaming,47223.4,2525.2,1
+1791406719338,0,step,495.7,0.0,24,0,0,0300_dreaming,47247.4,2335.0,1
+1791406770752,37,step,568.0,0.0,4,0,0,0505_catalog_refresh,903.6,2576.6,1
+1791406771425,15,step,615.6,0.0,4,0,0,0505_catalog_refresh,917.4,2479.5,1
+1791406727142,51,step,496.1,0.0,24,0,0,0300_dreaming,47268.1,2549.1,1
+1791406727536,35,step,510.0,0.0,24,0,0,0300_dreaming,47229.8,2417.8,1
+1791406729761,22,step,487.9,0.0,24,0,0,0300_dreaming,47213.1,2399.3,1
+1791406730375,16,step,529.8,0.0,24,0,0,0300_dreaming,47364.4,2462.6,1
+1791406734279,74,step,483.3,0.0,24,0,0,0300_dreaming,47219.9,2381.0,1
+1791406788182,18,step,591.5,0.0,4,0,0,0505_catalog_refresh,917.3,2701.8,1
+1791406742107,55,step,506.9,0.0,24,0,0,0300_dreaming,47278.1,2626.3,1
+1791406790199,7,step,596.0,0.0,4,0,0,0505_catalog_refresh,907.1,2830.0,1
+1791406744195,42,step,514.1,0.0,24,0,0,0300_dreaming,47317.2,2574.2,1
+1791406790781,73,step,597.5,0.0,4,0,0,0505_catalog_refresh,924.6,2637.7,1
+1791406791938,89,step,607.5,0.0,4,0,0,0505_catalog_refresh,920.9,2406.7,1
+1791406795395,11,step,614.8,0.0,4,0,0,0505_catalog_refresh,909.2,2577.9,1
+1791406795305,39,step,604.6,0.0,4,0,0,0505_catalog_refresh,910.7,2747.3,1
+1791406796021,79,step,564.6,0.0,4,0,0,0505_catalog_refresh,907.3,2516.4,1
+1791406750138,26,step,504.4,0.0,24,0,0,0300_dreaming,47293.3,2638.7,1
+1791406750606,72,step,517.5,0.0,24,0,0,0300_dreaming,47276.9,2644.6,1
+1791406752289,59,step,541.3,0.0,24,0,0,0300_dreaming,47254.7,2802.7,1
+1791406798696,33,step,617.4,0.0,4,0,0,0505_catalog_refresh,908.9,2716.0,1
+1791406756345,20,step,554.6,0.0,24,0,0,0300_dreaming,47279.2,2669.3,1
+1791406803349,31,step,591.4,0.0,4,0,0,0505_catalog_refresh,918.0,2833.0,1
+1791406804370,86,step,611.8,0.0,4,0,0,0505_catalog_refresh,916.1,2597.5,1
+1791406805092,70,step,625.5,0.0,4,0,0,0505_catalog_refresh,912.5,2788.7,1
+1791406806657,34,step,621.8,0.0,4,0,0,0505_catalog_refresh,932.7,2552.3,1
+1791406809162,17,step,606.4,0.0,4,0,0,0505_catalog_refresh,916.5,2745.2,1
+1791406809290,38,step,629.3,0.0,4,0,0,0505_catalog_refresh,915.2,2642.7,1
+1791406765454,27,step,510.4,0.0,24,0,0,0300_dreaming,47271.3,2465.5,1
+1791406813078,67,step,611.8,0.0,4,0,0,0505_catalog_refresh,907.8,2650.6,1
+1791406812952,85,step,586.9,0.0,4,0,0,0505_catalog_refresh,917.1,2950.4,1
+1791406771124,25,step,504.3,0.0,24,0,0,0300_dreaming,47323.2,2569.3,1
+1791406826620,3,step,590.5,0.0,4,0,0,0505_catalog_refresh,915.5,2588.8,1
+1791406833720,23,step,560.3,0.0,4,0,0,0505_catalog_refresh,911.0,2954.1,1
+1791406835343,41,step,580.4,0.0,4,0,0,0505_catalog_refresh,916.9,2754.2,1
+1791406789269,8,step,521.5,0.0,24,0,0,0300_dreaming,47256.8,2559.6,1
+1791406840456,78,step,583.9,0.0,4,0,0,0505_catalog_refresh,907.7,2762.9,1
+1791406795368,21,step,535.2,0.0,24,0,0,0300_dreaming,47225.6,2580.2,1
+1791406837991,80,step,598.7,0.0,8,0,0,0730_morning_hello,5560.3,2972.4,1
+1791406848893,81,step,576.9,0.0,4,0,0,0505_catalog_refresh,914.5,3068.1,1
+1791406848861,50,step,582.7,0.0,4,0,0,0505_catalog_refresh,914.2,3200.5,1
+1791406849088,53,step,588.9,0.0,4,0,0,0505_catalog_refresh,907.4,3009.0,1
+1791406844493,58,step,627.5,0.0,8,0,0,0730_morning_hello,5562.7,3139.9,1
+1791406847798,56,step,565.4,0.0,8,0,0,0730_morning_hello,5563.2,3114.1,1
+1791406853407,2,step,613.0,0.0,4,0,0,0505_catalog_refresh,907.8,2695.3,1
+1791406856061,88,step,591.7,0.0,4,0,0,0505_catalog_refresh,905.6,2713.9,1
+1791406856139,66,step,584.7,0.0,4,0,0,0505_catalog_refresh,911.7,2673.8,1
+1791406852392,9,step,548.1,0.0,8,0,0,0730_morning_hello,5565.7,3066.1,1
+1791406857398,52,step,611.5,0.0,4,0,0,0505_catalog_refresh,915.6,3099.8,1
+1791406853043,36,step,611.4,0.0,8,0,0,0730_morning_hello,5568.0,2949.7,1
+1791406859430,63,step,604.3,0.0,4,0,0,0505_catalog_refresh,923.8,2942.9,1
+1791406849722,80,step,609.2,0.0,16,0,0,0732_whats_today,12954.3,2979.4,1
+1791406865611,40,step,578.9,0.0,4,0,0,0505_catalog_refresh,903.1,3050.4,1
+1791406861455,46,step,634.1,0.0,8,0,0,0730_morning_hello,5570.1,3005.9,1
+1791406866666,5,step,570.9,0.0,4,0,0,0505_catalog_refresh,905.2,2768.6,1
+1791406867126,84,step,630.5,0.0,4,0,0,0505_catalog_refresh,918.0,2662.7,1
+1791406856044,58,step,607.8,0.0,16,0,0,0732_whats_today,12938.2,3023.2,1
+1791406871826,12,step,575.9,0.0,4,0,0,0505_catalog_refresh,911.6,3093.5,1
+1791406859679,56,step,667.6,0.0,16,0,0,0732_whats_today,12931.4,3144.5,1
+1791406867259,65,step,599.3,0.0,8,0,0,0730_morning_hello,5566.4,3017.5,1
+1791406869943,80,step,636.0,0.0,8,0,0,0735_quick_followup,4561.3,2640.9,1
+1791406870044,71,step,616.6,0.0,8,0,0,0730_morning_hello,5567.8,3442.8,1
+1791406863687,9,step,598.5,0.0,16,0,0,0732_whats_today,12937.3,2627.0,1
+1791406875585,54,step,596.6,0.0,4,0,0,0505_catalog_refresh,922.1,2778.2,1
+1791406865029,36,step,592.0,0.0,16,0,0,0732_whats_today,12937.7,2868.8,1
+1791406877319,76,step,623.5,0.0,4,0,0,0505_catalog_refresh,938.0,2877.2,1
+1791406873805,13,step,626.3,0.0,8,0,0,0730_morning_hello,5563.4,2699.0,1
+1791406876757,58,step,579.8,0.0,8,0,0,0735_quick_followup,4565.4,2728.2,1
+1791406878821,57,step,614.5,0.0,8,0,0,0730_morning_hello,5561.6,2837.5,1
+1791406879989,56,step,649.4,0.0,8,0,0,0735_quick_followup,4569.9,2810.5,1
+1791406879797,28,step,605.0,0.0,8,0,0,0730_morning_hello,5568.3,2914.5,1
+1791406872916,46,step,609.1,0.0,16,0,0,0732_whats_today,12943.6,2801.7,1
+1791406883626,9,step,540.7,0.0,8,0,0,0735_quick_followup,4570.7,2640.0,1
+1791406885495,36,step,651.4,0.0,8,0,0,0735_quick_followup,4567.0,2801.1,1
+1791406889447,49,step,634.6,0.0,4,0,0,0505_catalog_refresh,916.9,2908.4,1
+1791406879174,65,step,667.1,0.0,16,0,0,0732_whats_today,12953.1,2763.7,1
+1791406889244,69,step,581.5,0.0,8,0,0,0730_morning_hello,5561.0,2854.9,1
+1791406882438,71,step,610.4,0.0,16,0,0,0732_whats_today,12933.5,2819.1,1
+1791406889784,4,step,639.1,0.0,8,0,0,0730_morning_hello,5562.4,3016.7,1
+1791406892221,46,step,623.5,0.0,8,0,0,0735_quick_followup,4579.7,2454.6,1
+1791406885030,13,step,656.9,0.0,16,0,0,0732_whats_today,13060.6,2692.8,1
+1791406893244,68,step,664.6,0.0,8,0,0,0730_morning_hello,5564.8,2667.6,1
+1791406893256,45,step,671.2,0.0,8,0,0,0730_morning_hello,5565.0,2663.1,1
+1791406898868,83,step,634.8,0.0,4,0,0,0505_catalog_refresh,939.2,2946.3,1
+1791406896408,75,step,635.5,0.0,8,0,0,0730_morning_hello,5567.1,2675.9,1
+1791406889885,57,step,617.7,0.0,16,0,0,0732_whats_today,12929.8,2947.9,1
+1791406899224,65,step,622.2,0.0,8,0,0,0735_quick_followup,4572.8,2767.3,1
+1791406891403,28,step,604.7,0.0,16,0,0,0732_whats_today,12938.1,2727.3,1
+1791406904400,60,step,641.1,0.0,4,0,0,0505_catalog_refresh,920.0,2667.5,1
+1791406904959,22,step,652.2,0.0,4,0,0,0505_catalog_refresh,919.8,3865.8,1
+1791406900737,1,step,637.7,0.0,8,0,0,0730_morning_hello,5563.9,3783.8,1
+1791406900773,6,step,610.4,0.0,8,0,0,0730_morning_hello,5561.8,3849.7,1
+1791406901853,71,step,597.0,0.0,8,0,0,0735_quick_followup,4596.7,3978.1,1
+1791406906014,10,step,648.3,0.0,4,0,0,0505_catalog_refresh,929.0,3469.5,1
+1791406904088,29,step,613.7,0.0,8,0,0,0730_morning_hello,5563.0,2625.0,1
+1791406905687,13,step,642.2,0.0,8,0,0,0735_quick_followup,4569.5,2939.7,1
+1791406909621,24,step,584.7,0.0,4,0,0,0505_catalog_refresh,918.8,2836.9,1
+1791406900306,69,step,627.6,0.0,16,0,0,0732_whats_today,12950.3,2300.0,1
+1791406912926,0,step,662.5,0.0,4,0,0,0505_catalog_refresh,913.3,3076.0,1
+1791406909638,57,step,600.8,0.0,8,0,0,0735_quick_followup,4566.6,2862.0,1
+1791406901451,4,step,610.5,0.0,16,0,0,0732_whats_today,12953.0,3006.9,1
+1791406910112,87,step,608.0,0.0,8,0,0,0730_morning_hello,5571.6,3028.0,1
+1791406911577,28,step,629.8,0.0,8,0,0,0735_quick_followup,4565.1,2618.5,1
+1791406904123,45,step,621.7,0.0,16,0,0,0732_whats_today,12957.5,2733.8,1
+1791406904501,68,step,634.8,0.0,16,0,0,0732_whats_today,12947.2,2717.4,1
+1791406916835,62,step,592.3,0.0,4,0,0,0505_catalog_refresh,925.8,2912.3,1
+1791406907671,75,step,656.6,0.0,16,0,0,0732_whats_today,12971.3,2973.9,1
+1791406915334,15,step,648.1,0.0,8,0,0,0730_morning_hello,5564.2,3376.5,1
+1791406920483,32,step,609.9,0.0,4,0,0,0505_catalog_refresh,914.4,3055.5,1
+1791406920658,35,step,615.0,0.0,4,0,0,0505_catalog_refresh,922.1,3058.3,1
+1791406921229,44,step,612.7,0.0,4,0,0,0505_catalog_refresh,926.2,2836.3,1
+1791406921089,61,step,640.6,0.0,4,0,0,0505_catalog_refresh,924.4,2993.5,1
+1791406922291,55,step,627.5,0.0,4,0,0,0505_catalog_refresh,927.2,3046.4,1
+1791406917824,82,step,623.2,0.0,8,0,0,0730_morning_hello,5564.4,3134.5,1
+1791406919416,69,step,579.5,0.0,8,0,0,0735_quick_followup,4564.5,3300.6,1
+1791406923792,47,step,689.9,0.0,4,0,0,0505_catalog_refresh,932.9,2936.4,1
+1791406912800,6,step,666.2,0.0,16,0,0,0732_whats_today,12951.3,2604.2,1
+1791406912784,1,step,717.5,0.0,16,0,0,0732_whats_today,12960.0,2852.5,1
+1791406921706,4,step,670.3,0.0,8,0,0,0735_quick_followup,4567.8,2823.7,1
+1791406908976,80,step,608.5,0.0,17,0,0,0800_briefing,18007.8,2796.2,1
+1791406926484,77,step,617.2,0.0,4,0,0,0505_catalog_refresh,911.5,2625.2,1
+1791406914925,29,step,629.1,0.0,16,0,0,0732_whats_today,12936.9,2520.9,1
+1791406924009,45,step,698.0,0.0,8,0,0,0735_quick_followup,4570.3,2836.7,1
+1791406924393,68,step,633.7,0.0,8,0,0,0735_quick_followup,4567.4,2758.4,1
+1791406924229,30,step,654.1,0.0,8,0,0,0730_morning_hello,5565.7,2713.0,1
+1791406912494,56,step,671.9,0.0,17,0,0,0800_briefing,17998.0,2444.8,1
+1791406912375,58,step,654.4,0.0,17,0,0,0800_briefing,18011.1,2730.8,1
+1791406930025,74,step,638.3,0.0,4,0,0,0505_catalog_refresh,910.6,2811.8,1
+1791406932018,16,step,616.3,0.0,4,0,0,0505_catalog_refresh,915.8,2659.6,1
+1791406928172,75,step,657.4,0.0,8,0,0,0735_quick_followup,4567.7,2831.8,1
+1791406933333,42,step,617.4,0.0,4,0,0,0505_catalog_refresh,920.6,2623.7,1
+1791406922084,87,step,787.5,0.0,16,0,0,0732_whats_today,12958.8,2744.4,1
+1791406934568,59,step,647.5,0.0,4,0,0,0505_catalog_refresh,922.4,2583.3,1
+1791406932268,1,step,605.5,0.0,8,0,0,0735_quick_followup,4566.9,2441.5,1
+1791406932827,6,step,593.0,0.0,8,0,0,0735_quick_followup,4564.9,2539.5,1
+1791406936638,20,step,625.5,0.0,4,0,0,0505_catalog_refresh,941.8,2519.0,1
+1791406934241,29,step,705.7,0.0,8,0,0,0735_quick_followup,4587.6,2475.7,1
+1791406927101,15,step,652.8,0.0,16,0,0,0732_whats_today,12954.1,2516.2,1
+1791406939591,26,step,609.2,0.0,4,0,0,0505_catalog_refresh,921.3,2650.2,1
+1791406922663,36,step,664.9,0.0,17,0,0,0800_briefing,18025.1,2744.9,1
+1791406923433,9,step,720.6,0.0,17,0,0,0800_briefing,18013.2,2529.6,1
+1791406929120,82,step,657.9,0.0,16,0,0,0732_whats_today,12994.0,2389.4,1
+1791406939217,39,step,619.6,0.0,8,0,0,0730_morning_hello,5564.3,2417.6,1
+1791406940614,18,step,600.9,0.0,8,0,0,0730_morning_hello,5566.1,2582.1,1
+1791406941819,87,step,646.3,0.0,8,0,0,0735_quick_followup,4566.4,2688.1,1
+1791406941411,19,step,651.9,0.0,8,0,0,0730_morning_hello,5586.1,2640.4,1
+1791406941497,14,step,632.6,0.0,8,0,0,0730_morning_hello,5574.9,2719.5,1
+1791406935225,30,step,629.4,0.0,16,0,0,0732_whats_today,12954.1,2698.7,1
+1791406944953,11,step,592.7,0.0,8,0,0,0730_morning_hello,5558.6,2759.2,1
+1791406947247,15,step,641.2,0.0,8,0,0,0735_quick_followup,4569.5,2992.1,1
+1791406934455,65,step,649.8,0.0,17,0,0,0800_briefing,18016.9,2783.5,1
+1791406934449,46,step,721.6,0.0,17,0,0,0800_briefing,18025.1,2869.0,1
+1791406951980,51,step,608.4,0.0,4,0,0,0505_catalog_refresh,919.3,2974.8,1
+1791406948968,82,step,647.7,0.0,8,0,0,0735_quick_followup,4583.2,2722.4,1
+1791406949377,48,step,627.0,0.0,8,0,0,0730_morning_hello,5574.5,2757.4,1
+1791406937336,71,step,617.4,0.0,17,0,0,0800_briefing,18025.7,2658.3,1
+1791406957012,27,step,610.9,0.0,4,0,0,0505_catalog_refresh,909.7,2935.2,1
+1791406952925,37,step,577.4,0.0,8,0,0,0730_morning_hello,5585.3,2612.8,1
+1791406958179,25,step,606.9,0.0,4,0,0,0505_catalog_refresh,917.1,2843.4,1
+1791406953834,43,step,685.4,0.0,8,0,0,0730_morning_hello,5584.7,2784.1,1
+1791406955246,30,step,620.2,0.0,8,0,0,0735_quick_followup,4572.1,2658.5,1
+1791406950394,39,step,599.9,0.0,16,0,0,0732_whats_today,12970.6,2558.7,1
+1791406946335,13,step,646.4,0.0,17,0,0,0800_briefing,18010.9,2783.4,1
+1791406951501,18,step,645.0,0.0,16,0,0,0732_whats_today,12945.5,2796.9,1
+1791406952891,19,step,647.5,0.0,16,0,0,0732_whats_today,12934.5,2720.6,1
+1791406952769,14,step,654.0,0.0,16,0,0,0732_whats_today,12949.7,2862.8,1
+1791406947741,57,step,685.8,0.0,17,0,0,0800_briefing,18022.4,2843.8,1
+1791406962053,85,step,601.4,0.0,8,0,0,0730_morning_hello,5561.9,3363.2,1
+1791406966912,72,step,644.6,0.0,4,0,0,0505_catalog_refresh,911.0,3722.0,1
+1791406950005,28,step,642.7,0.0,17,0,0,0800_briefing,17998.8,3628.7,1
+1791406962535,64,step,640.0,0.0,8,0,0,0730_morning_hello,5562.6,4156.0,1
+1791406963129,70,step,610.0,0.0,8,0,0,0730_morning_hello,5563.6,3846.7,1
+1791406955944,11,step,621.2,0.0,16,0,0,0732_whats_today,12941.9,3741.2,1
+1791406963568,79,step,614.0,0.0,8,0,0,0730_morning_hello,5564.1,3568.6,1
+1791406964603,80,step,656.4,0.0,7,0,0,0830_heartbeat,4461.9,3648.2,1
+1791406970140,8,step,659.0,0.0,4,0,0,0505_catalog_refresh,914.8,2754.1,1
+1791406954103,69,step,657.1,0.0,17,0,0,0800_briefing,18042.8,2959.7,1
+1791406968276,56,step,606.3,0.0,7,0,0,0830_heartbeat,4441.5,2880.8,1
+1791406969791,39,step,614.4,0.0,8,0,0,0735_quick_followup,4571.8,2559.3,1
+1791406960588,48,step,631.4,0.0,16,0,0,0732_whats_today,12987.8,3506.8,1
+1791406972212,18,step,630.7,0.0,8,0,0,0735_quick_followup,4568.9,4178.3,1
+1791406958920,68,step,660.1,0.0,17,0,0,0800_briefing,18042.0,4082.4,1
+1791406963923,37,step,610.4,0.0,16,0,0,0732_whats_today,12968.8,4238.5,1
+1791406972758,19,step,642.3,0.0,8,0,0,0735_quick_followup,4577.0,3901.7,1
+1791406972927,14,step,657.2,0.0,8,0,0,0735_quick_followup,4564.9,3845.1,1
+1791406973343,58,step,644.9,0.0,7,0,0,0830_heartbeat,4439.1,4067.3,1
+1791406959944,4,step,637.5,0.0,17,0,0,0800_briefing,18034.5,3884.1,1
+1791406965415,43,step,695.6,0.0,16,0,0,0732_whats_today,12950.7,3598.7,1
+1791406973801,86,step,644.7,0.0,8,0,0,0730_morning_hello,5567.5,3241.3,1
+1791406961204,45,step,764.4,0.0,17,0,0,0800_briefing,18013.5,3373.7,1
+1791406974259,89,step,635.7,0.0,8,0,0,0730_morning_hello,5565.0,2980.8,1
+1791406976781,11,step,585.3,0.0,8,0,0,0735_quick_followup,4588.6,2866.7,1
+1791406964578,1,step,700.4,0.0,17,0,0,0800_briefing,18021.1,2782.1,1
+1791406977469,73,step,625.2,0.0,8,0,0,0730_morning_hello,5564.0,2553.2,1
+1791406978999,9,step,702.5,0.0,7,0,0,0830_heartbeat,4451.1,2711.3,1
+1791406978180,67,step,662.8,0.0,8,0,0,0730_morning_hello,5566.6,2670.9,1
+1791406980731,48,step,614.1,0.0,8,0,0,0735_quick_followup,4574.1,2883.3,1
+1791406985227,21,step,629.2,0.0,4,0,0,0505_catalog_refresh,920.1,3187.6,1
+1791406981857,36,step,671.8,0.0,7,0,0,0830_heartbeat,4443.6,3279.2,1
+1791406973906,85,step,638.1,0.0,16,0,0,0732_whats_today,12966.5,2944.2,1
+1791406981940,34,step,662.3,0.0,8,0,0,0730_morning_hello,5571.3,2924.9,1
+1791406975414,64,step,638.9,0.0,16,0,0,0732_whats_today,12942.3,2713.0,1
+1791406975466,70,step,637.3,0.0,16,0,0,0732_whats_today,12966.4,2676.2,1
+1791406971065,75,step,615.2,0.0,17,0,0,0800_briefing,17998.0,2692.5,1
+1791406976184,79,step,606.4,0.0,16,0,0,0732_whats_today,12960.2,2795.1,1
+1791406985836,37,step,659.6,0.0,8,0,0,0735_quick_followup,4572.3,2760.6,1
+1791406986358,43,step,633.8,0.0,8,0,0,0735_quick_followup,4565.3,3021.0,1
+1791406985876,38,step,634.6,0.0,8,0,0,0730_morning_hello,5563.8,2527.7,1
+1791406986975,33,step,652.0,0.0,8,0,0,0730_morning_hello,5567.8,2936.4,1
+1791406974762,6,step,619.5,0.0,17,0,0,0800_briefing,18002.0,2833.4,1
+1791406977622,29,step,656.7,0.0,17,0,0,0800_briefing,18026.0,2909.7,1
+1791406992041,71,step,674.4,0.0,7,0,0,0830_heartbeat,4453.6,3356.4,1
+1791406994022,85,step,607.5,0.0,8,0,0,0735_quick_followup,4573.6,3800.1,1
+1791406985853,89,step,662.5,0.0,16,0,0,0732_whats_today,12955.9,4999.6,1
+1791406985824,86,step,666.4,0.0,16,0,0,0732_whats_today,12963.7,5060.9,1
+1791406980712,87,step,670.8,0.0,17,0,0,0800_briefing,18016.5,5198.7,1
+1791406993282,3,step,585.4,0.0,8,0,0,0730_morning_hello,5565.6,5337.4,1
+1791406994708,64,step,664.0,0.0,8,0,0,0735_quick_followup,4602.6,5211.5,1
+1791406994894,70,step,654.9,0.0,8,0,0,0735_quick_followup,4566.2,5340.1,1
+1791406995505,79,step,616.5,0.0,8,0,0,0735_quick_followup,4575.6,5489.8,1
+1791406994524,53,step,617.5,0.0,8,0,0,0730_morning_hello,5568.2,5499.5,1
+1791406982152,82,step,629.1,0.0,17,0,0,0800_briefing,18041.1,5445.8,1
+1791406996735,65,step,615.0,0.0,7,0,0,0830_heartbeat,4449.1,5135.6,1
+1791406988513,73,step,657.3,0.0,16,0,0,0732_whats_today,12964.9,4889.0,1
+1791406997642,46,step,593.4,0.0,7,0,0,0830_heartbeat,4515.0,4469.2,1
+1791406984457,15,step,648.1,0.0,17,0,0,0800_briefing,18017.7,4253.8,1
+1791406997734,13,step,587.5,0.0,7,0,0,0830_heartbeat,4443.7,4623.6,1
+1791406989704,67,step,643.6,0.0,16,0,0,0732_whats_today,12943.3,4103.7,1
+1791407000489,50,step,656.2,0.0,8,0,0,0730_morning_hello,5561.9,3025.4,1
+1791406993497,34,step,665.9,0.0,16,0,0,0732_whats_today,12954.7,2678.2,1
+1791407000888,7,step,656.2,0.0,8,0,0,0730_morning_hello,5568.7,2813.4,1
+1791406990984,30,step,612.8,0.0,17,0,0,0800_briefing,18011.7,2627.5,1
+1791406996861,38,step,618.6,0.0,16,0,0,0732_whats_today,12992.4,2804.4,1
+1791407005573,57,step,630.3,0.0,7,0,0,0830_heartbeat,4452.0,2699.1,1
+1791406998966,33,step,648.7,0.0,16,0,0,0732_whats_today,12941.0,3293.2,1
+1791407006778,31,step,638.0,0.0,8,0,0,0730_morning_hello,5562.8,2961.9,1
+1791407007906,89,step,657.3,0.0,8,0,0,0735_quick_followup,4581.6,2842.9,1
+1791407007971,86,step,652.6,0.0,8,0,0,0735_quick_followup,4560.1,2843.2,1
+1791407010621,28,step,653.6,0.0,7,0,0,0830_heartbeat,4440.3,2746.4,1
+1791407010833,67,step,676.1,0.0,8,0,0,0735_quick_followup,4571.0,2685.1,1
+1791407010892,73,step,670.0,0.0,8,0,0,0735_quick_followup,4655.1,4091.3,1
+1791407012775,80,step,662.6,0.0,8,0,0,0900_heartbeat_and_cron,4465.6,2748.9,1
+1791407012341,69,step,682.0,0.0,7,0,0,0830_heartbeat,4638.0,3236.8,1
+1791407013057,34,step,652.3,0.0,8,0,0,0735_quick_followup,4607.3,2695.5,1
+1791407014358,58,step,648.0,0.0,8,0,0,0900_heartbeat_and_cron,4440.5,3081.0,1
+1791407006930,3,step,623.6,0.0,16,0,0,0732_whats_today,12958.0,2546.6,1
+1791407014188,56,step,654.0,0.0,8,0,0,0900_heartbeat_and_cron,4441.7,3892.7,1
+1791407016145,45,step,617.2,0.0,7,0,0,0830_heartbeat,4445.5,2787.5,1
+1791407016676,38,step,658.5,0.0,8,0,0,0735_quick_followup,4566.1,2834.6,1
+1791407008995,53,step,616.2,0.0,16,0,0,0732_whats_today,12933.6,2612.3,1
+1791407018654,4,step,659.7,0.0,7,0,0,0830_heartbeat,4498.4,2605.8,1
+1791407019504,1,step,660.5,0.0,7,0,0,0830_heartbeat,4450.1,3184.6,1
+1791407019568,68,step,646.6,0.0,7,0,0,0830_heartbeat,4498.9,3526.5,1
+1791407019617,33,step,656.8,0.0,8,0,0,0735_quick_followup,4599.8,3746.2,1
+1791407012004,7,step,685.2,0.0,16,0,0,0732_whats_today,12951.7,3240.8,1
+1791407012585,50,step,720.2,0.0,16,0,0,0732_whats_today,13161.3,3616.6,1
+1791407021194,88,step,662.2,0.0,8,0,0,0730_morning_hello,5579.0,3443.6,1
+1791407021373,17,step,663.9,0.0,8,0,0,0730_morning_hello,5561.1,3373.8,1
+1791407008275,39,step,692.1,0.0,17,0,0,0800_briefing,18005.2,4062.2,1
+1791407023476,84,step,649.8,0.0,8,0,0,0730_morning_hello,5568.6,2993.5,1
+1791407023847,23,step,631.9,0.0,8,0,0,0730_morning_hello,5569.7,2853.5,1
+1791407024477,52,step,637.1,0.0,8,0,0,0730_morning_hello,5574.2,3827.2,1
+1791407011982,11,step,651.2,0.0,17,0,0,0800_briefing,18278.3,4147.9,1
+1791407026251,9,step,654.3,0.0,8,0,0,0900_heartbeat_and_cron,4462.3,4165.4,1
+1791407012029,18,step,692.3,0.0,17,0,0,0800_briefing,18039.6,4900.3,1
+1791407026264,36,step,682.0,0.0,8,0,0,0900_heartbeat_and_cron,4495.8,4543.6,1
+1791407013158,14,step,642.5,0.0,17,0,0,0800_briefing,18015.6,4271.0,1
+1791407026262,3,step,661.1,0.0,8,0,0,0735_quick_followup,4578.5,4605.1,1
+1791407018182,31,step,695.8,0.0,16,0,0,0732_whats_today,13010.9,4354.5,1
+1791407014694,48,step,614.6,0.0,17,0,0,0800_briefing,18029.2,4115.4,1
+1791407028790,75,step,663.2,0.0,7,0,0,0830_heartbeat,4463.8,4913.5,1
+1791407028796,53,step,664.0,0.0,8,0,0,0735_quick_followup,4598.0,5111.7,1
+1791407015795,19,step,631.6,0.0,17,0,0,0800_briefing,18007.4,5829.1,1
+1791407028328,12,step,632.8,0.0,8,0,0,0730_morning_hello,5565.1,5774.8,1
+1791407030070,71,step,629.1,0.0,8,0,0,0900_heartbeat_and_cron,4455.5,5688.7,1
+1791407028641,76,step,615.7,0.0,8,0,0,0730_morning_hello,5567.4,6029.3,1
+1791407028977,66,step,643.0,0.0,8,0,0,0730_morning_hello,5563.3,6157.4,1
+1791407029604,5,step,611.2,0.0,8,0,0,0730_morning_hello,5590.2,5772.6,1
+1791407031025,6,step,677.6,0.0,7,0,0,0830_heartbeat,4444.2,5597.0,1
+1791407032145,7,step,630.8,0.0,8,0,0,0735_quick_followup,4568.6,4635.9,1
+1791407033861,50,step,665.4,0.0,8,0,0,0735_quick_followup,4564.6,3120.9,1
+1791407021663,43,step,643.6,0.0,17,0,0,0800_briefing,18008.2,2676.7,1
+1791407022745,37,step,673.9,0.0,17,0,0,0800_briefing,18060.4,3186.6,1
+1791407036822,15,step,673.1,0.0,7,0,0,0830_heartbeat,4440.4,3247.7,1
+1791407039158,29,step,609.2,0.0,7,0,0,0830_heartbeat,4441.6,2658.2,1
+1791407038827,82,step,603.5,0.0,7,0,0,0830_heartbeat,4437.1,3089.2,1
+1791407040199,31,step,632.5,0.0,8,0,0,0735_quick_followup,4567.0,2923.0,1
+1791407039242,41,step,605.3,0.0,8,0,0,0730_morning_hello,5565.7,3598.0,1
+1791407033090,88,step,656.1,0.0,16,0,0,0732_whats_today,13021.6,3146.4,1
+1791407028033,85,step,671.8,0.0,17,0,0,0800_briefing,18067.7,3255.4,1
+1791407033363,17,step,671.2,0.0,16,0,0,0732_whats_today,12961.2,3163.3,1
+1791407042184,87,step,685.2,0.0,7,0,0,0830_heartbeat,4441.0,3178.2,1
+1791407042023,13,step,705.0,0.0,8,0,0,0900_heartbeat_and_cron,4486.2,3590.3,1
+1791407035015,23,step,668.0,0.0,16,0,0,0732_whats_today,12956.7,2833.3,1
+1791407035380,84,step,747.5,0.0,16,0,0,0732_whats_today,12970.3,2918.9,1
+1791407037302,52,step,616.2,0.0,16,0,0,0732_whats_today,13005.3,3621.5,1
+1791407032591,79,step,649.2,0.0,17,0,0,0800_briefing,18004.9,3331.4,1
+1791407047888,65,step,679.1,0.0,8,0,0,0900_heartbeat_and_cron,4449.9,2954.0,1
+1791407048206,46,step,700.8,0.0,8,0,0,0900_heartbeat_and_cron,4449.7,2863.2,1
+1791407035441,70,step,748.2,0.0,17,0,0,0800_briefing,18041.4,3185.8,1
+1791407049603,81,step,661.7,0.0,8,0,0,0730_morning_hello,5585.8,2967.8,1
+1791407043117,12,step,623.7,0.0,16,0,0,0732_whats_today,12954.5,3235.8,1
+1791407043395,66,step,615.7,0.0,16,0,0,0732_whats_today,12949.6,3040.5,1
+1791407042837,76,step,637.7,0.0,16,0,0,0732_whats_today,12929.1,3654.9,1
+1791407043948,5,step,642.0,0.0,16,0,0,0732_whats_today,12946.5,2933.1,1
+1791407052332,54,step,605.1,0.0,8,0,0,0730_morning_hello,5563.0,2927.3,1
+1791407053616,30,step,708.8,0.0,7,0,0,0830_heartbeat,4464.4,2942.1,1
+1791407053752,56,step,678.7,0.0,7,0,0,0930_heartbeat,4446.4,3006.1,1
+1791407054180,17,step,697.2,0.0,8,0,0,0735_quick_followup,4643.8,10803.4,1
+1791407055144,23,step,662.3,0.0,8,0,0,0735_quick_followup,4582.3,10957.0,1
+1791407053588,88,step,771.5,0.0,8,0,0,0735_quick_followup,4583.2,12849.0,1
+1791407054830,57,step,716.0,0.0,8,0,0,0900_heartbeat_and_cron,4614.3,11986.6,1
+1791407052894,78,step,589.3,0.0,8,0,0,0730_morning_hello,5571.6,13114.1,1
+1791407054527,69,step,688.0,0.0,8,0,0,0900_heartbeat_and_cron,4587.4,12479.7,1
+1791407040996,64,step,647.5,0.0,17,0,0,0800_briefing,18070.8,12697.8,1
+1791407055230,84,step,635.7,0.0,8,0,0,0735_quick_followup,5045.8,11564.8,1
+1791407053219,2,step,717.1,0.0,8,0,0,0730_morning_hello,5569.8,12982.8,1
+1791407056341,45,step,642.3,0.0,8,0,0,0900_heartbeat_and_cron,4459.3,11452.0,1
+1791407056849,80,step,667.4,0.0,7,0,0,0930_heartbeat,4512.2,10999.9,1
+1791407056558,58,step,643.3,0.0,7,0,0,0930_heartbeat,4445.5,11407.4,1
+1791407057797,28,step,673.0,0.0,8,0,0,0900_heartbeat_and_cron,4476.8,10721.9,1
+1791407058270,4,step,683.1,0.0,8,0,0,0900_heartbeat_and_cron,4453.3,10805.3,1
+1791407058350,52,step,676.2,0.0,8,0,0,0735_quick_followup,4894.4,10820.3,1
+1791407044904,67,step,642.1,0.0,17,0,0,0800_briefing,18030.6,11191.0,1
+1791407045577,34,step,644.2,0.0,17,0,0,0800_briefing,18057.5,10524.3,1
+1791407051253,41,step,655.2,0.0,16,0,0,0732_whats_today,12960.4,10011.3,1
+1791407057714,10,step,627.9,0.0,8,0,0,0730_morning_hello,5573.1,10975.1,1
+1791407047176,86,step,635.7,0.0,17,0,0,0800_briefing,18014.9,9243.3,1
+1791407047733,89,step,689.5,0.0,17,0,0,0800_briefing,18010.1,8645.2,1
+1791407047704,73,step,692.2,0.0,17,0,0,0800_briefing,18027.6,8769.9,1
+1791407063594,5,step,668.1,0.0,8,0,0,0735_quick_followup,4952.4,6878.0,1
+1791407064320,66,step,646.4,0.0,8,0,0,0735_quick_followup,4638.9,6512.0,1
+1791407063214,76,step,696.5,0.0,8,0,0,0735_quick_followup,4582.2,7632.8,1
+1791407063504,39,step,704.4,0.0,7,0,0,0830_heartbeat,4513.5,7476.6,1
+1791407063357,12,step,702.1,0.0,8,0,0,0735_quick_followup,4755.1,7472.0,1
+1791407064086,63,step,660.5,0.0,8,0,0,0730_morning_hello,5664.1,9659.0,1
+1791407053072,33,step,658.7,0.0,17,0,0,0800_briefing,18023.1,8374.4,1
+1791407070089,1,step,637.5,0.0,8,0,0,0900_heartbeat_and_cron,4661.3,28538.4,1
+1791407070582,68,step,746.9,0.0,8,0,0,0900_heartbeat_and_cron,4451.4,28465.0,1
+1791407067037,9,step,630.7,0.0,7,0,0,0930_heartbeat,4542.5,32162.9,1
+1791407067623,36,step,644.6,0.0,7,0,0,0930_heartbeat,4460.8,31872.3,1
+1791407070940,14,step,632.2,0.0,7,0,0,0830_heartbeat,4741.7,28303.9,1
+1791407070185,19,step,656.2,0.0,7,0,0,0830_heartbeat,5030.5,28786.5,1
+1791407054963,38,step,659.0,0.0,17,0,0,0800_briefing,18768.5,30368.1,1
+1791407069941,71,step,628.6,0.0,7,0,0,0930_heartbeat,4495.1,29801.8,1
+1791407067831,44,step,614.6,0.0,8,0,0,0730_morning_hello,5569.9,30894.5,1
+1791407061538,81,step,680.1,0.0,16,0,0,0732_whats_today,13440.5,29315.1,1
+1791407071999,11,step,694.3,0.0,7,0,0,0830_heartbeat,4451.3,27833.5,1
+1791407077999,18,step,692.8,0.0,7,0,0,0830_heartbeat,4643.0,23800.8,1
+1791407079475,48,step,584.1,0.0,7,0,0,0830_heartbeat,5885.8,21197.4,1
+1791407066015,3,step,631.2,0.0,17,0,0,0800_briefing,19878.2,20622.3,1
+1791407077471,10,step,641.9,0.0,16,0,0,0732_whats_today,13073.1,15978.7,1
+1791407078513,41,step,631.2,0.0,8,0,0,0735_quick_followup,5550.3,22478.9,1
+1791407086535,29,step,614.0,0.0,8,0,0,0900_heartbeat_and_cron,4520.2,15544.0,1
+1791407075015,78,step,673.3,0.0,16,0,0,0732_whats_today,14922.6,16605.6,1
+1791407074772,2,step,717.4,0.0,16,0,0,0732_whats_today,14401.7,17341.2,1
+1791407063524,54,step,736.8,0.0,16,0,0,0732_whats_today,13214.5,29758.7,1
+1791407073498,43,step,643.0,0.0,7,0,0,0830_heartbeat,4462.1,28642.7,1
+1791407081437,82,step,643.3,0.0,8,0,0,0900_heartbeat_and_cron,4998.6,20183.0,1
+1791407083675,0,step,628.9,0.0,8,0,0,0730_morning_hello,5576.1,17393.4,1
+1791407077737,75,step,658.3,0.0,8,0,0,0900_heartbeat_and_cron,5088.5,23799.2,1
+1791407072845,6,step,660.0,0.0,8,0,0,0900_heartbeat_and_cron,4556.8,29228.8,1
+1791407074704,60,step,646.4,0.0,8,0,0,0730_morning_hello,6104.1,25841.1,1
+1791407075038,37,step,669.6,0.0,7,0,0,0830_heartbeat,4860.6,26738.9,1
+1791407075838,40,step,654.3,0.0,8,0,0,0730_morning_hello,6427.4,24408.0,1
+1791407088206,77,step,619.9,0.0,8,0,0,0730_morning_hello,5564.5,13166.2,1
+1791407087787,15,step,611.4,0.0,8,0,0,0900_heartbeat_and_cron,4460.6,14703.1,1
+1791407096291,83,step,661.6,0.0,8,0,0,0730_morning_hello,5585.2,82361.9,1
+1791407108637,52,step,692.7,0.0,17,0,0,0800_briefing,20325.4,55774.8,1
+1791407103850,64,step,697.4,0.0,7,0,0,0830_heartbeat,6098.1,74846.3,1
+1791407092430,65,step,619.1,0.0,7,0,0,0930_heartbeat,4649.6,89393.2,1
+1791407141840,51,step,589.8,0.0,8,0,0,0730_morning_hello,6529.3,38200.6,1
+1791407093918,30,step,775.2,0.0,8,0,0,0900_heartbeat_and_cron,4705.7,87863.2,1
+1791407104050,58,step,720.6,0.0,8,0,0,1000_heartbeat_and_cron,5754.6,76746.7,1
+1791407105357,74,step,619.0,0.0,8,0,0,0730_morning_hello,7001.8,74337.3,1
+1791407075549,31,step,662.5,0.0,17,0,0,0800_briefing,18625.7,92478.7,1
+1791407105115,88,step,653.8,0.0,17,0,0,0800_briefing,20093.4,61477.1,1
+1791407141698,11,step,641.1,0.0,8,0,0,0900_heartbeat_and_cron,6238.7,38771.0,1
+1791407109461,66,step,673.4,0.0,17,0,0,0800_briefing,19257.9,58000.2,1
+1791407111144,2,step,646.8,0.0,8,0,0,0735_quick_followup,4968.8,70640.8,1
+1791407145620,29,step,615.7,0.0,7,0,0,0930_heartbeat,4561.2,36608.1,1
+1791407076144,50,step,645.7,0.0,17,0,0,0800_briefing,18075.3,92539.5,1
+1791407138278,3,step,643.7,0.0,7,0,0,0830_heartbeat,5447.1,43042.9,1
+1791407074946,53,step,678.4,0.0,17,0,0,0800_briefing,20352.3,91471.4,1
+1791407101571,23,step,681.4,0.0,17,0,0,0800_briefing,18586.2,66610.2,1
+1791407125763,55,step,623.1,0.0,8,0,0,0730_morning_hello,7242.7,53822.5,1
+1791407082432,63,step,630.1,0.0,16,0,0,0732_whats_today,13151.5,91255.5,1
+1791407090775,79,step,668.8,0.0,7,0,0,0830_heartbeat,4539.3,91487.3,1
+1791407092771,46,step,706.0,0.0,7,0,0,0930_heartbeat,5221.4,88782.0,1
+1791407146136,14,step,645.1,0.0,8,0,0,0900_heartbeat_and_cron,4471.0,36235.7,1
+1791407103931,76,step,715.2,0.0,17,0,0,0800_briefing,20350.8,62501.7,1
+1791407110854,10,step,646.9,0.0,8,0,0,0735_quick_followup,4948.4,71057.0,1
+1791407102184,80,step,708.0,0.0,8,0,0,1000_heartbeat_and_cron,4745.8,79851.3,1
+1791407138605,18,step,652.2,0.0,8,0,0,0900_heartbeat_and_cron,4826.9,43426.0,1
+1791407134232,38,step,658.2,0.0,7,0,0,0830_heartbeat,5003.2,47632.1,1
+1791407095015,49,step,803.1,0.0,8,0,0,0730_morning_hello,5607.4,86103.3,1
+1791407115306,57,step,626.4,0.0,7,0,0,0930_heartbeat,4906.2,66697.9,1
+1791407109241,60,step,657.2,0.0,16,0,0,0732_whats_today,17938.4,59705.7,1
+1791407092047,13,step,639.4,0.0,7,0,0,0930_heartbeat,4516.6,90342.7,1
+1791407092903,87,step,853.0,0.0,8,0,0,0900_heartbeat_and_cron,4718.0,89082.4,1
+1791407138928,37,step,654.1,0.0,8,0,0,0900_heartbeat_and_cron,4922.7,43056.3,1
+1791407110128,28,step,644.4,0.0,7,0,0,0930_heartbeat,4450.6,72347.3,1
+1791407134353,9,step,667.8,0.0,8,0,0,1000_heartbeat_and_cron,4596.3,47969.5,1
+1791407143247,6,step,683.8,0.0,7,0,0,0930_heartbeat,4852.2,38806.8,1
+1791407106784,4,step,697.0,0.0,7,0,0,0930_heartbeat,4647.8,75469.8,1
+1791407103922,12,step,714.4,0.0,17,0,0,0800_briefing,21122.7,61853.6,1
+1791407109461,39,step,681.8,0.0,8,0,0,0900_heartbeat_and_cron,7208.0,70272.7,1
+1791407109864,0,step,670.1,0.0,16,0,0,0732_whats_today,15299.6,61811.0,1
+1791407091333,70,step,622.7,0.0,7,0,0,0830_heartbeat,4491.0,91217.6,1
+1791407110206,40,step,673.6,0.0,16,0,0,0732_whats_today,14139.7,62699.5,1
+1791407104659,73,step,683.7,0.0,7,0,0,0830_heartbeat,5023.6,77380.0,1
+1791407107738,35,step,605.5,0.0,8,0,0,0730_morning_hello,5855.3,73642.4,1
+1791407102178,84,step,712.4,0.0,17,0,0,0800_briefing,19236.4,65760.6,1
+1791407137273,48,step,604.3,0.0,8,0,0,0900_heartbeat_and_cron,5791.5,44444.9,1
+1791407118461,24,step,785.6,0.0,8,0,0,0730_morning_hello,5674.7,63197.1,1
+1791407089610,22,step,625.7,0.0,8,0,0,0730_morning_hello,5726.6,92190.3,1
+1791407146620,15,step,633.6,0.0,7,0,0,0930_heartbeat,5874.2,35105.9,1
+1791407095621,17,step,693.6,0.0,17,0,0,0800_briefing,20797.9,71138.2,1
+1791407109908,77,step,679.7,0.0,16,0,0,0732_whats_today,19298.0,58407.7,1
+1791407134464,36,step,662.9,0.0,8,0,0,1000_heartbeat_and_cron,6032.3,47387.5,1
+1791407108371,5,step,815.3,0.0,17,0,0,0800_briefing,21746.3,57669.6,1
+1791407076282,7,step,649.1,0.0,17,0,0,0800_briefing,18705.0,93010.7,1
+1791407114941,89,step,652.9,0.0,7,0,0,0830_heartbeat,5649.5,67425.4,1
+1791407140201,68,step,604.8,0.0,7,0,0,0930_heartbeat,6652.5,41271.1,1
+1791407136122,75,step,622.1,0.0,7,0,0,0930_heartbeat,4544.5,47469.0,1
+1791407104420,34,step,676.4,0.0,7,0,0,0830_heartbeat,4802.8,78865.8,1
+1791407110544,69,step,830.5,0.0,7,0,0,0930_heartbeat,4705.6,72686.2,1
+1791407146001,43,step,640.1,0.0,8,0,0,0900_heartbeat_and_cron,5187.7,36949.4,1
+1791407103628,56,step,717.1,0.0,8,0,0,1000_heartbeat_and_cron,4460.2,79991.1,1
+1791407138580,82,step,643.9,0.0,7,0,0,0930_heartbeat,4682.9,44901.2,1
+1791407138325,19,step,660.2,0.0,8,0,0,0900_heartbeat_and_cron,4455.5,45368.7,1
+1791407134518,20,step,637.0,0.0,8,0,0,0730_morning_hello,6742.5,46921.4,1
+1791407143030,1,step,658.1,0.0,7,0,0,0930_heartbeat,5216.8,39918.7,1
+1791407108789,81,step,618.8,0.0,8,0,0,0735_quick_followup,4875.9,74564.7,1
+1791407109157,33,step,644.8,0.0,7,0,0,0830_heartbeat,4677.3,74378.5,1
+1791407120057,16,step,609.4,0.0,8,0,0,0730_morning_hello,6708.2,61488.1,1
+1791407111090,54,step,631.8,0.0,8,0,0,0735_quick_followup,6412.1,70740.5,1
+1791407117682,32,step,620.3,0.0,8,0,0,0730_morning_hello,7079.9,63507.5,1
+1791407110842,45,step,654.2,0.0,7,0,0,0930_heartbeat,4692.9,72706.3,1
+1791407092457,59,step,661.5,0.0,8,0,0,0730_morning_hello,5761.4,90015.7,1
+1791407139775,71,step,623.1,0.0,8,0,0,1000_heartbeat_and_cron,4508.8,43998.0,1
+1791407107056,44,step,648.9,0.0,16,0,0,0732_whats_today,14998.2,66206.9,1
+1791407125160,26,step,621.2,0.0,8,0,0,0730_morning_hello,5850.8,57292.9,1
+1791407114979,67,step,608.8,0.0,7,0,0,0830_heartbeat,5647.6,67711.3,1
+1791407131678,41,step,636.0,0.0,17,0,0,0800_briefing,18202.7,38442.6,1
+1791407116268,86,step,646.3,0.0,7,0,0,0830_heartbeat,5272.9,66777.3,1
+1791407108570,25,step,617.0,0.0,8,0,0,0730_morning_hello,6022.7,73761.0,1
+1791407131931,47,step,627.8,0.0,8,0,0,0730_morning_hello,6041.4,50378.9,1
+1791407111129,78,step,609.5,0.0,8,0,0,0735_quick_followup,4645.1,72599.0,1
+1791407090565,85,step,695.8,0.0,7,0,0,0830_heartbeat,4610.9,93117.5,1
+1791407103366,27,step,632.7,0.0,8,0,0,0730_morning_hello,6792.1,78204.6,1
+1791407104433,42,step,682.0,0.0,8,0,0,0730_morning_hello,6638.4,77244.5,1
+1791407100204,62,step,693.7,0.0,8,0,0,0730_morning_hello,5877.9,82243.1,1
+1791407125382,61,step,617.4,0.0,8,0,0,0730_morning_hello,5635.5,57409.2,1
+1791407191402,42,step,691.6,0.0,16,0,0,0732_whats_today,13757.5,25841.7,1
+1791407190888,60,step,707.9,0.0,8,0,0,0735_quick_followup,4925.9,36189.0,1
+1791407191316,62,step,721.0,0.0,16,0,0,0732_whats_today,14487.7,26241.4,1
+1791407191543,25,step,691.3,0.0,16,0,0,0732_whats_today,18336.2,22204.5,1
+1791407191399,47,step,711.2,0.0,16,0,0,0732_whats_today,14770.0,25907.6,1
+1791407191298,27,step,674.7,0.0,16,0,0,0732_whats_today,14569.2,26249.5,1
+1791407192460,44,step,651.0,0.0,8,0,0,0735_quick_followup,4792.9,34909.2,1
+1791407190964,26,step,710.4,0.0,16,0,0,0732_whats_today,15657.0,25487.5,1
+1791407190390,63,step,648.0,0.0,8,0,0,0735_quick_followup,4693.8,37090.5,1
+1791407190895,40,step,711.4,0.0,8,0,0,0735_quick_followup,4929.9,36298.0,1
+1791407192200,77,step,657.7,0.0,8,0,0,0735_quick_followup,5551.7,34426.5,1
+1791407189675,55,step,610.2,0.0,16,0,0,0732_whats_today,13817.6,28752.0,1
+1791407165066,72,step,796.9,0.0,8,0,0,0730_morning_hello,5604.0,61368.5,1
+1791407187760,83,step,661.8,0.0,16,0,0,0732_whats_today,18120.1,26317.5,1
+1791407191470,61,step,626.9,0.0,16,0,0,0732_whats_today,13907.2,26857.4,1
+1791407190085,35,step,648.0,0.0,16,0,0,0732_whats_today,14203.3,27935.1,1
+1791407190230,22,step,710.1,0.0,16,0,0,0732_whats_today,14294.7,27643.6,1
+1791407191614,0,step,655.9,0.0,8,0,0,0735_quick_followup,5334.4,35285.2,1
+1791407190755,20,step,653.6,0.0,16,0,0,0732_whats_today,14428.7,27058.1,1
+1791407190771,24,step,731.8,0.0,16,0,0,0732_whats_today,16019.2,25378.4,1
+1791407190895,59,step,667.0,0.0,16,0,0,0732_whats_today,16314.3,25028.1,1
+1791407191749,32,step,680.4,0.0,16,0,0,0732_whats_today,19890.4,20592.5,1
+1791407168090,8,step,703.3,0.0,8,0,0,0730_morning_hello,6073.3,58059.8,1
+1791407172292,21,step,700.6,0.0,8,0,0,0730_morning_hello,5605.4,54853.5,1
+1791407191525,16,step,708.0,0.0,16,0,0,0732_whats_today,22794.5,77863.5,1
+1791407190202,49,step,719.7,0.0,16,0,0,0732_whats_today,14453.2,87795.7,1
+1791407189807,51,step,676.0,0.0,16,0,0,0732_whats_today,14722.2,87968.3,1
+1791407189911,74,step,717.7,0.0,16,1,0,0732_whats_today,20174.7,0.0,1
+1791407214785,64,step,637.0,0.0,8,1,0,0900_heartbeat_and_cron,4457.9,0.0,1
+1791407203779,9,step,617.2,0.0,16,1,0,1015_question,16377.6,0.0,1
+1791407204496,56,step,638.7,0.0,16,1,0,1015_question,16755.6,0.0,1
+1791407217392,28,step,608.5,0.0,8,1,0,1000_heartbeat_and_cron,4538.6,0.0,1
+1791407203788,36,step,689.0,0.0,16,1,0,1015_question,18472.7,0.0,1
+1791407207046,58,step,608.3,0.0,16,1,0,1015_question,15321.2,0.0,1
+1791407217755,19,step,643.3,0.0,7,1,0,0930_heartbeat,5193.9,0.0,1
+1791407217938,6,step,644.3,0.0,8,1,0,1000_heartbeat_and_cron,5302.2,0.0,1
+1791407217980,86,step,658.0,0.0,8,1,0,0900_heartbeat_and_cron,5473.4,0.0,1
+1791407218655,23,step,1076.4,0.0,7,1,0,0830_heartbeat,4516.3,0.0,1
+1791407219171,30,step,1431.8,0.0,7,1,0,0930_heartbeat,4557.1,0.0,1
+1791407208695,71,step,622.7,0.0,16,1,0,1015_question,15903.1,0.0,1
+1791407206296,80,step,651.7,0.0,16,1,0,1015_question,18628.2,0.0,1
+1791407219254,52,step,1870.2,0.0,7,1,0,0830_heartbeat,4521.6,0.0,1
+1791407220105,88,step,1016.2,0.0,7,1,0,0830_heartbeat,4589.7,0.0,1
+1791407220098,84,step,1062.0,0.0,7,1,0,0830_heartbeat,4550.4,0.0,1
+1791407220064,65,step,1073.4,0.0,8,1,0,1000_heartbeat_and_cron,4618.8,0.0,1
+1791407214118,81,step,623.6,0.0,17,0,0,0800_briefing,20174.8,111036.3,1
+1791407220772,5,step,1015.6,0.0,7,1,0,0830_heartbeat,4470.7,0.0,1
+1791407222845,82,step,709.1,0.0,8,0,0,1000_heartbeat_and_cron,5290.0,117433.9,1
+1791407218745,4,step,2415.1,0.0,8,1,0,1000_heartbeat_and_cron,5248.6,0.0,1
+1791407220624,3,step,1147.4,0.0,8,1,0,0900_heartbeat_and_cron,4787.1,0.0,1
+1791407220915,11,step,886.7,0.0,7,1,0,0930_heartbeat,5018.8,0.0,1
+1791407220332,29,step,1433.6,0.0,8,1,0,1000_heartbeat_and_cron,5216.8,0.0,1
+1791407221797,39,step,658.6,0.0,7,1,0,0930_heartbeat,4724.7,0.0,1
+1791407234880,8,step,642.2,0.0,16,0,0,0732_whats_today,15501.5,96385.1,1
+1791407236855,20,step,703.1,0.0,8,0,0,0735_quick_followup,9050.8,100834.4,1
+1791407223432,50,step,699.6,0.0,7,0,0,0830_heartbeat,6558.6,116761.5,1
+1791407236212,47,step,659.8,0.0,8,0,0,0735_quick_followup,7188.5,103415.6,1
+1791407228535,1,step,659.2,0.0,8,0,0,1000_heartbeat_and_cron,4841.5,113443.2,1
+1791407267871,77,step,638.4,0.0,17,0,0,0800_briefing,18871.4,60085.1,1
+1791407224345,31,step,884.5,0.0,7,0,0,0830_heartbeat,5352.3,116943.1,1
+1791407236913,32,step,862.6,0.0,8,0,0,0735_quick_followup,5620.6,104146.4,1
+1791407220570,15,step,1171.5,0.0,8,1,0,1000_heartbeat_and_cron,5784.8,0.0,1
+1791407297402,49,step,652.8,0.0,8,0,0,0735_quick_followup,4616.8,44894.9,1
+1791407222010,37,step,635.3,0.0,7,0,0,0930_heartbeat,5691.3,119238.6,1
+1791407220683,43,step,1089.2,0.0,7,1,0,0930_heartbeat,5784.9,0.0,1
+1791407228790,87,step,659.6,0.0,7,0,0,0930_heartbeat,5764.8,112367.3,1
+1791407227105,75,step,697.1,0.0,8,0,0,1000_heartbeat_and_cron,6041.0,113761.4,1
+1791407262882,0,step,631.1,0.0,17,0,0,0800_briefing,18472.5,65693.3,1
+1791407230587,41,step,656.6,0.0,7,0,0,0830_heartbeat,4848.6,111588.5,1
+1791407223680,34,step,666.1,0.0,8,0,0,0900_heartbeat_and_cron,4600.7,118754.2,1
+1791407229659,48,step,654.5,0.0,7,0,0,0930_heartbeat,5138.4,112285.6,1
+1791407230022,79,step,678.7,0.0,8,0,0,0900_heartbeat_and_cron,5702.3,111334.8,1
+1791407223781,18,step,685.0,0.0,7,0,0,0930_heartbeat,9043.0,114338.3,1
+1791407225335,70,step,679.2,0.0,8,0,0,0900_heartbeat_and_cron,6016.3,115836.7,1
+1791407237171,35,step,661.8,0.0,8,0,0,0735_quick_followup,8785.1,101356.3,1
+1791407236865,61,step,691.9,0.0,8,0,0,0735_quick_followup,8825.3,101638.7,1
+1791407218310,78,step,1673.4,0.0,17,0,0,0800_briefing,22565.9,105546.6,1
+1791407260941,40,step,648.6,0.0,17,0,0,0800_briefing,20629.1,65908.2,1
+1791407212181,10,step,624.4,0.0,17,0,0,0800_briefing,19692.2,115631.5,1
+1791407257076,63,step,617.2,0.0,17,0,0,0800_briefing,22768.8,67707.8,1
+1791407223210,38,step,662.0,0.0,8,1,0,0900_heartbeat_and_cron,4463.6,0.0,1
+1791407235365,72,step,859.8,0.0,16,0,0,0732_whats_today,15595.7,96568.5,1
+1791407295936,16,step,644.6,0.0,8,0,0,0735_quick_followup,4590.7,47215.1,1
+1791407224650,69,step,651.1,0.0,8,0,0,1000_heartbeat_and_cron,8779.5,114455.8,1
+1791407236451,26,step,662.6,0.0,8,0,0,0735_quick_followup,5142.7,106302.0,1
+1791407222487,14,step,708.5,0.0,7,1,0,0930_heartbeat,5410.3,0.0,1
+1791407222559,13,step,707.4,0.0,8,1,0,1000_heartbeat_and_cron,5383.2,0.0,1
+1791407235793,55,step,712.5,0.0,8,0,0,0735_quick_followup,6255.0,106076.3,1
+1791407235951,59,step,723.0,0.0,8,0,0,0735_quick_followup,5472.4,106781.8,1
+1791407225158,46,step,698.5,0.0,8,0,0,1000_heartbeat_and_cron,4852.1,118243.1,1
+1791407225832,17,step,682.9,0.0,7,0,0,0830_heartbeat,4795.8,117685.5,1
+1791407236140,24,step,685.0,0.0,8,0,0,0735_quick_followup,7341.1,104830.8,1
+1791407226836,67,step,704.3,0.0,8,0,0,0900_heartbeat_and_cron,8671.8,112794.5,1
+1791407235770,25,step,728.3,0.0,8,0,0,0735_quick_followup,6047.6,106488.9,1
+1791407237059,22,step,689.6,0.0,8,0,0,0735_quick_followup,5040.0,106252.6,1
+1791407235191,42,step,722.6,0.0,8,0,0,0735_quick_followup,6567.3,106569.6,1
+1791407235803,83,step,4882.1,0.0,8,0,0,0735_quick_followup,4563.7,103808.9,1
+1791407235854,21,step,707.1,0.0,16,0,0,0732_whats_today,26315.4,86228.1,1
+1791407226692,66,step,701.7,0.0,7,0,0,0830_heartbeat,4529.7,117192.3,1
+1791407223971,73,step,666.5,0.0,8,0,0,0900_heartbeat_and_cron,7183.2,117296.1,1
+1791407221017,54,step,803.7,0.0,17,0,0,0800_briefing,21988.3,105313.5,1
+1791407257421,44,step,652.8,0.0,17,0,0,0800_briefing,20756.5,70318.4,1
+1791407226597,76,step,680.2,0.0,7,0,0,0830_heartbeat,9946.9,111925.2,1
+1791407223991,7,step,643.6,0.0,7,0,0,0830_heartbeat,6267.5,118264.3,1
+1791407237043,27,step,686.9,0.0,8,0,0,0735_quick_followup,7759.5,103707.3,1
+1791407227783,68,step,659.4,0.0,8,0,0,1000_heartbeat_and_cron,7955.0,112807.9,1
+1791407223450,12,step,667.7,0.0,7,0,0,0830_heartbeat,6170.9,118915.1,1
+1791407230169,89,step,672.8,0.0,8,0,0,0900_heartbeat_and_cron,7208.2,111171.6,1
+1791407220111,2,step,1024.8,0.0,17,0,0,0800_briefing,22735.3,105363.8,1
+1791407296637,51,step,753.8,0.0,8,0,0,0735_quick_followup,4733.1,47122.4,1
+1791407236152,62,step,637.9,0.0,8,0,0,0735_quick_followup,7771.8,104693.0,1
+1791407230446,53,step,660.1,0.0,7,0,0,0830_heartbeat,5276.9,112900.6,1
+1791407227196,85,step,685.0,0.0,8,0,0,0900_heartbeat_and_cron,5274.7,116132.7,1
+1791407229203,57,step,670.1,0.0,8,0,0,1000_heartbeat_and_cron,4468.0,114990.6,1
+1791407260842,60,step,656.3,0.0,17,0,0,0800_briefing,18685.6,69163.1,1
+1791407221810,33,step,646.1,0.0,8,0,0,0900_heartbeat_and_cron,7364.2,119536.7,1
+1791407226923,45,step,707.8,0.0,8,0,0,1000_heartbeat_and_cron,5417.7,116315.7,1
+1791407350439,8,step,624.1,0.0,8,0,0,0735_quick_followup,4566.4,2565.0,1
+1791407351476,72,step,594.4,0.0,8,0,0,0735_quick_followup,4570.4,2411.4,1
+1791407352793,21,step,589.6,0.0,8,0,0,0735_quick_followup,4567.8,2488.0,1
+1791407333942,74,step,31683.8,0.0,1,2,5,0735_quick_followup,0.0,0.0,-1
+1791407363867,75,step,659.7,0.0,16,0,0,1015_question,14632.6,2781.8,1
+1791407364432,69,step,591.2,0.0,16,0,0,1015_question,14640.7,2875.3,1
+1791407365316,57,step,582.6,0.0,16,0,0,1015_question,14639.9,2980.7,1
+1791407365846,1,step,587.5,0.0,16,0,0,1015_question,14665.1,2754.7,1
+1791407343414,9,step,31367.4,0.0,1,2,5,1017_followup,0.0,0.0,-1
+1791407366773,46,step,664.1,0.0,16,0,0,1015_question,14644.6,3082.8,1
+1791407343938,56,step,31803.8,0.0,1,2,5,1017_followup,0.0,0.0,-1
+1791407367046,45,step,661.0,0.0,16,0,0,1015_question,14661.9,4014.1,1
+1791407366985,82,step,673.7,0.0,16,0,0,1015_question,14696.4,4159.2,1
+1791407345018,58,step,31923.8,0.0,1,2,5,1017_followup,0.0,0.0,-1
+1791407345463,36,step,31714.7,0.0,1,2,5,1017_followup,0.0,0.0,-1
+1791407377819,63,step,630.6,0.0,7,0,0,0830_heartbeat,4443.5,4377.4,1
+1791407378719,89,step,648.8,0.0,7,0,0,0930_heartbeat,4449.7,5275.3,1
+1791407378867,76,step,652.9,0.0,8,0,0,0900_heartbeat_and_cron,4498.0,5148.6,1
+1791407378740,81,step,616.3,0.0,7,0,0,0830_heartbeat,4468.3,5354.7,1
+1791407347844,71,step,31879.9,0.0,1,2,5,1017_followup,0.0,0.0,-1
+1791407348155,80,step,31788.7,0.0,1,2,5,1017_followup,0.0,0.0,-1
+1791407368890,68,step,563.4,0.0,16,0,0,1015_question,14660.8,6015.4,1
+1791407379531,2,step,673.4,0.0,7,0,0,0830_heartbeat,4445.5,5492.3,1
+1791407379715,79,step,659.3,0.0,7,0,0,0930_heartbeat,4494.7,5278.3,1
+1791407379412,60,step,684.1,0.0,7,0,0,0830_heartbeat,4550.8,5587.3,1
+1791407379211,10,step,678.3,0.0,7,0,0,0830_heartbeat,4498.4,5894.6,1
+1791407380535,77,step,626.6,0.0,7,0,0,0830_heartbeat,4446.0,4802.6,1
+1791407381652,44,step,647.4,0.0,7,0,0,0830_heartbeat,4463.0,4044.0,1
+1791407382884,33,step,673.2,0.0,7,0,0,0930_heartbeat,4459.3,3577.5,1
+1791407383261,7,step,695.5,0.0,8,0,0,0900_heartbeat_and_cron,4467.3,3397.7,1
+1791407383830,17,step,698.2,0.0,8,0,0,0900_heartbeat_and_cron,4463.6,3420.7,1
+1791407383621,87,step,744.4,0.0,8,0,0,1000_heartbeat_and_cron,4453.7,3622.7,1
+1791407383961,50,step,751.6,0.0,8,0,0,0900_heartbeat_and_cron,4466.1,3510.1,1
+1791407384364,18,step,690.5,0.0,8,0,0,1000_heartbeat_and_cron,4456.4,4148.2,1
+1791407358119,28,step,31945.2,0.0,1,2,5,1015_question,0.0,0.0,-1
+1791407385529,37,step,734.0,0.0,8,0,0,1000_heartbeat_and_cron,4457.5,12425.0,1
+1791407385027,53,step,741.9,0.0,8,0,0,0900_heartbeat_and_cron,4580.0,13324.3,1
+1791407384838,78,step,743.8,0.0,7,0,0,0830_heartbeat,4525.4,13697.0,1
+1791407362143,65,step,31652.7,0.0,1,2,5,1015_question,0.0,0.0,-1
+1791407384486,12,step,694.2,0.0,8,0,0,0900_heartbeat_and_cron,4460.7,14360.9,1
+1791407362397,15,step,31674.8,0.0,1,2,5,1015_question,0.0,0.0,-1
+1791407362673,6,step,31610.4,0.0,1,2,5,1015_question,0.0,0.0,-1
+1791407385305,34,step,682.0,0.0,7,0,0,0930_heartbeat,4502.9,13852.6,1
+1791407384553,66,step,741.9,0.0,8,0,0,0900_heartbeat_and_cron,4470.3,14656.3,1
+1791407365118,29,step,30907.0,0.0,1,2,5,1015_question,0.0,0.0,-1
+1791407365743,4,step,31594.0,0.0,1,2,5,1015_question,0.0,0.0,-1
+1791407366792,13,step,31622.7,0.0,1,2,5,1015_question,0.0,0.0,-1
+1791407372413,32,step,607.4,0.0,17,0,0,0800_briefing,18451.6,18194.9,1
+1791407384568,75,step,681.6,0.0,8,0,0,1017_followup,6720.0,17831.1,1
+1791407373028,26,step,650.9,0.0,17,0,0,0800_briefing,18022.2,18147.3,1
+1791407386923,70,step,689.0,0.0,7,0,0,0930_heartbeat,4585.0,17935.6,1
+1791407372872,20,step,641.4,0.0,17,0,0,0800_briefing,18015.2,18687.8,1
+1791407385914,40,step,695.8,0.0,7,0,0,0830_heartbeat,4468.3,19192.6,1
+1791407385400,69,step,772.5,0.0,8,0,0,1017_followup,6593.8,21543.6,1
+1791407386972,31,step,696.9,0.0,8,0,0,0900_heartbeat_and_cron,4618.2,22641.5,1
+1791407387810,41,step,694.2,0.0,8,0,0,0900_heartbeat_and_cron,4523.3,22093.4,1
+1791407374572,47,step,673.6,0.0,17,0,0,0800_briefing,18018.4,22384.0,1
+1791407388277,54,step,688.1,0.0,7,0,0,0830_heartbeat,4554.1,22133.5,1
+1791407388257,67,step,691.8,0.0,7,0,0,0930_heartbeat,4527.3,22183.3,1
+1791407388035,0,step,699.7,0.0,7,0,0,0830_heartbeat,4519.4,22487.1,1
+1791407386163,1,step,705.3,0.0,8,0,0,1017_followup,6668.8,22229.1,1
+1791407374848,61,step,637.1,0.0,17,0,0,0800_briefing,18205.4,22094.8,1
+1791407386298,57,step,718.3,0.0,8,0,0,1017_followup,6940.9,21830.8,1
+1791407387387,46,step,748.7,0.0,8,0,0,1017_followup,6578.3,21061.2,1
+1791407389037,73,step,785.5,0.0,7,0,0,0930_heartbeat,4857.1,21126.4,1
+1791407374718,27,step,664.3,0.0,17,0,0,0800_briefing,18330.0,22189.1,1
+1791407375554,22,step,619.2,0.0,17,0,0,0800_briefing,18134.8,21608.7,1
+1791407388485,45,step,725.0,0.0,8,0,0,1017_followup,6610.6,20333.3,1
+1791407390876,48,step,699.5,0.0,8,0,0,1000_heartbeat_and_cron,4460.7,20130.3,1
+1791407378104,59,step,630.4,0.0,17,0,0,0800_briefing,18019.0,19663.5,1
+1791407391817,85,step,654.6,0.0,7,0,0,0930_heartbeat,4607.9,19410.8,1
+1791407388846,82,step,722.2,0.0,8,0,0,1017_followup,6715.8,20196.5,1
+1791407379014,55,step,694.3,0.0,17,0,0,0800_briefing,18026.6,19071.3,1
+1791407379255,24,step,660.1,0.0,17,0,0,0800_briefing,18097.3,18959.6,1
+1791407379856,49,step,678.6,0.0,17,0,0,0800_briefing,18080.6,18488.1,1
+1791407380507,35,step,679.2,0.0,17,0,0,0800_briefing,18106.5,17925.2,1
+1791407392633,68,step,695.4,0.0,8,0,0,1017_followup,6593.1,17551.5,1
+1791407381931,51,step,674.5,0.0,17,0,0,0800_briefing,18103.6,16800.7,1
+1791407382074,25,step,668.4,0.0,17,0,0,0800_briefing,18049.0,16784.4,1
+1791407384241,62,step,797.6,0.0,17,0,0,0800_briefing,18043.2,14670.2,1
+1791407384192,83,step,727.3,0.0,17,0,0,0800_briefing,18374.3,14468.5,1
+1791407383824,16,step,730.2,0.0,17,0,0,0800_briefing,18230.1,15049.8,1
+1791407384988,42,step,711.5,0.0,17,0,0,0800_briefing,18472.5,13711.3,1
+1791407386410,72,step,704.1,0.0,17,0,0,0800_briefing,18429.5,12538.6,1
+1791407387286,21,step,736.9,0.0,17,0,0,0800_briefing,18328.9,11734.7,1
+1791407390521,8,step,800.5,0.0,17,0,0,0800_briefing,18078.5,8715.1,1
+1791407388694,56,step,31786.2,0.0,1,1,5,1020_remember_this,0.0,0.0,-1
+1791407388287,9,step,32229.1,0.0,1,1,5,1020_remember_this,0.0,0.0,-1
+1791407379067,64,step,31958.6,0.0,1,2,5,0930_heartbeat,0.0,0.0,-1
+1791407390209,58,step,31181.0,0.0,1,1,5,1020_remember_this,0.0,0.0,-1
+1791407380101,30,step,31459.0,0.0,1,2,5,1000_heartbeat_and_cron,0.0,0.0,-1
+1791407390417,36,step,31693.7,0.0,1,1,5,1020_remember_this,0.0,0.0,-1
+1791407380517,23,step,31908.5,0.0,1,2,5,0900_heartbeat_and_cron,0.0,0.0,-1
+1791407393181,80,step,31590.1,0.0,1,1,5,1020_remember_this,0.0,0.0,-1
+1791407393131,71,step,31752.0,0.0,1,1,5,1020_remember_this,0.0,0.0,-1
+1791407383392,11,step,31627.3,0.0,1,2,5,1000_heartbeat_and_cron,0.0,0.0,-1
+1791407384344,19,step,31567.2,0.0,1,2,5,1000_heartbeat_and_cron,0.0,0.0,-1
+1791407384904,86,step,31170.8,0.0,1,2,5,0930_heartbeat,0.0,0.0,-1
+1791407386839,43,step,31468.4,0.0,1,2,5,1000_heartbeat_and_cron,0.0,0.0,-1
+1791407386651,38,step,31865.8,0.0,1,2,5,0930_heartbeat,0.0,0.0,-1
+1791407386958,88,step,31620.5,0.0,1,2,5,0900_heartbeat_and_cron,0.0,0.0,-1
+1791407387133,5,step,31493.5,0.0,1,2,5,0900_heartbeat_and_cron,0.0,0.0,-1
+1791407387085,84,step,31804.1,0.0,1,2,5,0900_heartbeat_and_cron,0.0,0.0,-1
+1791407388325,39,step,31531.8,0.0,1,2,5,1000_heartbeat_and_cron,0.0,0.0,-1
+1791407388142,52,step,31897.8,0.0,1,2,5,0900_heartbeat_and_cron,0.0,0.0,-1
+1791407389755,3,step,31654.1,0.0,1,2,5,0930_heartbeat,0.0,0.0,-1
+1791407390240,14,step,31286.6,0.0,1,2,5,1000_heartbeat_and_cron,0.0,0.0,-1
+=== end csv ===
