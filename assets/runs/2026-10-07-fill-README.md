@@ -34,11 +34,13 @@ Stop rules, evaluated per leg: **literal** = resume P90 ≤ GA bar (150 ms gViso
 | Agents (50 workers) | Peak live actors | Resume P50 / P90 / P99 ms | Park P50 / P90 / P99 s | Err + refusals | Host mem GB (%) | Host CPU p90 | Hyperdisk write p90 / max MiB/s | Net tx max MiB/s | Literal | Degradation |
 |---|---|---|---|---|---|---|---|---|---|---|
 | 30 | 13 (4) | 571 / 633 / 849 | 0.9 / 1.3 / 2.6 | 0.00 % (0+0 of 508) | 41 (5 %) | 2 % | 592 / 1,184 | 18 | fail | pass |
+| 45 | 19 (5) | 572 / 621 / 743 | 1.0 / 48.1 / 69.8 | 0.00 % (0+0 of 565) | 58 (8 %) | 2 % | 738 / 2,180 | 5 | fail | pass |
 | 60 | 21 (6) | 572 / 626 / 934 | 1.0 / 62.7 / 108.2 | 2.07 % (4+10 of 676) | 76 (10 %) | 3 % | 780 / 1,751 | 19 | fail | fail |
+| 60 (rerun) | 23 (6) | 572 / 621 / 794 | 1.2 / 58.0 / 109.4 | 0.40 % (3+0 of 743) | 73 (10 %) | 3 % | 975 / 1,841 | 6 | fail | pass |
 
-- **Ceiling (degradation rule):** 30 agents pass, 60 fails → measured peak live actors at the ceiling **13**; live mean 3.9.
+- **Ceiling (degradation rule):** 60 agents pass, no failing rung yet → measured peak live actors at the ceiling **23**; live mean 6.1.
 - **Ceiling (literal GA bars):** 0 agents — the GA resume bars are not met by this 1 GiB-resident actor at any rung.
-- **Step 8, ACE's basis:** active per node = 13; runnable = 13 × 17 (Oct 6 agents/worker for microvm pause) = 221; memory overcommit = 221 × 1.0 GiB ÷ 768 = 0.3×; $ at 100 % active = $3179 ÷ 13 = **$244.54** per active agent-month; on our basis ($3179 ÷ 13) ÷ 17 + $0.09 = **$14.47** per runnable agent-month.
+- **Step 8, ACE's basis:** active per node = 23; runnable = 23 × 17 (Oct 6 agents/worker for microvm pause) = 391; memory overcommit = 391 × 1.0 GiB ÷ 768 = 0.5×; $ at 100 % active = $3179 ÷ 23 = **$138.22** per active agent-month; on our basis ($3179 ÷ 23) ÷ 17 + $0.09 = **$8.22** per runnable agent-month.
 
 ## microvm · suspend
 
