@@ -240,7 +240,11 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 		if time.Now().Add(gap).After(deadline) {
 			break
 		}
-		time.Sleep(gap)
+		select { // a think gap can be hours at ×1: stop promptly when the run ends
+		case <-ctx.Done():
+			return
+		case <-time.After(gap):
+		}
 		if s.swapGate != nil {
 			if !s.swapGate.enter(ctx, id) { // blocks while the swap loop has this actor parked
 				return
