@@ -216,6 +216,11 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 				// play its state-building ops (files written, RAM filled) with no
 				// think gap so later steps find what they expect, skip the rest.
 				cum += gap
+				if s.swapGate != nil { // never touch a parked actor: the request would wake it behind the swap loop's back
+					if !s.swapGate.enter(ctx, id) {
+						return
+					}
+				}
 				for _, o := range st.Ops {
 					switch o.Kind {
 					case agentscript.KindIngest, agentscript.KindWriteDisk, agentscript.KindFillRAM:
@@ -223,6 +228,9 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 							slog.Warn("catch-up op failed", "actor", name, "step", st.Name, "kind", o.Kind.String(), "err", err)
 						}
 					}
+				}
+				if s.swapGate != nil {
+					s.swapGate.leave(id)
 				}
 				continue
 			}
