@@ -219,6 +219,7 @@ export FAIL_WAKE_P99_MS="${FAIL_WAKE_P99_MS:-10000}"
 export FAIL_TURN_P99_MS="${FAIL_TURN_P99_MS:-2000}"
 # swap mode: SWAP_FILL resident idle actors, park N + wake N every SWAP_EVERY, N × SWAP_MULT per level
 export SWAP_FILL="${SWAP_FILL:-0}"
+export SCRIPT_SNAPSHOT_STEPS="${SCRIPT_SNAPSHOT_STEPS:-}"   # script mode: park+log a snapshot point after these step counts
 export SWAP_START="${SWAP_START:-5}"
 export SWAP_MULT="${SWAP_MULT:-2}"
 export SWAP_EVERY="${SWAP_EVERY:-10s}"

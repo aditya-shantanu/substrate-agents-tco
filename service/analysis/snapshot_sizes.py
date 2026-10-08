@@ -57,8 +57,8 @@ def summarize(per_actor_files):
             "breakdown": dict(sorted(breakdown.items(), key=lambda kv: -kv[1]["mean"]))}
 
 
-def suspend_sizes(bucket, atespace, uids):
-    root = f"gs://{bucket}/benchmark-workloads/glutton/atespaces/{atespace}/actors/"
+def suspend_sizes(bucket, atespace, uids, template="glutton"):
+    root = f"gs://{bucket}/benchmark-workloads/{template}/atespaces/{atespace}/actors/"
     r = sh(["gcloud", "storage", "ls", "-l", "-r", root])
     per = collections.defaultdict(lambda: collections.defaultdict(dict))  # uid -> snapid -> {file: bytes}
     for line in r.stdout.splitlines():
@@ -121,6 +121,7 @@ def main():
     ap.add_argument("--lifecycle", required=True, choices=["pause", "suspend"])
     ap.add_argument("--bucket", required=True)
     ap.add_argument("--atespace", default="agents-sim")
+    ap.add_argument("--template", default="glutton", help="ActorTemplate name (its snapshotConfig.storageLocation prefix under benchmark-workloads/)")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     acts = actors(a.atespace, a.prefix)
@@ -128,7 +129,7 @@ def main():
     states = collections.Counter(st.get("state", "?") for _, _, st in acts)
     if not uids:
         sys.exit(f"no actors with prefix {a.prefix}")
-    latest, gens = (pause_sizes(uids) if a.lifecycle == "pause" else suspend_sizes(a.bucket, a.atespace, uids))
+    latest, gens = (pause_sizes(uids) if a.lifecycle == "pause" else suspend_sizes(a.bucket, a.atespace, uids, a.template))
     s = summarize(latest)
     s.update({"prefix": a.prefix, "lifecycle": a.lifecycle, "states": dict(states),
               "files_or_generations_per_actor_mean": statistics.fmean(gens.values()) if gens else 0,

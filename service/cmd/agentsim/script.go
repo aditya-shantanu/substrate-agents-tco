@@ -24,6 +24,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -60,6 +61,16 @@ func checkScriptFile(source string) int {
 // against the script's floor (the upstream driver's guard), and switches
 // off the personal-agent per-turn work, which the script replaces.
 func (s *sim) loadScript(ctx context.Context) error {
+	if s.cfg.scriptSnapshotSteps != "" {
+		s.snapshotSteps = map[int]bool{}
+		for _, f := range strings.Split(s.cfg.scriptSnapshotSteps, ",") {
+			n, err := strconv.Atoi(strings.TrimSpace(f))
+			if err != nil || n <= 0 {
+				return fmt.Errorf("--script-snapshot-steps: bad entry %q", f)
+			}
+			s.snapshotSteps[n] = true
+		}
+	}
 	switch s.cfg.lifecycle {
 	case "suspend", "pause", "none":
 	default:
@@ -304,6 +315,14 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 			s.swapGate.leave(id)
 		}
 		steps++
+		if s.snapshotSteps[steps] && r.errors == 0 {
+			t := time.Now()
+			if ms, perr := s.suspendNowForce(ctx, name); perr != nil {
+				slog.Warn("snapshot point failed", "actor", name, "step_index", steps, "step", st.Name, "err", perr)
+			} else {
+				slog.Info("snapshot point", "actor", name, "step_index", steps, "step", st.Name, "lifecycle", s.cfg.lifecycle, "park_ms", int(ms), "unix_ms", t.UnixMilli())
+			}
+		}
 		errs += r.errors
 		if r.errors > 0 {
 			consecutiveFailures++
@@ -361,6 +380,11 @@ func (s *sim) suspendNow(ctx context.Context, name string) (float64, error) {
 	if s.cfg.lifecycle == "none" {
 		return 0, nil // resident: the driver never parks after activity (setup still parks via hibernateRPC)
 	}
+	return s.suspendNowForce(ctx, name)
+}
+
+// suspendNowForce parks regardless of a "none" lifecycle (snapshot points).
+func (s *sim) suspendNowForce(ctx context.Context, name string) (float64, error) {
 	ref := &ateapipb.ObjectRef{Atespace: s.cfg.atespace, Name: name}
 	var err error
 	for attempt := 0; attempt < 5; attempt++ {

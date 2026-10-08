@@ -68,6 +68,10 @@ type cfg struct {
 	failRelP90, failProbeP99Ms, failMemAvailPct, failPsiMemFull, failPsiCPUSome float64
 	failCrashed                                                                 int
 	holdAfterFail                                                               time.Duration
+	// script mode: park (per --lifecycle-mode) after these 1-based step
+	// counts of a lap, log a "snapshot point", and let the next step's request
+	// resume the actor — snapshot size/composition as the day progresses.
+	scriptSnapshotSteps string
 	// swap mode (see swap.go): turnover at a fixed resident fill
 	swapFill, swapStart int
 	swapMult            float64
@@ -126,10 +130,11 @@ type result struct {
 }
 
 type sim struct {
-	swapGate *swapGate // swap mode: coordinates resident agents' steps with the park/wake ticks (nil otherwise)
-	cfg      cfg
-	api      ateapipb.ControlClient
-	http     *http.Client
+	snapshotSteps map[int]bool // script mode: 1-based step counts that end with a snapshot park (nil = off)
+	swapGate      *swapGate    // swap mode: coordinates resident agents' steps with the park/wake ticks (nil otherwise)
+	cfg           cfg
+	api           ateapipb.ControlClient
+	http          *http.Client
 
 	mu      sync.Mutex
 	results []result
@@ -180,6 +185,7 @@ func main() {
 	flag.Float64Var(&c.failPsiCPUSome, "fail-psi-cpu-some", 0, "load-test: a wave fails if node CPU PSI some avg10 exceeds this % (0 disables)")
 	flag.IntVar(&c.failCrashed, "fail-crashed", 0, "load-test: a wave fails if at least this many actors are CRASHED (0 disables)")
 	flag.DurationVar(&c.holdAfterFail, "hold-after-fail", 0, "load-test: after a failed wave, stop the agents that wave added and keep the last clean level running for this long, scoring it (0 = end at once)")
+	flag.StringVar(&c.scriptSnapshotSteps, "script-snapshot-steps", "", "script mode: comma-separated 1-based step counts after which the driver parks the actor (per --lifecycle-mode) to take a snapshot and logs a 'snapshot point'; the next step's request resumes it (use with --script-suspend idle)")
 	flag.IntVar(&c.swapFill, "swap-fill", 0, "swap mode: hold this many actors resident and idle, then park N and wake N every --swap-every (0 = off)")
 	flag.IntVar(&c.swapStart, "swap-start", 5, "swap mode: N per tick at the first level")
 	flag.Float64Var(&c.swapMult, "swap-mult", 2, "swap mode: multiply N by this per level (one level per --wave-interval)")

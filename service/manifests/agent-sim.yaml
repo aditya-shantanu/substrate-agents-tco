@@ -137,6 +137,7 @@ spec:
         - --fail-crashed=${FAIL_CRASHED}
         - --hold-after-fail=${HOLD_AFTER_FAIL}
         - --swap-fill=${SWAP_FILL}
+        - --script-snapshot-steps=${SCRIPT_SNAPSHOT_STEPS}
         - --swap-start=${SWAP_START}
         - --swap-mult=${SWAP_MULT}
         - --swap-every=${SWAP_EVERY}
