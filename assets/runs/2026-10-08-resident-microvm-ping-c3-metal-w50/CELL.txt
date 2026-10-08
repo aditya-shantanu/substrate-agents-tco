@@ -1,1 +1,2 @@
-microvm ping pods=50 fleet=4000 node=agents-tco-euw4/europe-west4-c run_rc=1 first_wave=
+microvm ping pods=50 fleet=1600 node=agents-tco-euw4/europe-west4-c run_rc=1 first_wave=100
+LOADTEST VERDICT: failure at 1000 active agents (refusals+errors+wake-p99+turn-p99+crashed); last sustainable level = 850; hold at 850 also failed (crashed)

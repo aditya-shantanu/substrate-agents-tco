@@ -18,7 +18,7 @@ Two workloads, two runtimes, two pool shapes. **Nothing parks**: actors are crea
 | **gvisor · ping** | 50 | from 850 to 4000 (extension) | 4000 | none up to 4000 | — | — | 38 % of node | 14 % / 21 % | — |
 | **gvisor · ping** | 1 | from 100 to 1600 | 100 | 250 | refusals+errors+wake-p99 | clean | 7 % of node | 2 % / 22 % | p50=557 p90=717 p99=862 max=949 |
 | **microvm · ping** | 50 | from 100 to 1600 | 850 | 1000 | refusals+errors+wake-p99+turn-p99+crashed | failed: crashed | 16 % of node | 3 % / 12 % | p50=1417 p90=2173 p99=2760 max=3123 |
-| **microvm · ping** | 50 | from 0 to 4000 | 0 | none up to 4000 | — | — | — | 10 % / 18 % | — |
+| **microvm · ping** | 50 | from 850 to 4000 (extension) | 3550 | 3850 | wake-p99 | clean | 56 % of node | 10 % / 18 % | — |
 | **microvm · ping** | 1 | from 100 to 1600 | 100 | 250 | refusals+errors+wake-p99 | clean | 5 % of node | 5 % / 7 % | p50=1785 p90=2819 p99=3307 max=3481 |
 
 ## gvisor · pa · 50 pods — agents-tco-east (us-east4-a)
@@ -172,10 +172,22 @@ Verdict: failure at 1000 active agents (refusals+errors+wake-p99+turn-p99+crashe
 
 ## microvm · ping · 50 pods — agents-tco-euw4 (europe-west4-c)
 
-Verdict: no verdict (run did not finish)
+Verdict: failure at 3850 active agents (wake-p99); last sustainable level = 3550; hold at 3550 clean for 10m0s
 
 | Awake agents | Activations in window | Wake P50 / P90 / P99 ms (newly woken) | Turn P90 / P99 ms (awake request) | CPU probe P50 / P90 / P99 ms | Err + refusals | Node mem avail | PSI cpu some / mem full / io some | Running | Crashed | Failed on |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 850 | 22923 | 150 / 179 / 339 | 4 / 7 | 0.0 / 0.0 / 0.0 | 0 + 0 | 83.6 % | 0.03 / 0.54 / 3.43 | 850 | 0 | pass |
+| 1150 | 33627 | 160 / 171 / 185 | 4 / 7 | 0.0 / 0.0 / 0.0 | 0 + 0 | 79.2 % | 0.00 / 0.00 / 0.00 | 1150 | 0 | pass |
+| 1450 | 42732 | 169 / 189 / 220 | 4 / 7 | 0.0 / 0.0 / 0.0 | 0 + 0 | 74.7 % | 0.00 / 0.00 / 0.00 | 1450 | 0 | pass |
+| 1750 | 51518 | 178 / 197 / 250 | 4 / 8 | 0.0 / 0.0 / 0.0 | 0 + 0 | 70.3 % | 0.00 / 0.00 / 0.00 | 1750 | 0 | pass |
+| 2050 | 60481 | 185 / 200 / 243 | 4 / 8 | 0.0 / 0.0 / 0.0 | 0 + 0 | 65.9 % | 0.05 / 0.00 / 0.00 | 2050 | 0 | pass |
+| 2350 | 69155 | 199 / 229 / 255 | 5 / 8 | 0.0 / 0.0 / 0.0 | 0 + 0 | 61.5 % | 0.01 / 0.00 / 0.00 | 2350 | 0 | pass |
+| 2650 | 78829 | 217 / 261 / 315 | 5 / 9 | 0.0 / 0.0 / 0.0 | 0 + 0 | 57.1 % | 0.04 / 0.00 / 0.00 | 2650 | 0 | pass |
+| 2950 | 87741 | 259 / 374 / 623 | 5 / 11 | 0.0 / 0.0 / 0.0 | 0 + 0 | 52.7 % | 0.18 / 0.00 / 0.00 | 2950 | 0 | pass |
+| 3250 | 96978 | 322 / 518 / 770 | 5 / 13 | 0.0 / 0.0 / 0.0 | 0 + 0 | 48.1 % | 0.09 / 0.14 / 0.59 | 3250 | 0 | pass |
+| 3550 | 106129 | 429 / 1,129 / 1,947 | 6 / 18 | 0.0 / 0.0 / 0.0 | 0 + 0 | 43.8 % | 0.74 / 0.00 / 0.00 | 3550 | 0 | pass |
+| 3850 | 114228 | 551 / 7,334 / 14,889 | 8 / 203 | 0.0 / 0.0 / 0.0 | 31 + 37 | 39.3 % | 1.37 / 0.03 / 0.14 | 3850 | 0 | wake-p99 |
+| 3550 (hold) | 212468 | 0 / 0 / 0 | 6 / 16 | 0.0 / 0.0 / 0.0 | 0 + 0 | 43.1 % | 1.31 / 0.00 / 0.00 | 3550 | 0 | pass |
 
 ## microvm · ping · 1 pod — agents-tco-euw4 (europe-west4-c)
 
