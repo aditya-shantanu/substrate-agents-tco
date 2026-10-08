@@ -49,21 +49,43 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 	parked := append([]int(nil), s.ready[s.cfg.swapFill:]...)
 
 	// ---- fill: wake the resident set and leave it idle
+	// Gentle fill: 8 wakes in flight (each restores ~1 GiB from the node disk,
+	// which is still absorbing the setup writes) and retry a failed wake until
+	// the actor is really resident; an actor that will not come up stays
+	// parked so the queues reflect reality.
 	slog.Info("swap fill", "resident", len(resident), "parked", len(parked))
 	t0 := time.Now()
 	var fw sync.WaitGroup
-	sem := make(chan struct{}, 32)
+	var fmu sync.Mutex
+	var up, down []int
+	sem := make(chan struct{}, 8)
 	for _, id := range resident {
 		fw.Add(1)
 		go func(id int) {
 			defer fw.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			s.swapWake(ctx, id, "fill")
+			var err error
+			for attempt := 0; attempt < 12 && ctx.Err() == nil; attempt++ {
+				if err = s.swapWake(ctx, id, "fill"); err == nil {
+					break
+				}
+				time.Sleep(time.Duration(5+attempt*5) * time.Second)
+			}
+			fmu.Lock()
+			if err == nil {
+				up = append(up, id)
+			} else {
+				down = append(down, id)
+			}
+			fmu.Unlock()
 		}(id)
 	}
 	fw.Wait()
-	slog.Info("swap fill done", "took", time.Since(t0).String())
+	sort.Ints(up)
+	resident = up
+	parked = append(parked, down...)
+	slog.Info("swap fill done", "took", time.Since(t0).String(), "resident", len(resident), "parked", len(parked), "fill_failures", len(down))
 
 	var mu sync.Mutex // guards resident/parked queues and the park samples
 	var parkSamples []tsample
@@ -91,15 +113,23 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 				mu.Lock()
 				if err == nil {
 					parkSamples = append(parkSamples, tsample{time.Now().UnixMilli(), ms})
+					parked = append(parked, id)
+				} else if status.Code(err) == codes.FailedPrecondition {
+					parked = append(parked, id) // was already parked (a failed earlier wake)
+				} else {
+					resident = append(resident, id) // park failed: it is still awake
 				}
-				parked = append(parked, id)
 				mu.Unlock()
 			}(toPark[i])
 			go func(id int) {
 				defer wg.Done()
-				s.swapWake(ctx, id, "swap")
+				err := s.swapWake(ctx, id, "swap")
 				mu.Lock()
-				resident = append(resident, id)
+				if err == nil {
+					resident = append(resident, id)
+				} else {
+					parked = append(parked, id) // still parked: back to the pool
+				}
 				mu.Unlock()
 			}(toWake[i])
 		}
@@ -272,7 +302,7 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 // swapWake is the wake half of a swap: the first request after a park,
 // with the same refusal retries as a gateway; recorded as a result of the
 // given kind (wasSuspended = 1 so the report treats it as a wake).
-func (s *sim) swapWake(ctx context.Context, id int, kind string) {
+func (s *sim) swapWake(ctx context.Context, id int, kind string) error {
 	name := actorName(id)
 	r := result{unixMs: time.Now().UnixMilli(), agent: id, kind: kind, wasSuspended: 1}
 	start := time.Now()
@@ -295,6 +325,7 @@ func (s *sim) swapWake(ctx context.Context, id int, kind string) {
 	s.mu.Lock()
 	s.results = append(s.results, r)
 	s.mu.Unlock()
+	return err
 }
 
 // swapPark is the park half: SuspendActor or PauseActor per --lifecycle-mode,
