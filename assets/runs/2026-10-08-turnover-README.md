@@ -12,37 +12,26 @@
 
 **What 0.5 swaps/s means.** ~41,000 activations per node per day. A real-time personal assistant wakes ~61 times a day, so this turnover rate serves about 680 such agents' wake-ups per node — the same order as the memory-bound 650 awake agents measured the night before.
 
-**Caveats recorded below.** (1) The 10-minute hold after each failed level is *not* a clean data point in any cell: the 120–180 unfinished swaps of the failed level were still draining through it, so the hold rows show the collapse continuing, not the lower level failing. (2) The gVisor suspend cell was run twice; the first attempt stopped at its first level on a single transient error (one in 145 wakes, 0.69 % against a 0.5 % gate) and is not shown; the gates now require at least three occurrences. (3) In every cell the fill (waking 500 actors from parked) took 20–30 s because actors are small at creation; the resident set is built by the agents' own first-lap catch-up. (4) The microVM suspend cell's host-probe samples were lost in a results-directory mix-up on the laptop; its rows carry the autosuspender's memory/PSI fields only. (5) A few actors per node (0–2) failed to wake in the fill and stayed in the parked pool.
+**Caveats recorded below.** (1) The 10-minute hold after each failed level is *not* a clean data point in any cell: the 120–180 unfinished swaps of the failed level were still draining through it, so the hold rows show the collapse continuing, not the lower level failing. (2) The gVisor suspend cell was run twice; the first attempt stopped at its first level on a single transient error (one in 145 wakes, 0.69 % against a 0.5 % gate) and is not shown; the gates now require at least three occurrences. (3) In every cell the fill (waking 500 actors from parked) took 20–30 s because actors are small at creation; the resident set is built by the agents' own first-lap catch-up. (4) The host-probe samples of the two suspend cells were lost in a results-directory mix-up on the laptop (two pipelines, one results folder); their rows carry the autosuspender's memory/PSI fields only, and the disk column is blank for them. (5) A few actors per node (0–2) failed to wake in the fill and stayed in the parked pool.
 
 ## Ceiling per cell
 
 | Runtime | Park mode | Last clean level (swaps/s) | First failing level (swaps/s) | Failed on | Wake P50 / P90 / P99 at the last clean level (ms) | Park P50 / P90 / P99 at the last clean level (s) | Disk busy % · queue depth at the last clean level (p90) |
 |---|---|---|---|---|---|---|---|
-| **gvisor** | suspend | 5 per 10 s = **0.48/s** | 10 per 10 s = 1.00/s target, 0.77 achieved | refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog | 205 / 599 / 828 | 1.0 / 2.2 / 3.3 | — |
-| **gvisor** | suspend | 5 per 10 s = **0.48/s** | 10 per 10 s = 1.00/s target, 0.77 achieved | refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog | 205 / 599 / 828 | 1.0 / 2.2 / 3.3 | — |
+| **gvisor** | suspend | 5 per 10 s = **0.48/s** | 10 per 10 s = 1.00/s target, 0.68 achieved | refusals+wake-p99+wake-p90-vs-baseline+backlog+psi-mem-full | 544 / 610 / 906 | 4.5 / 6.8 / 10.7 | — |
 | **gvisor** | pause | 5 per 10 s = **0.48/s** | 10 per 10 s = 1.00/s target, 0.83 achieved | refusals+wake-p99+wake-p90-vs-baseline+backlog+psi-mem-full | 512 / 574 / 605 | 0.6 / 2.9 / 4.9 | 96 % · 109 |
 | **microvm** | suspend | 5 per 10 s = **0.48/s** | 10 per 10 s = 1.00/s target, 0.77 achieved | refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog | 216 / 454 / 928 | 4.0 / 5.1 / 7.1 | — |
 | **microvm** | pause | 5 per 10 s = **0.48/s** | 10 per 10 s = 1.00/s target, 0.77 achieved | refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog | 205 / 599 / 828 | 1.0 / 2.2 / 3.3 | — |
 
 ## gvisor · suspend — agents-tco-east (us-east4-a)
 
-Fill of 500 resident actors took 19.541359103s. Verdict: failure at 10 per 10s (1.00 swaps/s target, 0.77 achieved; refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog); last clean level = 5 per 10s (0.50 swaps/s); hold at 5 also failed (refusals+errors+wake-p99+backlog+crashed)
+Fill of 500 resident actors took 29.765006685s. Verdict: failure at 10 per 10s (1.00 swaps/s target, 0.68 achieved; refusals+wake-p99+wake-p90-vs-baseline+backlog+psi-mem-full); last clean level = 5 per 10s (0.50 swaps/s); hold at 5 also failed (refusals+errors+wake-p99+wake-p90-vs-baseline+backlog+crashed)
 
 | N per 10 s | Target swaps/s | Achieved swaps/s | Wakes / parks in the level | Wake P50 / P90 / P99 ms | Park P50 / P90 / P99 s | Errors + refusals | Backlog at end | Node mem avail | PSI cpu / mem / io | Running | Crashed | Failed on |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 5 | 0.50 | 0.48 | 145 / 145 | 205 / 599 / 828 | 1.0 / 2.2 / 3.3 | 0 + 0 | 0 | 33.8 % | 0.00 / 0.00 / 19.50 | 500 | 0 | pass |
-| 10 | 1.00 | 0.77 | 230 / 122 | 3,179 / 9,783 / 31,555 | 8.1 / 18.9 / 30.0 | 79 + 392 | 160 | 29.5 % | 0.00 / 1.51 / 86.22 | 460 | 0 | refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog |
-| 5 (hold) | 0.50 | 0.44 | 265 / 0 | 9,943 / 49,943 / 49,943 | 0.0 / 0.0 / 0.0 | 259 + 543 | 90 | 17.2 % | 0.00 / 1.04 / 81.31 | 450 | 6 | refusals+errors+wake-p99+backlog+crashed |
-
-## gvisor · suspend — agents-tco-east (us-east4-a)
-
-Fill of 500 resident actors took 19.541359103s. Verdict: failure at 10 per 10s (1.00 swaps/s target, 0.77 achieved; refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog); last clean level = 5 per 10s (0.50 swaps/s); hold at 5 also failed (refusals+errors+wake-p99+backlog+crashed)
-
-| N per 10 s | Target swaps/s | Achieved swaps/s | Wakes / parks in the level | Wake P50 / P90 / P99 ms | Park P50 / P90 / P99 s | Errors + refusals | Backlog at end | Node mem avail | PSI cpu / mem / io | Running | Crashed | Failed on |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 5 | 0.50 | 0.48 | 145 / 145 | 205 / 599 / 828 | 1.0 / 2.2 / 3.3 | 0 + 0 | 0 | 33.8 % | 0.00 / 0.00 / 19.50 | 500 | 0 | pass |
-| 10 | 1.00 | 0.77 | 230 / 122 | 3,179 / 9,783 / 31,555 | 8.1 / 18.9 / 30.0 | 79 + 392 | 160 | 29.5 % | 0.00 / 1.51 / 86.22 | 460 | 0 | refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog |
-| 5 (hold) | 0.50 | 0.44 | 265 / 0 | 9,943 / 49,943 / 49,943 | 0.0 / 0.0 / 0.0 | 259 + 543 | 90 | 17.2 % | 0.00 / 1.04 / 81.31 | 450 | 6 | refusals+errors+wake-p99+backlog+crashed |
+| 5 | 0.50 | 0.48 | 145 / 145 | 544 / 610 / 906 | 4.5 / 6.8 / 10.7 | 0 + 0 | 0 | 37.4 % | 0.90 / 0.00 / 8.68 | 500 | 0 | pass |
+| 10 | 1.00 | 0.68 | 203 / 182 | 826 / 10,161 / 23,414 | 8.2 / 9.3 / 11.6 | 0 + 31 | 120 | 31.9 % | 7.14 / 37.18 / 98.78 | 452 | 0 | refusals+wake-p99+wake-p90-vs-baseline+backlog+psi-mem-full |
+| 5 (hold) | 0.50 | 0.48 | 287 / 5 | 21,258 / 61,390 / 101,389 | 147.5 / 163.2 / 163.2 | 202 + 397 | 90 | 38.2 % | 1.04 / 0.73 / 92.08 | 292 | 48 | refusals+errors+wake-p99+wake-p90-vs-baseline+backlog+crashed |
 
 ## gvisor · pause — agents-tco-east (us-east4-a)
 
