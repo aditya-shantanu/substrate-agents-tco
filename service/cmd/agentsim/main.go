@@ -126,9 +126,10 @@ type result struct {
 }
 
 type sim struct {
-	cfg  cfg
-	api  ateapipb.ControlClient
-	http *http.Client
+	swapGate *swapGate // swap mode: coordinates resident agents' steps with the park/wake ticks (nil otherwise)
+	cfg      cfg
+	api      ateapipb.ControlClient
+	http     *http.Client
 
 	mu      sync.Mutex
 	results []result

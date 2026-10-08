@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"math/rand/v2"
 	"sort"
 	"strings"
 	"sync"
@@ -27,11 +28,95 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// swapGate coordinates the resident agents' own steps (the assistant day at
+// its real pace) with the swap ticks: a tick parks only actors that are not
+// inside a step, and an agent whose actor was parked waits at its next step
+// until a later tick wakes it. first-lap agents start at a random point of
+// the day so the fleet is spread over it.
+type swapGate struct {
+	mu     sync.Mutex
+	cond   *sync.Cond
+	busy   map[int]bool
+	parked map[int]bool
+	lapped map[int]bool
+}
+
+func newSwapGate() *swapGate {
+	g := &swapGate{busy: map[int]bool{}, parked: map[int]bool{}, lapped: map[int]bool{}}
+	g.cond = sync.NewCond(&g.mu)
+	return g
+}
+
+func (g *swapGate) firstLap(id int) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.lapped[id] {
+		return false
+	}
+	g.lapped[id] = true
+	return true
+}
+
+// enter blocks while the actor is parked, then marks it busy; false if ctx ended.
+func (g *swapGate) enter(ctx context.Context, id int) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for g.parked[id] {
+		if ctx.Err() != nil {
+			return false
+		}
+		done := make(chan struct{})
+		go func() { // wake the waiter if ctx ends
+			select {
+			case <-ctx.Done():
+				g.mu.Lock()
+				g.cond.Broadcast()
+				g.mu.Unlock()
+			case <-done:
+			}
+		}()
+		g.cond.Wait()
+		close(done)
+	}
+	g.busy[id] = true
+	return true
+}
+
+func (g *swapGate) leave(id int) {
+	g.mu.Lock()
+	g.busy[id] = false
+	g.mu.Unlock()
+}
+
+// pick takes up to n actors from the front of the resident queue that are
+// not inside a step and marks them parked; returns them and the remaining queue.
+func (g *swapGate) pick(resident []int, n int) (chosen, rest []int) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	for _, id := range resident {
+		if len(chosen) < n && !g.busy[id] {
+			g.parked[id] = true
+			chosen = append(chosen, id)
+		} else {
+			rest = append(rest, id)
+		}
+	}
+	return chosen, rest
+}
+
+func (g *swapGate) unpark(id int) {
+	g.mu.Lock()
+	g.parked[id] = false
+	g.cond.Broadcast()
+	g.mu.Unlock()
+}
+
 type swapStat struct {
 	tag                                string
 	n                                  int
 	targetPerS, achievedPerS           float64
 	wakes, parks, errors, refusals     int
+	stepActs, stepErrors               int // the resident agents' own steps in the window (not swaps)
 	wakeP50, wakeP90, wakeP99          float64
 	parkP50, parkP90, parkP99          float64
 	backlog                            int
@@ -87,6 +172,33 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 	parked = append(parked, down...)
 	slog.Info("swap fill done", "took", time.Since(t0).String(), "resident", len(resident), "parked", len(parked), "fill_failures", len(down))
 
+	// The resident agents do what they are supposed to do, at the script's
+	// real pace (think ×1 → ~2.5 steps per hour each); parked ones wait at
+	// their next step until a tick wakes them.
+	loopCtx, cancelLoops := context.WithCancel(ctx)
+	defer cancelLoops()
+	var lw sync.WaitGroup
+	if s.script != nil {
+		s.swapGate = newSwapGate()
+		for _, id := range s.ready { // every actor in the pool has a loop; parked ones block in enter()
+			lw.Add(1)
+			go func(id int) {
+				defer lw.Done()
+				rng := rand.New(rand.NewPCG(uint64(id), 0x5a7a))
+				for time.Now().Before(deadline) && loopCtx.Err() == nil {
+					s.runTask(loopCtx, id, actorName(id), rng, deadline)
+				}
+			}(id)
+		}
+		// everything not resident starts parked
+		s.swapGate.mu.Lock()
+		for _, id := range parked {
+			s.swapGate.parked[id] = true
+		}
+		s.swapGate.mu.Unlock()
+		slog.Info("swap resident loops started", "agents", len(s.ready), "think_scale", s.cfg.thinkScale)
+	}
+
 	var mu sync.Mutex // guards resident/parked queues and the park samples
 	var parkSamples []tsample
 	var inFlight int
@@ -98,8 +210,14 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 		if n > len(resident) || n > len(parked) {
 			n = min(len(resident), len(parked))
 		}
-		toPark := append([]int(nil), resident[:n]...)
-		resident = resident[n:]
+		var toPark []int
+		if s.swapGate != nil {
+			toPark, resident = s.swapGate.pick(resident, n)
+			n = len(toPark)
+		} else {
+			toPark = append([]int(nil), resident[:n]...)
+			resident = resident[n:]
+		}
 		toWake := append([]int(nil), parked[:n]...)
 		parked = parked[n:]
 		inFlight += n
@@ -118,6 +236,9 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 					parked = append(parked, id) // was already parked (a failed earlier wake)
 				} else {
 					resident = append(resident, id) // park failed: it is still awake
+					if s.swapGate != nil {
+						s.swapGate.unpark(id)
+					}
 				}
 				mu.Unlock()
 			}(toPark[i])
@@ -131,6 +252,9 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 					parked = append(parked, id) // still parked: back to the pool
 				}
 				mu.Unlock()
+				if err == nil && s.swapGate != nil {
+					s.swapGate.unpark(id)
+				}
 			}(toWake[i])
 		}
 		wg.Wait()
@@ -146,7 +270,15 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 		s.mu.Lock()
 		var wakes []float64
 		for _, r := range s.results {
-			if r.unixMs < sinceMs || r.kind != "swap" {
+			if r.unixMs < sinceMs {
+				continue
+			}
+			if r.kind == "step" {
+				st.stepActs++
+				st.stepErrors += r.errors
+				continue
+			}
+			if r.kind != "swap" {
 				continue
 			}
 			st.wakes++
@@ -220,7 +352,7 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 			"achieved_swaps_per_s", fmt.Sprintf("%.2f", st.achievedPerS), "wakes", st.wakes, "parks", st.parks,
 			"wake_p50_ms", int(st.wakeP50), "wake_p90_ms", int(st.wakeP90), "wake_p99_ms", int(st.wakeP99),
 			"park_p50_ms", int(st.parkP50), "park_p90_ms", int(st.parkP90), "park_p99_ms", int(st.parkP99),
-			"errors", st.errors, "refusals", st.refusals, "backlog", st.backlog,
+			"errors", st.errors, "refusals", st.refusals, "backlog", st.backlog, "step_acts", st.stepActs, "step_errors", st.stepErrors,
 			"mem_avail_pct", fmt.Sprintf("%.1f", st.memAvailPct), "psi_cpu_some10", st.psiCPU, "psi_mem_full10", st.psiMem, "psi_io_some10", st.psiIO,
 			"running", st.running, "crashed", st.crashed, "failed", st.failedOn != "", "failed_on", st.failedOn)
 		return st
@@ -250,16 +382,18 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 	}
 	printTable := func(verdict string) {
 		fmt.Println("=== swap levels ===")
-		fmt.Println("tag,n_per_tick,target_swaps_per_s,achieved_swaps_per_s,wakes,parks,wake_p50_ms,wake_p90_ms,wake_p99_ms,park_p50_ms,park_p90_ms,park_p99_ms,errors,refusals,backlog,mem_avail_pct,psi_cpu_some10,psi_mem_full10,psi_io_some10,running,crashed,failed_on")
+		fmt.Println("tag,n_per_tick,target_swaps_per_s,achieved_swaps_per_s,wakes,parks,wake_p50_ms,wake_p90_ms,wake_p99_ms,park_p50_ms,park_p90_ms,park_p99_ms,errors,refusals,backlog,step_acts,step_errors,mem_avail_pct,psi_cpu_some10,psi_mem_full10,psi_io_some10,running,crashed,failed_on")
 		for _, l := range levels {
-			fmt.Printf("%s,%d,%.2f,%.2f,%d,%d,%.0f,%.0f,%.0f,%.0f,%.0f,%.0f,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%d,%d,%s\n",
+			fmt.Printf("%s,%d,%.2f,%.2f,%d,%d,%.0f,%.0f,%.0f,%.0f,%.0f,%.0f,%d,%d,%d,%d,%d,%.1f,%.2f,%.2f,%.2f,%d,%d,%s\n",
 				l.tag, l.n, l.targetPerS, l.achievedPerS, l.wakes, l.parks, l.wakeP50, l.wakeP90, l.wakeP99, l.parkP50, l.parkP90, l.parkP99,
-				l.errors, l.refusals, l.backlog, l.memAvailPct, l.psiCPU, l.psiMem, l.psiIO, l.running, l.crashed, l.failedOn)
+				l.errors, l.refusals, l.backlog, l.stepActs, l.stepErrors, l.memAvailPct, l.psiCPU, l.psiMem, l.psiIO, l.running, l.crashed, l.failedOn)
 		}
 		fmt.Println("=== end swap ===")
 		fmt.Println(verdict)
 	}
 
+	defer lw.Wait()
+	defer cancelLoops()
 	lastGood := 0
 	n := s.cfg.swapStart
 	for {

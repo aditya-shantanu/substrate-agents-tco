@@ -74,7 +74,11 @@ func (s *sim) loadScript(ctx context.Context) error {
 		}
 		// "nomem": the one-ping agent is a bare glutton process. No RAM
 		// fill, no per-turn work, no CPU-probe file.
-		s.cfg.memTarget, s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes, s.cfg.probeBytes = "", "", "", 0, 0
+		if s.cfg.swapFill > 0 { // swap mode: keep the boot-time RAM fill (the agent's resident set), drop per-turn work
+			s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes, s.cfg.probeBytes = "", "", 0, 0
+		} else {
+			s.cfg.memTarget, s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes, s.cfg.probeBytes = "", "", "", 0, 0
+		}
 		slog.Info("one-ping workload", "actors_per_user", s.cfg.pingActorsPerUser,
 			"wait", s.cfg.pingWait.String(), "live", s.cfg.pingLive.String())
 		return nil
@@ -103,7 +107,9 @@ func (s *sim) loadScript(ctx context.Context) error {
 
 	// The script fills its own RAM and files; the per-turn knobs would only
 	// add work the script's author did not ask for.
-	if s.cfg.memTarget != "" || s.cfg.memChurn != "" || s.cfg.memRead != "" || s.cfg.diskBytes > 0 {
+	if s.cfg.swapFill > 0 {
+		s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes = "", "", 0
+	} else if s.cfg.memTarget != "" || s.cfg.memChurn != "" || s.cfg.memRead != "" || s.cfg.diskBytes > 0 {
 		slog.Info("script mode: ignoring --mem-target/--mem-read/--mem-churn/--disk-bytes (the script governs the sandbox work)")
 		s.cfg.memTarget, s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes = "", "", "", 0
 	}
@@ -195,14 +201,38 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 	taskStart := time.Now()
 	consecutiveFailures := 0
 	steps, errs := 0, 0
+	// Swap mode: a resident agent enters the day at a random point the
+	// first time through, so a fleet is spread over the day instead of all
+	// starting at midnight; later laps play from the top.
+	var skipUntil, cum time.Duration
+	if s.swapGate != nil && s.swapGate.firstLap(id) {
+		var total time.Duration
+		for _, st := range s.script.Steps {
+			total += time.Duration(float64(st.Think) * s.cfg.thinkScale)
+		}
+		skipUntil = time.Duration(rng.Float64() * float64(total))
+	}
 	for _, st := range s.script.Steps {
 		// The LLM is producing this step; the actor is asleep (driver mode)
 		// or about to be (idle mode).
 		gap := time.Duration(float64(st.Think) * s.cfg.thinkScale * (0.8 + 0.4*rng.Float64()))
+		if skipUntil > 0 {
+			if cum+gap <= skipUntil { // fast-forward through the part of the day already "behind" this agent
+				cum += gap
+				continue
+			}
+			gap = cum + gap - skipUntil
+			skipUntil = 0
+		}
 		if time.Now().Add(gap).After(deadline) {
 			break
 		}
 		time.Sleep(gap)
+		if s.swapGate != nil {
+			if !s.swapGate.enter(ctx, id) { // blocks while the swap loop has this actor parked
+				return
+			}
+		}
 
 		r := result{unixMs: time.Now().UnixMilli(), agent: id, kind: "step", step: st.Name}
 		r.wasSuspended = s.actorSuspended(ctx, name)
@@ -253,6 +283,9 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 		s.mu.Lock()
 		s.results = append(s.results, r)
 		s.mu.Unlock()
+		if s.swapGate != nil {
+			s.swapGate.leave(id)
+		}
 		steps++
 		errs += r.errors
 		if r.errors > 0 {
