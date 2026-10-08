@@ -869,9 +869,15 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 		sort.Float64s(wakes)
 		sort.Float64s(turns)
 		sort.Float64s(probes)
-		st.wakeP50, st.wakeP90, st.wakeP99 = q(wakes, 0.5), q(wakes, 0.9), q(wakes, 0.99)
-		st.turnP90, st.turnP99 = q(turns, 0.9), q(turns, 0.99)
-		st.probeP50, st.probeP90, st.probeP99 = q(probes, 0.5), q(probes, 0.9), q(probes, 0.99)
+		qz := func(v []float64, p float64) float64 {
+			if len(v) == 0 {
+				return 0
+			}
+			return q(v, p)
+		}
+		st.wakeP50, st.wakeP90, st.wakeP99 = qz(wakes, 0.5), qz(wakes, 0.9), qz(wakes, 0.99)
+		st.turnP90, st.turnP99 = qz(turns, 0.9), qz(turns, 0.99)
+		st.probeP50, st.probeP90, st.probeP99 = qz(probes, 0.5), qz(probes, 0.9), qz(probes, 0.99)
 		st.memAvailPct = -1
 		if h, ok := s.fetchHostState(ctx); ok {
 			st.memAvailPct, st.psiCPU, st.psiMem, st.psiIO = h.memAvailPct(), h.PsiCPUSome, h.PsiMemFull, h.PsiIOSome
@@ -971,6 +977,24 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 							c()
 						}
 					}
+					// Stopping a loop leaves its actor resident; park the dropped
+					// agents so the hold really runs at the last clean level.
+					var pw sync.WaitGroup
+					sem := make(chan struct{}, 16)
+					for i := prevActive; i < active; i++ {
+						pw.Add(1)
+						go func(id int) {
+							defer pw.Done()
+							sem <- struct{}{}
+							defer func() { <-sem }()
+							pctx, pcancel := context.WithTimeout(ctx, 3*time.Minute)
+							defer pcancel()
+							if err := s.hibernateRPC(pctx, &ateapipb.ObjectRef{Atespace: s.cfg.atespace, Name: actorName(id)}); err != nil && status.Code(err) != codes.FailedPrecondition {
+								slog.Warn("park dropped agent", "actor", actorName(id), "err", err)
+							}
+						}(s.ready[i])
+					}
+					pw.Wait()
 					active = prevActive
 					slog.Info("hold", "active_agents", active, "for", s.cfg.holdAfterFail.String())
 					holdStartMs := time.Now().UnixMilli()
