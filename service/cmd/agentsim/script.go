@@ -74,11 +74,7 @@ func (s *sim) loadScript(ctx context.Context) error {
 		}
 		// "nomem": the one-ping agent is a bare glutton process. No RAM
 		// fill, no per-turn work, no CPU-probe file.
-		if s.cfg.swapFill > 0 { // swap mode: keep the boot-time RAM fill (the agent's resident set), drop per-turn work
-			s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes, s.cfg.probeBytes = "", "", 0, 0
-		} else {
-			s.cfg.memTarget, s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes, s.cfg.probeBytes = "", "", "", 0, 0
-		}
+		s.cfg.memTarget, s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes, s.cfg.probeBytes = "", "", "", 0, 0
 		slog.Info("one-ping workload", "actors_per_user", s.cfg.pingActorsPerUser,
 			"wait", s.cfg.pingWait.String(), "live", s.cfg.pingLive.String())
 		return nil
@@ -107,9 +103,7 @@ func (s *sim) loadScript(ctx context.Context) error {
 
 	// The script fills its own RAM and files; the per-turn knobs would only
 	// add work the script's author did not ask for.
-	if s.cfg.swapFill > 0 {
-		s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes = "", "", 0
-	} else if s.cfg.memTarget != "" || s.cfg.memChurn != "" || s.cfg.memRead != "" || s.cfg.diskBytes > 0 {
+	if s.cfg.memTarget != "" || s.cfg.memChurn != "" || s.cfg.memRead != "" || s.cfg.diskBytes > 0 {
 		slog.Info("script mode: ignoring --mem-target/--mem-read/--mem-churn/--disk-bytes (the script governs the sandbox work)")
 		s.cfg.memTarget, s.cfg.memChurn, s.cfg.memRead, s.cfg.diskBytes = "", "", "", 0
 	}
@@ -217,8 +211,19 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 		// or about to be (idle mode).
 		gap := time.Duration(float64(st.Think) * s.cfg.thinkScale * (0.8 + 0.4*rng.Float64()))
 		if skipUntil > 0 {
-			if cum+gap <= skipUntil { // fast-forward through the part of the day already "behind" this agent
+			if cum+gap <= skipUntil {
+				// This step is "behind" the agent's entry point into the day:
+				// play its state-building ops (files written, RAM filled) with no
+				// think gap so later steps find what they expect, skip the rest.
 				cum += gap
+				for _, o := range st.Ops {
+					switch o.Kind {
+					case agentscript.KindIngest, agentscript.KindWriteDisk, agentscript.KindFillRAM:
+						if err := s.execOp(ctx, name, o); err != nil {
+							slog.Warn("catch-up op failed", "actor", name, "step", st.Name, "kind", o.Kind.String(), "err", err)
+						}
+					}
+				}
 				continue
 			}
 			gap = cum + gap - skipUntil

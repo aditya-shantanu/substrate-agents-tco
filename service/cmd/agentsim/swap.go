@@ -138,6 +138,36 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 	// which is still absorbing the setup writes) and retry a failed wake until
 	// the actor is really resident; an actor that will not come up stays
 	// parked so the queues reflect reality.
+	// The resident agents do what they are supposed to do, at the script's
+	// real pace (think ×1 → ~2.5 steps per hour each); an agent's loop starts
+	// the moment its own fill wake succeeds (so the first-lap catch-up is
+	// spread over the fill), parked agents wait at their next step until a
+	// tick wakes them.
+	loopCtx, cancelLoops := context.WithCancel(ctx)
+	defer cancelLoops()
+	var lw sync.WaitGroup
+	startLoop := func(id int) {
+		if s.script == nil {
+			return
+		}
+		lw.Add(1)
+		go func() {
+			defer lw.Done()
+			rng := rand.New(rand.NewPCG(uint64(id), 0x5a7a))
+			for time.Now().Before(deadline) && loopCtx.Err() == nil {
+				s.runTask(loopCtx, id, actorName(id), rng, deadline)
+			}
+		}()
+	}
+	if s.script != nil {
+		s.swapGate = newSwapGate()
+		s.swapGate.mu.Lock()
+		for _, id := range s.ready { // everything starts parked; a successful fill wake un-parks
+			s.swapGate.parked[id] = true
+		}
+		s.swapGate.mu.Unlock()
+	}
+
 	slog.Info("swap fill", "resident", len(resident), "parked", len(parked))
 	t0 := time.Now()
 	var fw sync.WaitGroup
@@ -164,40 +194,22 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 				down = append(down, id)
 			}
 			fmu.Unlock()
+			if err == nil {
+				if s.swapGate != nil {
+					s.swapGate.unpark(id)
+				}
+				startLoop(id)
+			}
 		}(id)
 	}
 	fw.Wait()
 	sort.Ints(up)
 	resident = up
 	parked = append(parked, down...)
-	slog.Info("swap fill done", "took", time.Since(t0).String(), "resident", len(resident), "parked", len(parked), "fill_failures", len(down))
-
-	// The resident agents do what they are supposed to do, at the script's
-	// real pace (think ×1 → ~2.5 steps per hour each); parked ones wait at
-	// their next step until a tick wakes them.
-	loopCtx, cancelLoops := context.WithCancel(ctx)
-	defer cancelLoops()
-	var lw sync.WaitGroup
-	if s.script != nil {
-		s.swapGate = newSwapGate()
-		for _, id := range s.ready { // every actor in the pool has a loop; parked ones block in enter()
-			lw.Add(1)
-			go func(id int) {
-				defer lw.Done()
-				rng := rand.New(rand.NewPCG(uint64(id), 0x5a7a))
-				for time.Now().Before(deadline) && loopCtx.Err() == nil {
-					s.runTask(loopCtx, id, actorName(id), rng, deadline)
-				}
-			}(id)
-		}
-		// everything not resident starts parked
-		s.swapGate.mu.Lock()
-		for _, id := range parked {
-			s.swapGate.parked[id] = true
-		}
-		s.swapGate.mu.Unlock()
-		slog.Info("swap resident loops started", "agents", len(s.ready), "think_scale", s.cfg.thinkScale)
+	for _, id := range parked { // pool agents: loops exist but block until a tick wakes them
+		startLoop(id)
 	}
+	slog.Info("swap fill done", "took", time.Since(t0).String(), "resident", len(resident), "parked", len(parked), "fill_failures", len(down), "think_scale", s.cfg.thinkScale)
 
 	var mu sync.Mutex // guards resident/parked queues and the park samples
 	var parkSamples []tsample
