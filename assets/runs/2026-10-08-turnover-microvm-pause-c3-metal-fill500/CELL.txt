@@ -1,0 +1,2 @@
+microvm pause fill=500 fleet=800 node=agents-tco-euw4/europe-west4-c run_rc=1
+SWAP VERDICT: failure at 10 per 10s (1.00 swaps/s target, 0.77 achieved; refusals+errors+wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline+backlog); last clean level = 5 per 10s (0.50 swaps/s); hold at 5 also failed (refusals+errors+wake-p99+backlog+crashed)
