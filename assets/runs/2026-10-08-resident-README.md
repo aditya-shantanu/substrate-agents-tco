@@ -4,6 +4,28 @@ Two workloads, two runtimes, two pool shapes. **Nothing parks**: actors are crea
 
 **Gates (any one fails the wave):** in-sandbox CPU probe or awake-request (turn) P90 above 2× the first wave's; probe or turn P99 above 1 s; errors or router refusals above 0.5 % of activations; node MemAvailable below 10 %; memory PSI full avg10 above 10 %; CPU PSI some avg10 above 50 %; any actor CRASHED. First-wave wake P90 is also reported per wave (provisioning signal; 10 s P99 hard gate).
 
+## Summary
+
+Question asked: with pause/suspend taken out of the picture, how many agents can one bare-metal node hold **awake**, and what tells us to stop adding? Two workloads (the personal-assistant day at think ×0.02 with ~1 GiB resident, and the one-ping actor at 256 MiB), two runtimes, two pool shapes, on two c3-standard-192-metal nodes in parallel, every actor limited to 1 vCPU. Agents were pre-created parked and woken in waves; nothing was parked again.
+
+| Workload | Runtime | 50 pods: last clean / first fail (awake agents on the node) | What tripped | 1 pod: last clean / first fail |
+|---|---|---|---|---|
+| Personal assistant | gVisor (3 GiB limit) | **650 / 700** | node memory below 10 % available | 150 / 200 |
+| Personal assistant | microVM (1.5 GiB limit) | **650 / 700** | memory reclaim: CPU probe P90 15 → 117 ms, request P90 5 → 65 ms, wakes 6.7 s | 150 / 200 |
+| Ping | gVisor | **≥ 4,000** (fleet exhausted; 62 % memory free, CPU idle) | nothing | 100 / 250 |
+| Ping | microVM | **3,550 / 3,850** | wake P99 of the newly added 300 above 10 s | 100 / 250 |
+
+**What the signals showed**
+
+- **Awake capacity for the assistant actor is memory-bound at ~650 per 768 GB node, on both runtimes.** Request latency (4 ms P90), the in-sandbox CPU probe (15–16 ms P90) and host CPU (P90 under 20 %) were flat all the way up; only MemAvailable moved, about 1.1 GB of host RAM per awake agent including sandbox overhead. Configured oversubscription at the ceiling: memory 2.5× for gVisor at its 3 GiB limit and 1.3× for microVM at 1.5 GiB; CPU 3.4× for both at 1 vCPU each.
+- **Ping is not host-bound.** gVisor carried 4,000 awake sandboxes with 38 % of memory used and CPU idle; microVM reached 3,550 and stopped only because waking 300 more guests at once pushed that batch's wake tail past 10 s. Request latency for already-awake actors stayed at 4–8 ms P90 throughout.
+- **One worker pod caps provisioning, not serving.** Every one-pod cell — both workloads, both runtimes — failed the moment a wave asked for more than roughly 50–100 simultaneous wakes through a single ateom (wake P90 at the router's 30 s limit, refusals 4–28 %), while the agents already awake on that pod kept answering in 4 ms. The limit is in the per-worker wake path (assignment/restore), not in the sandbox runtime; worth locating in the code.
+- **The kernel's ARP neighbour table was the real wall at ~1,000 live sandboxes.** Both ping cells collapsed at the 1,000 wave on both nodes with the host idle; dmesg showed `neighbour: arp_cache: neighbor table overflow!` at the COS default `gc_thresh3 = 1024`. Raising `net.ipv{4,6}.neigh.default.gc_thresh*` to 4096/8192/16384 removed it (the extension rows). This is a Substrate node-preparation gap, like the node-directory leak.
+
+**Stop rule that actually fired, per cell:** MemAvailable (gVisor PA), relative latency degradation + errors (microVM PA, the early-warning gates), wake P99 (microVM ping and all one-pod cells), the crash gate (the pre-fix ping cells — caused by the ARP wall). Errors/refusals were 0 in every clean wave.
+
+**Caveats recorded in the tables below:** the first hold for gVisor PA is invalid (the harness did not yet park the agents it dropped, fixed before all later cells); one gVisor ping extension attempt was aborted by a single crash in its 850-agent opening wave under the crash gate of 1 (then set to 5) and is shown as its own row; the two largest runs' wave tables were recovered from the node's rotated container logs after `kubectl logs` returned nothing.
+
 ## Ceilings at a glance
 
 | Cell | Pods | Ramp | Last clean level (awake agents) | First failing level | Failed on | Hold at last clean level | Host memory used at ceiling | Host CPU p90 / max over the run | Cold start of new actors (p50/p90/p99 ms) |
