@@ -62,7 +62,7 @@ func scriptSum(name string) agentscript.Summary {
 }
 
 // scripted says whether the workload is an agent-session script.
-func (c config) scripted() bool { return c.workload == "coding-session" || c.workload == "personal-assistant" }
+func (c config) scripted() bool { return c.workload == "coding-session" || c.workload == "nano-personal-agent" || c.workload == "personal-assistant" }
 func (c config) coding() bool   { return c.workload == "coding-session" }
 func (c config) assistant() bool { return c.workload == "personal-assistant" }
 
@@ -386,7 +386,7 @@ var fields = []field{
 		}
 		return "personal agent — 3 chats + 40 check-ins a day"
 	}, func(c *config, d int) {
-		c.workload = cycleStr(c.workload, []string{"personal", "coding-session", "personal-assistant", "ping"}, d)
+		c.workload = cycleStr(c.workload, []string{"personal", "coding-session", "personal-assistant", "nano-personal-agent", "ping"}, d)
 		if c.assistant() && c.thinkScale >= 1 {
 			c.thinkScale = 0.02 // a day in ~30 min
 		} else if c.coding() && c.thinkScale < 1 {

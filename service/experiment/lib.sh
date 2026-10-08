@@ -125,6 +125,16 @@ elif [[ "${WORKLOAD}" == "ping" ]]; then
   export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
   export SCRIPT_ARG=""
   [[ "${PING_ACTORS_PER_USER}" -gt 0 || "${PING_INDEPENDENT}" == "true" ]] || export PING_ACTORS_PER_USER=20
+elif [[ "${WORKLOAD}" == "nano-personal-agent" ]]; then
+  # The smallest always-on agent that still has a day: same event structure as
+  # personal-assistant, every action mocked (dwell = model call, ping = API
+  # call, KiB-sized file reads/writes = file open), no synthetic heap.
+  export SESSIONS_PER_DAY="${SESSIONS_PER_DAY:-1}"
+  export WAKES_PER_DAY="${WAKES_PER_DAY:-0}"
+  export THINK_SCALE="${USER_THINK_SCALE:-0.02}"
+  export SCRIPT_LOOP="${USER_SCRIPT_LOOP:-true}"
+  export RAMP_SECONDS="${USER_RAMP_SECONDS:-1200}"
+  export SCRIPT_ARG="nano-personal-agent"
 elif [[ "${WORKLOAD}" == "personal-assistant" ]]; then
   # substrate#2230: one lap = one day of an always-on assistant (61 steps,
   # 24 h of think gaps, 440 s of resident dwell, 640→960 MiB resident).
@@ -156,7 +166,7 @@ fi
 # shmem pages can page out and mask an undersized limit — badly. The
 # coding-session script declares a 1Gi floor (agentsim refuses a smaller
 # template), so script workloads default to 1Gi.
-actor_mem_default() { case "${WORKLOAD}" in personal|ping) echo 256Mi ;; personal-assistant) echo 1536Mi ;; *) echo 1Gi ;; esac; }
+actor_mem_default() { case "${WORKLOAD}" in personal|ping|nano-personal-agent) echo 256Mi ;; personal-assistant) echo 1536Mi ;; *) echo 1Gi ;; esac; }
 export ACTOR_MEMORY="${ACTOR_MEMORY:-$(actor_mem_default)}"
 export ACTOR_CPU="${ACTOR_CPU:-}"   # optional per-actor CPU limit (gVisor: cgroup quota + sentry vCPUs; microVM: guest vCPUs)
 
