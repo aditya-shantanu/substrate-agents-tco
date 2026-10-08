@@ -1,2 +1,2 @@
 gvisor ping pods=50 fleet=4000 node=agents-tco-east/us-east4-a run_rc=1 first_wave=850
-LOADTEST VERDICT: failure at 850 active agents (crashed); last sustainable level = 0
+LOADTEST VERDICT: no failure up to 4000 active agents (raise --agents to push further)

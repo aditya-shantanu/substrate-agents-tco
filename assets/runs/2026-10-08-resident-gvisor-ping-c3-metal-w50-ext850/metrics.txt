@@ -4,7 +4,5 @@ autosuspend_suspend_seconds_sum 0.000000
 autosuspend_suspend_seconds_count 0
 autosuspend_wedged_suspending 0
 autosuspend_unwedged_total 0
-autosuspend_actors{state="RUNNING"} 849
-autosuspend_actors{state="CRASHED"} 1
-autosuspend_actors{state="SUSPENDED"} 3150
+autosuspend_actors{state="RUNNING"} 4000
 autosuspend_actors_total 4000

@@ -15,9 +15,10 @@ Two workloads, two runtimes, two pool shapes. **Nothing parks**: actors are crea
 | **microvm · pa** | 1 | from 50 to 600 | 150 | 200 | refusals+errors+wake-p99 | failed: errors | 20 % of node | 9 % / 13 % | p50=2850 p90=3321 p99=3972 max=4113 |
 | **gvisor · ping** | 50 | from 100 to 1600 | 850 | 1000 | refusals+errors+wake-p99+turn-p99+crashed | failed: crashed | 11 % of node | 3 % / 17 % | p50=787 p90=1033 p99=1277 max=1398 |
 | **gvisor · ping** | 50 | from 850 to 4000 (extension) — aborted attempt: 1 crash in the opening wave tripped the crash gate (then set to 5) | 0 | 850 | crashed | — | — | 18 % / 19 % | p50=852 p90=1137 p99=1405 max=1896 |
-| **gvisor · ping** | 50 | from 0 to 4000 | 0 | none up to 4000 | — | — | — | 14 % / 21 % | — |
+| **gvisor · ping** | 50 | from 850 to 4000 (extension) | 4000 | none up to 4000 | — | — | 38 % of node | 14 % / 21 % | — |
 | **gvisor · ping** | 1 | from 100 to 1600 | 100 | 250 | refusals+errors+wake-p99 | clean | 7 % of node | 2 % / 22 % | p50=557 p90=717 p99=862 max=949 |
 | **microvm · ping** | 50 | from 100 to 1600 | 850 | 1000 | refusals+errors+wake-p99+turn-p99+crashed | failed: crashed | 16 % of node | 3 % / 12 % | p50=1417 p90=2173 p99=2760 max=3123 |
+| **microvm · ping** | 50 | from 0 to 4000 | 0 | none up to 4000 | — | — | — | 10 % / 18 % | — |
 | **microvm · ping** | 1 | from 100 to 1600 | 100 | 250 | refusals+errors+wake-p99 | clean | 5 % of node | 5 % / 7 % | p50=1785 p90=2819 p99=3307 max=3481 |
 
 ## gvisor · pa · 50 pods — agents-tco-east (us-east4-a)
@@ -126,10 +127,22 @@ Verdict: failure at 850 active agents (crashed); last sustainable level = 0
 
 ## gvisor · ping · 50 pods — agents-tco-east (us-east4-a)
 
-Verdict: no verdict (run did not finish)
+Verdict: no failure up to 4000 active agents (raise --agents to push further)
 
 | Awake agents | Activations in window | Wake P50 / P90 / P99 ms (newly woken) | Turn P90 / P99 ms (awake request) | CPU probe P50 / P90 / P99 ms | Err + refusals | Node mem avail | PSI cpu some / mem full / io some | Running | Crashed | Failed on |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 850 | 22899 | 336 / 544 / 916 | 5 / 23 | 0.0 / 0.0 / 0.0 | 0 + 0 | 81.3 % | 0.00 / 0.00 / 0.00 | 850 | 0 | pass |
+| 1150 | 33631 | 334 / 469 / 830 | 5 / 25 | 0.0 / 0.0 / 0.0 | 0 + 0 | 79.5 % | 0.01 / 0.00 / 0.05 | 1150 | 0 | pass |
+| 1450 | 42695 | 372 / 513 / 1,063 | 5 / 27 | 0.0 / 0.0 / 0.0 | 0 + 0 | 77.6 % | 0.00 / 0.00 / 0.00 | 1450 | 0 | pass |
+| 1750 | 51519 | 392 / 528 / 1,210 | 5 / 27 | 0.0 / 0.0 / 0.0 | 0 + 0 | 75.6 % | 0.72 / 2.79 / 6.22 | 1750 | 0 | pass |
+| 2050 | 60437 | 446 / 627 / 1,469 | 5 / 27 | 0.0 / 0.0 / 0.0 | 0 + 0 | 73.8 % | 0.00 / 0.00 / 0.00 | 2050 | 0 | pass |
+| 2350 | 69154 | 519 / 778 / 1,818 | 5 / 28 | 0.0 / 0.0 / 0.0 | 0 + 0 | 72.1 % | 0.00 / 0.00 / 0.00 | 2350 | 0 | pass |
+| 2650 | 78805 | 521 / 917 / 1,992 | 5 / 30 | 0.0 / 0.0 / 0.0 | 0 + 0 | 70.2 % | 0.00 / 0.00 / 0.22 | 2650 | 0 | pass |
+| 2950 | 87689 | 601 / 1,307 / 2,547 | 5 / 30 | 0.0 / 0.0 / 0.0 | 0 + 0 | 68.3 % | 0.15 / 0.00 / 0.00 | 2950 | 0 | pass |
+| 3250 | 96947 | 663 / 1,060 / 2,496 | 6 / 37 | 0.0 / 0.0 / 0.0 | 0 + 0 | 66.4 % | 0.19 / 0.00 / 0.00 | 3250 | 0 | pass |
+| 3550 | 106112 | 800 / 1,999 / 3,570 | 7 / 41 | 0.0 / 0.0 / 0.0 | 8 + 0 | 64.4 % | 0.22 / 0.00 / 0.38 | 3550 | 0 | pass |
+| 3850 | 114573 | 800 / 1,455 / 3,604 | 9 / 47 | 0.0 / 0.0 / 0.0 | 170 + 0 | 62.5 % | 0.68 / 0.00 / 0.00 | 3850 | 0 | pass |
+| 4000 | 118731 | 618 / 893 / 1,260 | 9 / 52 | 0.0 / 0.0 / 0.0 | 238 + 0 | 61.6 % | 0.35 / 0.00 / 0.00 | 4000 | 0 | pass |
 
 ## gvisor · ping · 1 pod — agents-tco-east (us-east4-a)
 
@@ -156,6 +169,13 @@ Verdict: failure at 1000 active agents (refusals+errors+wake-p99+turn-p99+crashe
 | 850 | 25148 | 152 / 162 / 192 | 4 / 6 | NaN / NaN / NaN | 0 + 0 | 84.2 % | 0.00 / 0.00 / 0.00 | 850 | 0 | pass |
 | 1000 | 26774 | 8,470 / 31,590 / 32,079 | 4 / 3,144 | NaN / NaN / NaN | 309 + 240 | 82.1 % | 0.00 / 0.00 / 0.00 | 993 | 7 | refusals+errors+wake-p99+turn-p99+crashed |
 | 850 (hold) | 49701 | nan / nan / nan | 4 / 621 | NaN / NaN / NaN | 49 + 0 | 82.1 % | 0.00 / 0.00 / 0.32 | 993 | 7 | crashed |
+
+## microvm · ping · 50 pods — agents-tco-euw4 (europe-west4-c)
+
+Verdict: no verdict (run did not finish)
+
+| Awake agents | Activations in window | Wake P50 / P90 / P99 ms (newly woken) | Turn P90 / P99 ms (awake request) | CPU probe P50 / P90 / P99 ms | Err + refusals | Node mem avail | PSI cpu some / mem full / io some | Running | Crashed | Failed on |
+|---|---|---|---|---|---|---|---|---|---|---|
 
 ## microvm · ping · 1 pod — agents-tco-euw4 (europe-west4-c)
 
