@@ -68,8 +68,12 @@ type cfg struct {
 	failRelP90, failProbeP99Ms, failMemAvailPct, failPsiMemFull, failPsiCPUSome float64
 	failCrashed                                                                 int
 	holdAfterFail                                                               time.Duration
-	probeBytes                                                                  int
-	setupSuspend                                                                bool
+	// swap mode (see swap.go): turnover at a fixed resident fill
+	swapFill, swapStart int
+	swapMult            float64
+	swapEvery           time.Duration
+	probeBytes          int
+	setupSuspend        bool
 
 	// script mode (see script.go): sessions play an agent-session script
 	script        string  // built-in name or YAML path; empty = personal-agent turns
@@ -175,6 +179,10 @@ func main() {
 	flag.Float64Var(&c.failPsiCPUSome, "fail-psi-cpu-some", 0, "load-test: a wave fails if node CPU PSI some avg10 exceeds this % (0 disables)")
 	flag.IntVar(&c.failCrashed, "fail-crashed", 0, "load-test: a wave fails if at least this many actors are CRASHED (0 disables)")
 	flag.DurationVar(&c.holdAfterFail, "hold-after-fail", 0, "load-test: after a failed wave, stop the agents that wave added and keep the last clean level running for this long, scoring it (0 = end at once)")
+	flag.IntVar(&c.swapFill, "swap-fill", 0, "swap mode: hold this many actors resident and idle, then park N and wake N every --swap-every (0 = off)")
+	flag.IntVar(&c.swapStart, "swap-start", 5, "swap mode: N per tick at the first level")
+	flag.Float64Var(&c.swapMult, "swap-mult", 2, "swap mode: multiply N by this per level (one level per --wave-interval)")
+	flag.DurationVar(&c.swapEvery, "swap-every", 10*time.Second, "swap mode: tick length — N parks + N wakes are started every tick")
 	flag.Float64Var(&c.failTurnP99Ms, "fail-turn-p99-ms", 2000, "load-test: a wave fails if in-session turn p99 exceeds this (0 disables)")
 	flag.IntVar(&c.probeBytes, "probe-bytes", 8<<20, "fixed-work CPU probe: sha256 over this many bytes once per activation; drift = CPU throttling (0 disables)")
 	flag.BoolVar(&c.setupSuspend, "setup-suspend", true, "suspend each agent right after setup (snapshot design); false keeps agents resident on their workers (parking design: workers >= agents, long idle timeout)")
@@ -240,7 +248,9 @@ func main() {
 	deadline := time.Now().Add(c.duration)
 	progressCtx, stopProgress := context.WithCancel(ctx)
 	go s.progressLoop(progressCtx)
-	if c.pingActorsPerUser > 0 {
+	if c.swapFill > 0 {
+		s.runSwap(ctx, deadline)
+	} else if c.pingActorsPerUser > 0 {
 		s.runPing(ctx, deadline)
 	} else if c.loadTest {
 		s.runLoadTest(ctx, deadline)

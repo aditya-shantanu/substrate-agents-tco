@@ -136,6 +136,10 @@ spec:
         - --fail-psi-cpu-some=${FAIL_PSI_CPU_SOME}
         - --fail-crashed=${FAIL_CRASHED}
         - --hold-after-fail=${HOLD_AFTER_FAIL}
+        - --swap-fill=${SWAP_FILL}
+        - --swap-start=${SWAP_START}
+        - --swap-mult=${SWAP_MULT}
+        - --swap-every=${SWAP_EVERY}
         volumeMounts:
         - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
         - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }
