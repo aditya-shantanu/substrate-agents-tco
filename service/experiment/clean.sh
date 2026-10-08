@@ -21,7 +21,7 @@ kubectl -n agent-sim delete job agentsim --ignore-not-found --wait=true 2>/dev/n
 #    each CLI invocation pays ~1.5s of port-forward setup, so 8 at a time.
 purged=false
 if kubectl -n agent-sim get svc autosuspender >/dev/null 2>&1; then
-  PFPORT=18098
+  PFPORT="${PURGE_PORT:-18098}"
   kubectl -n agent-sim port-forward svc/autosuspender ${PFPORT}:8080 >/dev/null 2>&1 &
   PF_PID=$!
   trap 'kill ${PF_PID} 2>/dev/null || true' EXIT

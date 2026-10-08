@@ -158,6 +158,7 @@ fi
 # template), so script workloads default to 1Gi.
 actor_mem_default() { case "${WORKLOAD}" in personal|ping) echo 256Mi ;; personal-assistant) echo 1536Mi ;; *) echo 1Gi ;; esac; }
 export ACTOR_MEMORY="${ACTOR_MEMORY:-$(actor_mem_default)}"
+export ACTOR_CPU="${ACTOR_CPU:-}"   # optional per-actor CPU limit (gVisor: cgroup quota + sentry vCPUs; microVM: guest vCPUs)
 
 # --- worker pod shape (used by the Burstable patch; requests<limits) ---
 # Under kubelet LimitedSwap a pod may swap at most request/nodeRAM × swap,
@@ -191,6 +192,21 @@ export LOAD_TEST="${LOAD_TEST:-false}"
 export WAVE_START="${WAVE_START:-10}"
 export WAVE_STEP="${WAVE_STEP:-10}"
 export WAVE_INTERVAL="${WAVE_INTERVAL:-3m}"
+# Resident-fill gates (all 0/empty = off): relative-to-first-wave P90 bound on
+# the CPU probe and turn latency, absolute probe p99, node MemAvailable %,
+# node PSI, crashed actors; HOLD_AFTER_FAIL keeps the last clean level
+# running after a failed wave and scores it.
+export FAIL_REL_P90="${FAIL_REL_P90:-0}"
+export FAIL_PROBE_P99_MS="${FAIL_PROBE_P99_MS:-0}"
+export FAIL_MEM_AVAIL_PCT="${FAIL_MEM_AVAIL_PCT:-0}"
+export FAIL_PSI_MEM_FULL="${FAIL_PSI_MEM_FULL:-0}"
+export FAIL_PSI_CPU_SOME="${FAIL_PSI_CPU_SOME:-0}"
+export FAIL_CRASHED="${FAIL_CRASHED:-0}"
+export HOLD_AFTER_FAIL="${HOLD_AFTER_FAIL:-0s}"
+export FAIL_REFUSAL_PCT="${FAIL_REFUSAL_PCT:-5}"
+export FAIL_ERROR_PCT="${FAIL_ERROR_PCT:-2}"
+export FAIL_WAKE_P99_MS="${FAIL_WAKE_P99_MS:-10000}"
+export FAIL_TURN_P99_MS="${FAIL_TURN_P99_MS:-2000}"
 
 if [[ ! -d "${SUBSTRATE_REPO}" ]]; then
   echo "SUBSTRATE_REPO=${SUBSTRATE_REPO} does not exist." >&2

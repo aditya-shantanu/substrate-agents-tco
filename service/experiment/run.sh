@@ -115,17 +115,17 @@ run_quiet "${EXP_DIR}/40-deploy-experiment.sh"; stage_done
 OUT="${EXP_DIR}/results/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "${OUT}"
 
-kubectl -n agent-sim port-forward svc/autosuspender 18080:8080 >/dev/null 2>&1 &
+kubectl -n agent-sim port-forward svc/autosuspender ${DASH_PORT:-18080}:8080 >/dev/null 2>&1 &
 PF_PID=$!
 trap 'kill ${PF_PID} 2>/dev/null || true' EXIT
 sleep 3
 
 stage 5 $TOTAL "TEST RUNNING — ${AGENTS} agents · ${WORKER_COUNT} workers · window ${DURATION} (wall ≈ prep + window + drain) · time ×${COMPRESS}"
-echo "   ${DIM}live dashboard: http://localhost:18080/   (kept open while this runs)${RESET}"
+echo "   ${DIM}live dashboard: http://localhost:${DASH_PORT:-18080}/   (kept open while this runs)${RESET}"
 echo
 
 cluster_tick() {
-  curl -sf --max-time 4 localhost:18080/state.json | python3 -c '
+  curl -sf --max-time 4 localhost:${DASH_PORT:-18080}/state.json | python3 -c '
 import json, sys, datetime
 try:
     s = json.load(sys.stdin)
@@ -189,11 +189,11 @@ kubectl -n agent-sim logs job/agentsim > "${OUT}/run.log"
 # reconnect); open a fresh one for the collect and never let a curl failure
 # abort the finale (set -e): the card can be re-rendered from run.log.
 kill "${PF_PID}" 2>/dev/null || true
-kubectl -n agent-sim port-forward svc/autosuspender 18080:8080 >/dev/null 2>&1 &
+kubectl -n agent-sim port-forward svc/autosuspender ${DASH_PORT:-18080}:8080 >/dev/null 2>&1 &
 PF_PID=$!
 sleep 3
-curl -sf --retry 3 localhost:18080/occupancy.csv > "${OUT}/occupancy.csv" || echo "warning: occupancy.csv not collected"
-curl -sf --retry 3 localhost:18080/metrics > "${OUT}/metrics.txt" || echo "warning: metrics.txt not collected"
+curl -sf --retry 3 localhost:${DASH_PORT:-18080}/occupancy.csv > "${OUT}/occupancy.csv" || echo "warning: occupancy.csv not collected"
+curl -sf --retry 3 localhost:${DASH_PORT:-18080}/metrics > "${OUT}/metrics.txt" || echo "warning: metrics.txt not collected"
 
 # Price the machine the workers actually ran on (multi-pool clusters).
 WORKER_NODE=$(kubectl -n benchmark-workloads get pods -l ate.dev/worker-pool -o jsonpath='{.items[0].spec.nodeName}' 2>/dev/null)

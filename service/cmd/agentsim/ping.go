@@ -91,6 +91,9 @@ func (s *sim) pingCycle(ctx context.Context, id int, rng *rand.Rand) {
 		}
 		r.stepMs = float64(time.Since(liveStart).Microseconds()) / 1000
 	}
+	if err == nil {
+		s.sampleAwake(ctx, name, r) // UX turn + fixed-work CPU probe
+	}
 	s.touch(name, "end")
 
 	if ms, err := s.suspendNow(ctx, name); err != nil {

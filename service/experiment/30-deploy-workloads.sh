@@ -19,7 +19,7 @@ fi
 # (e.g. a bare-metal pool: WORKER_NODE_SELECTOR=ate.dev/pool=metal
 # WORKER_TOLERATION=ate.dev/sandboxClass=microvm:NoSchedule); empty = any node.
 WAIT_TIMEOUT_SECS="${DEPLOY_WAIT_SECS:-900}" ./benchmarking/workloads/deploy.sh --deploy \
-  --worker-count "${WORKER_COUNT}" --sandbox-class "${SANDBOX_CLASS:-gvisor}" --actor-memory "${ACTOR_MEMORY}" \
+  --worker-count "${WORKER_COUNT}" --sandbox-class "${SANDBOX_CLASS:-gvisor}" --actor-memory "${ACTOR_MEMORY}" ${ACTOR_CPU:+--actor-cpu "${ACTOR_CPU}"} \
   ${WORKER_NODE_SELECTOR:+--worker-node-selector "${WORKER_NODE_SELECTOR}"} \
   ${WORKER_TOLERATION:+--worker-toleration "${WORKER_TOLERATION}"}
 

@@ -27,6 +27,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -88,6 +89,32 @@ type sample struct {
 	PsiCPUSome float64 `json:"psi_cpu_some10"`
 	PsiMemFull float64 `json:"psi_mem_full10"`
 	PsiIOSome  float64 `json:"psi_io_some10"`
+	// Node memory from /proc/meminfo (host-global in a plain container).
+	MemTotal     int64 `json:"mem_total_bytes"`
+	MemAvailable int64 `json:"mem_available_bytes"`
+}
+
+// readMemInfo returns MemTotal and MemAvailable in bytes from /proc/meminfo
+// (0, 0 if unreadable).
+func readMemInfo() (total, avail int64) {
+	b, err := os.ReadFile("/proc/meminfo")
+	if err != nil {
+		return 0, 0
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		f := strings.Fields(line)
+		if len(f) < 2 {
+			continue
+		}
+		v, _ := strconv.ParseInt(f[1], 10, 64)
+		switch f[0] {
+		case "MemTotal:":
+			total = v * 1024
+		case "MemAvailable:":
+			avail = v * 1024
+		}
+	}
+	return total, avail
 }
 
 // maxSamples bounds the in-memory window: 6h at the default 5s interval.
@@ -482,6 +509,7 @@ func (s *server) sampleLoop(ctx context.Context, every time.Duration) {
 			PsiMemFull:   readPSI("memory", "full"),
 			PsiIOSome:    readPSI("io", "some"),
 		}
+		smp.MemTotal, smp.MemAvailable = readMemInfo()
 		s.samplesMu.Lock()
 		s.samples = append(s.samples, smp)
 		if len(s.samples) > maxSamples {
@@ -501,12 +529,12 @@ func (s *server) snapshotSamples() []sample {
 
 func (s *server) handleOccupancy(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/csv")
-	fmt.Fprintln(w, "unix_ms,workers_total,workers_active,workers_assigned,actors_total,running,resuming,suspending,suspended,paused,crashed,psi_cpu_some10,psi_mem_full10,psi_io_some10")
+	fmt.Fprintln(w, "unix_ms,workers_total,workers_active,workers_assigned,actors_total,running,resuming,suspending,suspended,paused,crashed,psi_cpu_some10,psi_mem_full10,psi_io_some10,mem_total_bytes,mem_available_bytes")
 	for _, r := range s.snapshotSamples() {
-		fmt.Fprintf(w, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f\n",
+		fmt.Fprintf(w, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.2f,%.2f,%.2f,%d,%d\n",
 			r.T, r.WorkersTotal, r.WorkersActiv, r.Assigned, r.ActorsTotal,
 			r.Running, r.Resuming, r.Suspending, r.Suspended, r.Paused, r.Crashed,
-			r.PsiCPUSome, r.PsiMemFull, r.PsiIOSome)
+			r.PsiCPUSome, r.PsiMemFull, r.PsiIOSome, r.MemTotal, r.MemAvailable)
 	}
 }
 
@@ -523,7 +551,12 @@ func (s *server) handleState(w http.ResponseWriter, _ *http.Request) {
 		avgMs = float64(s.suspendNsSum.Load()) / float64(n) / 1e6
 	}
 	w.Header().Set("Content-Type", "application/json")
+	var latest any
+	if len(samples) > 0 {
+		latest = samples[len(samples)-1]
+	}
 	json.NewEncoder(w).Encode(map[string]any{
+		"latest":         latest, // newest occupancy/host sample (agentsim's load-test gates read it)
 		"atespace":       s.atespace,
 		"idle_timeout":   s.idleTimeout.String(),
 		"suspends":       s.suspends.Load(),

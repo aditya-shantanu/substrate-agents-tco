@@ -61,9 +61,9 @@ func checkScriptFile(source string) int {
 // off the personal-agent per-turn work, which the script replaces.
 func (s *sim) loadScript(ctx context.Context) error {
 	switch s.cfg.lifecycle {
-	case "suspend", "pause":
+	case "suspend", "pause", "none":
 	default:
-		return fmt.Errorf("--lifecycle-mode must be suspend or pause, got %q", s.cfg.lifecycle)
+		return fmt.Errorf("--lifecycle-mode must be suspend, pause or none, got %q", s.cfg.lifecycle)
 	}
 	if s.cfg.pingActorsPerUser > 0 || s.cfg.pingIndependent {
 		if s.cfg.script != "" {
@@ -237,6 +237,7 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 				r.pings++
 			}
 			r.stepMs = float64(time.Since(stepStart).Microseconds()) / 1000
+			s.sampleAwake(ctx, name, r) // UX turn + fixed-work CPU probe
 		}
 		s.touch(name, "end")
 
@@ -307,6 +308,9 @@ func (s *sim) hibernateRPC(ctx context.Context, ref *ateapipb.ObjectRef) error {
 // conflicts; an actor already parked (FailedPrecondition) counts as success
 // without a timing. Returns the call's wall ms.
 func (s *sim) suspendNow(ctx context.Context, name string) (float64, error) {
+	if s.cfg.lifecycle == "none" {
+		return 0, nil // resident: the driver never parks after activity (setup still parks via hibernateRPC)
+	}
 	ref := &ateapipb.ObjectRef{Atespace: s.cfg.atespace, Name: name}
 	var err error
 	for attempt := 0; attempt < 5; attempt++ {
@@ -445,4 +449,29 @@ func (s *sim) stepTable(rs []result) string {
 	}
 	b.WriteString("=== end steps ===\n")
 	return b.String()
+}
+
+// sampleAwake records the user-visible latency of an awake actor: the step's
+// or ping's first request when the actor was NOT parked (a "turn"), and the
+// fixed-work CPU probe (sha256 over --probe-bytes of a pagecache-warm file),
+// whose drift under load is CPU starvation inside the sandbox. Both feed the
+// load-test gates (absolute p99 and relative-to-first-wave p90).
+func (s *sim) sampleAwake(ctx context.Context, name string, r result) {
+	now := time.Now().UnixMilli()
+	s.mu.Lock()
+	if r.wasSuspended == 0 && r.errors == 0 {
+		s.turns = append(s.turns, tsample{now, r.firstReqMs})
+	}
+	s.mu.Unlock()
+	if s.cfg.probeBytes <= 0 {
+		return
+	}
+	t := time.Now()
+	if _, err := s.post(ctx, name, "/readdisk", readDiskBody("cpuprobe")); err != nil {
+		_, _ = s.post(ctx, name, "/writedisk", writeDiskBody("cpuprobe", s.cfg.probeBytes)) // file lost (actor recreated)
+		return
+	}
+	s.mu.Lock()
+	s.probes = append(s.probes, tsample{time.Now().UnixMilli(), float64(time.Since(t).Microseconds()) / 1000})
+	s.mu.Unlock()
 }

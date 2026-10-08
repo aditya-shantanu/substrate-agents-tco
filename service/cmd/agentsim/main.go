@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -61,8 +62,14 @@ type cfg struct {
 
 	// starvation SLO gates (load-test waves) and the fixed-work CPU probe
 	failWakeP99Ms, failTurnP99Ms float64
-	probeBytes                   int
-	setupSuspend                 bool
+	// resident-fill gates: latency relative to the first wave, absolute probe
+	// p99, node MemAvailable / PSI (autosuspender /state.json), crashed
+	// actors; holdAfterFail keeps the last clean level running and scores it.
+	failRelP90, failProbeP99Ms, failMemAvailPct, failPsiMemFull, failPsiCPUSome float64
+	failCrashed                                                                 int
+	holdAfterFail                                                               time.Duration
+	probeBytes                                                                  int
+	setupSuspend                                                                bool
 
 	// script mode (see script.go): sessions play an agent-session script
 	script        string  // built-in name or YAML path; empty = personal-agent turns
@@ -161,6 +168,13 @@ func main() {
 	flag.IntVar(&c.waveStep, "wave-step", 10, "load-test: agents added per wave")
 	flag.DurationVar(&c.waveInterval, "wave-interval", 3*time.Minute, "load-test: observation window per wave")
 	flag.Float64Var(&c.failWakeP99Ms, "fail-wake-p99-ms", 10000, "load-test: a wave fails if wake p99 exceeds this (0 disables) — soft-starvation gate")
+	flag.Float64Var(&c.failRelP90, "fail-rel-p90", 0, "load-test: a wave fails if its CPU-probe or turn P90 exceeds this multiple of the first wave's (0 disables)")
+	flag.Float64Var(&c.failProbeP99Ms, "fail-probe-p99-ms", 0, "load-test: a wave fails if the fixed-work CPU probe p99 exceeds this many ms (0 disables)")
+	flag.Float64Var(&c.failMemAvailPct, "fail-mem-avail-pct", 0, "load-test: a wave fails if the node's MemAvailable is below this % of MemTotal (from the autosuspender's /state.json; 0 disables)")
+	flag.Float64Var(&c.failPsiMemFull, "fail-psi-mem-full", 0, "load-test: a wave fails if node memory PSI full avg10 exceeds this % (0 disables)")
+	flag.Float64Var(&c.failPsiCPUSome, "fail-psi-cpu-some", 0, "load-test: a wave fails if node CPU PSI some avg10 exceeds this % (0 disables)")
+	flag.IntVar(&c.failCrashed, "fail-crashed", 0, "load-test: a wave fails if at least this many actors are CRASHED (0 disables)")
+	flag.DurationVar(&c.holdAfterFail, "hold-after-fail", 0, "load-test: after a failed wave, stop the agents that wave added and keep the last clean level running for this long, scoring it (0 = end at once)")
 	flag.Float64Var(&c.failTurnP99Ms, "fail-turn-p99-ms", 2000, "load-test: a wave fails if in-session turn p99 exceeds this (0 disables)")
 	flag.IntVar(&c.probeBytes, "probe-bytes", 8<<20, "fixed-work CPU probe: sha256 over this many bytes once per activation; drift = CPU throttling (0 disables)")
 	flag.BoolVar(&c.setupSuspend, "setup-suspend", true, "suspend each agent right after setup (snapshot design); false keeps agents resident on their workers (parking design: workers >= agents, long idle timeout)")
@@ -743,51 +757,95 @@ func appendVarint(b []byte, field int, v uint64) []byte {
 	return binary.AppendUvarint(b, v)
 }
 
-// runLoadTest activates agent loops in waves and watches each wave's
-// refusal/error rates. When a wave trips the failure thresholds (or all
-// agents are active, or the deadline passes) it stops and logs the verdict:
-// the last level that stayed under the thresholds is the pool's sustainable
-// maximum for this workload.
+// hostState is the newest autosuspender sample: actor states plus the node's
+// PSI and memory (host-global /proc values from the autosuspender's node).
+type hostState struct {
+	MemTotal     int64   `json:"mem_total_bytes"`
+	MemAvailable int64   `json:"mem_available_bytes"`
+	PsiCPUSome   float64 `json:"psi_cpu_some10"`
+	PsiMemFull   float64 `json:"psi_mem_full10"`
+	PsiIOSome    float64 `json:"psi_io_some10"`
+	Running      int     `json:"running"`
+	Crashed      int     `json:"crashed"`
+}
+
+func (h hostState) memAvailPct() float64 {
+	if h.MemTotal <= 0 {
+		return -1
+	}
+	return 100 * float64(h.MemAvailable) / float64(h.MemTotal)
+}
+
+// fetchHostState reads the autosuspender's /state.json "latest" sample.
+func (s *sim) fetchHostState(ctx context.Context) (hostState, bool) {
+	if s.cfg.suspenderURL == "" {
+		return hostState{}, false
+	}
+	cctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(cctx, http.MethodGet, s.cfg.suspenderURL+"/state.json", nil)
+	if err != nil {
+		return hostState{}, false
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return hostState{}, false
+	}
+	defer resp.Body.Close()
+	var body struct {
+		Latest *hostState `json:"latest"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil || body.Latest == nil {
+		return hostState{}, false
+	}
+	return *body.Latest, true
+}
+
+// runLoadTest activates agent loops in waves and scores each wave's window:
+// refusal/error rates, wake/turn/probe latency (absolute SLOs and, with
+// --fail-rel-p90, relative to the first wave), and the node's memory, PSI and
+// crashed-actor counts from the autosuspender. The first wave that trips a
+// gate ends the ramp; with --hold-after-fail the agents that wave added are
+// stopped and the last clean level keeps running for the hold window and is
+// scored again. The last level that passed every gate is the ceiling.
 func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 	type waveStat struct {
-		level, acts, refusals, errors int
-		wakeP50, wakeP90, wakeP99     float64
+		level, acts, refusals, errors      int
+		wakeP50, wakeP90, wakeP99          float64
+		turnP90, turnP99                   float64
+		probeP50, probeP90, probeP99       float64
+		memAvailPct, psiCPU, psiMem, psiIO float64
+		running, crashed                   int
+		failedOn                           string
+		tag                                string // "" | "hold"
 	}
 	loopCtx, cancelLoops := context.WithCancel(ctx)
 	defer cancelLoops()
 	var wg sync.WaitGroup
+	cancels := map[int]context.CancelFunc{} // per activated agent (index into s.ready)
 	active := 0
 	lastGood := 0
 	var waves []waveStat
+	var baseProbeP90, baseTurnP90 float64
 
 	activate := func(n int) {
 		for ; active < n && active < len(s.ready); active++ {
+			actx, acancel := context.WithCancel(loopCtx)
+			cancels[active] = acancel
 			wg.Add(1)
 			go func(id int) {
 				defer wg.Done()
-				s.agentLoop(loopCtx, id, deadline)
+				s.agentLoop(actx, id, deadline)
 			}(s.ready[active])
 		}
 	}
-
-	for level := s.cfg.waveStart; ; level += s.cfg.waveStep {
-		if level > len(s.ready) {
-			level = len(s.ready)
-		}
-		activate(level)
-		slog.Info("wave", "active_agents", active, "observing_for", s.cfg.waveInterval.String())
-		waveStartMs := time.Now().UnixMilli()
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(s.cfg.waveInterval):
-		}
-		// score the wave from results inside its window
+	// score the window since sinceMs and return the stat (level = active)
+	score := func(sinceMs int64) waveStat {
 		s.mu.Lock()
 		st := waveStat{level: active}
-		var wakes []float64
+		var wakes, turns, probes []float64
 		for _, r := range s.results {
-			if r.unixMs < waveStartMs {
+			if r.unixMs < sinceMs {
 				continue
 			}
 			st.acts++
@@ -797,14 +855,13 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 				wakes = append(wakes, r.firstReqMs)
 			}
 		}
-		var turns, probes []float64
 		for _, t := range s.turns {
-			if t.t >= waveStartMs {
+			if t.t >= sinceMs {
 				turns = append(turns, t.ms)
 			}
 		}
 		for _, t := range s.probes {
-			if t.t >= waveStartMs {
+			if t.t >= sinceMs {
 				probes = append(probes, t.ms)
 			}
 		}
@@ -813,15 +870,18 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 		sort.Float64s(turns)
 		sort.Float64s(probes)
 		st.wakeP50, st.wakeP90, st.wakeP99 = q(wakes, 0.5), q(wakes, 0.9), q(wakes, 0.99)
-		turnP99, probeP50 := q(turns, 0.99), q(probes, 0.5)
-		waves = append(waves, st)
+		st.turnP90, st.turnP99 = q(turns, 0.9), q(turns, 0.99)
+		st.probeP50, st.probeP90, st.probeP99 = q(probes, 0.5), q(probes, 0.9), q(probes, 0.99)
+		st.memAvailPct = -1
+		if h, ok := s.fetchHostState(ctx); ok {
+			st.memAvailPct, st.psiCPU, st.psiMem, st.psiIO = h.memAvailPct(), h.PsiCPUSome, h.PsiMemFull, h.PsiIOSome
+			st.running, st.crashed = h.Running, h.Crashed
+		}
 		refPct, errPct := 0.0, 0.0
 		if st.acts > 0 {
 			refPct = 100 * float64(st.refusals) / float64(st.acts)
 			errPct = 100 * float64(st.errors) / float64(st.acts)
 		}
-		// The wave passes only if the workload is NOT starved: bounded
-		// refusals/errors AND latency SLOs held.
 		var reasons []string
 		if refPct > s.cfg.failRefusalPct {
 			reasons = append(reasons, "refusals")
@@ -832,30 +892,106 @@ func (s *sim) runLoadTest(ctx context.Context, deadline time.Time) {
 		if s.cfg.failWakeP99Ms > 0 && len(wakes) > 0 && st.wakeP99 > s.cfg.failWakeP99Ms {
 			reasons = append(reasons, "wake-p99")
 		}
-		if s.cfg.failTurnP99Ms > 0 && len(turns) > 0 && turnP99 > s.cfg.failTurnP99Ms {
+		if s.cfg.failTurnP99Ms > 0 && len(turns) > 0 && st.turnP99 > s.cfg.failTurnP99Ms {
 			reasons = append(reasons, "turn-p99")
 		}
-		failed := len(reasons) > 0
-		slog.Info("wave result", "active_agents", st.level, "activations", st.acts,
+		if s.cfg.failProbeP99Ms > 0 && len(probes) > 0 && st.probeP99 > s.cfg.failProbeP99Ms {
+			reasons = append(reasons, "probe-p99")
+		}
+		if s.cfg.failRelP90 > 0 {
+			if baseProbeP90 > 0 && len(probes) >= 20 && st.probeP90 > s.cfg.failRelP90*baseProbeP90 {
+				reasons = append(reasons, "probe-p90-vs-baseline")
+			}
+			if baseTurnP90 > 0 && len(turns) >= 20 && st.turnP90 > s.cfg.failRelP90*baseTurnP90 {
+				reasons = append(reasons, "turn-p90-vs-baseline")
+			}
+		}
+		if s.cfg.failMemAvailPct > 0 && st.memAvailPct >= 0 && st.memAvailPct < s.cfg.failMemAvailPct {
+			reasons = append(reasons, "mem-available")
+		}
+		if s.cfg.failPsiMemFull > 0 && st.psiMem > s.cfg.failPsiMemFull {
+			reasons = append(reasons, "psi-mem-full")
+		}
+		if s.cfg.failPsiCPUSome > 0 && st.psiCPU > s.cfg.failPsiCPUSome {
+			reasons = append(reasons, "psi-cpu-some")
+		}
+		if s.cfg.failCrashed > 0 && st.crashed >= s.cfg.failCrashed {
+			reasons = append(reasons, "crashed")
+		}
+		st.failedOn = strings.Join(reasons, "+")
+		slog.Info("wave result", "tag", st.tag, "active_agents", st.level, "activations", st.acts,
 			"refusal_pct", fmt.Sprintf("%.1f", refPct), "error_pct", fmt.Sprintf("%.1f", errPct),
 			"wake_p50_ms", int(st.wakeP50), "wake_p90_ms", int(st.wakeP90), "wake_p99_ms", int(st.wakeP99),
-			"turn_p99_ms", int(turnP99), "probe_p50_ms", int(probeP50),
-			"failed", failed, "failed_on", strings.Join(reasons, "+"))
+			"turn_p90_ms", int(st.turnP90), "turn_p99_ms", int(st.turnP99),
+			"probe_p50_ms", int(st.probeP50), "probe_p90_ms", int(st.probeP90), "probe_p99_ms", int(st.probeP99),
+			"mem_avail_pct", fmt.Sprintf("%.1f", st.memAvailPct), "psi_cpu_some10", st.psiCPU, "psi_mem_full10", st.psiMem, "psi_io_some10", st.psiIO,
+			"running", st.running, "crashed", st.crashed,
+			"failed", st.failedOn != "", "failed_on", st.failedOn)
+		return st
+	}
+	printTable := func(verdict string) {
+		fmt.Println("=== loadtest waves ===")
+		fmt.Println("tag,active_agents,activations,refusals,errors,wake_p50_ms,wake_p90_ms,wake_p99_ms,turn_p90_ms,turn_p99_ms,probe_p50_ms,probe_p90_ms,probe_p99_ms,mem_avail_pct,psi_cpu_some10,psi_mem_full10,psi_io_some10,running,crashed,failed_on")
+		for _, w := range waves {
+			fmt.Printf("%s,%d,%d,%d,%d,%.0f,%.0f,%.0f,%.0f,%.0f,%.1f,%.1f,%.1f,%.1f,%.2f,%.2f,%.2f,%d,%d,%s\n",
+				w.tag, w.level, w.acts, w.refusals, w.errors, w.wakeP50, w.wakeP90, w.wakeP99, w.turnP90, w.turnP99,
+				w.probeP50, w.probeP90, w.probeP99, w.memAvailPct, w.psiCPU, w.psiMem, w.psiIO, w.running, w.crashed, w.failedOn)
+		}
+		fmt.Println("=== end loadtest ===")
+		fmt.Println(verdict)
+	}
+
+	for level := s.cfg.waveStart; ; level += s.cfg.waveStep {
+		if level > len(s.ready) {
+			level = len(s.ready)
+		}
+		prevActive := active
+		activate(level)
+		slog.Info("wave", "active_agents", active, "observing_for", s.cfg.waveInterval.String())
+		waveStartMs := time.Now().UnixMilli()
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(s.cfg.waveInterval):
+		}
+		st := score(waveStartMs)
+		if len(waves) == 0 {
+			baseProbeP90, baseTurnP90 = st.probeP90, st.turnP90
+		}
+		waves = append(waves, st)
+		failed := st.failedOn != ""
 		if failed || st.level >= len(s.ready) || time.Now().After(deadline) {
-			cancelLoops()
-			fmt.Println("=== loadtest waves ===")
-			fmt.Println("active_agents,activations,refusals,errors,wake_p50_ms,wake_p90_ms,wake_p99_ms")
-			for _, w := range waves {
-				fmt.Printf("%d,%d,%d,%d,%.0f,%.0f,%.0f\n",
-					w.level, w.acts, w.refusals, w.errors, w.wakeP50, w.wakeP90, w.wakeP99)
-			}
-			fmt.Println("=== end loadtest ===")
+			verdict := fmt.Sprintf("LOADTEST VERDICT: no failure up to %d active agents (raise --agents to push further)", st.level)
 			if failed {
-				fmt.Printf("LOADTEST VERDICT: failure at %d active agents; last sustainable level = %d\n",
-					st.level, lastGood)
-			} else {
-				fmt.Printf("LOADTEST VERDICT: no failure up to %d active agents (raise --agents to push further)\n", st.level)
+				verdict = fmt.Sprintf("LOADTEST VERDICT: failure at %d active agents (%s); last sustainable level = %d", st.level, st.failedOn, lastGood)
+				if s.cfg.holdAfterFail > 0 && lastGood > 0 {
+					// Drop the agents this wave added, keep the last clean level running, score it.
+					for i := prevActive; i < active; i++ {
+						if c, ok := cancels[i]; ok {
+							c()
+						}
+					}
+					active = prevActive
+					slog.Info("hold", "active_agents", active, "for", s.cfg.holdAfterFail.String())
+					holdStartMs := time.Now().UnixMilli()
+					select {
+					case <-ctx.Done():
+						printTable(verdict)
+						return
+					case <-time.After(s.cfg.holdAfterFail):
+					}
+					hs := score(holdStartMs)
+					hs.tag = "hold"
+					waves = append(waves, hs)
+					if hs.failedOn != "" {
+						verdict += fmt.Sprintf("; hold at %d also failed (%s)", hs.level, hs.failedOn)
+					} else {
+						verdict += fmt.Sprintf("; hold at %d clean for %s", hs.level, s.cfg.holdAfterFail)
+					}
+				}
 			}
+			cancelLoops()
+			printTable(verdict)
 			break
 		}
 		lastGood = st.level

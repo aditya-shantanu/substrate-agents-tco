@@ -125,6 +125,17 @@ spec:
         - --wave-start=${WAVE_START}
         - --wave-step=${WAVE_STEP}
         - --wave-interval=${WAVE_INTERVAL}
+        - --fail-refusal-pct=${FAIL_REFUSAL_PCT}
+        - --fail-error-pct=${FAIL_ERROR_PCT}
+        - --fail-wake-p99-ms=${FAIL_WAKE_P99_MS}
+        - --fail-turn-p99-ms=${FAIL_TURN_P99_MS}
+        - --fail-rel-p90=${FAIL_REL_P90}
+        - --fail-probe-p99-ms=${FAIL_PROBE_P99_MS}
+        - --fail-mem-avail-pct=${FAIL_MEM_AVAIL_PCT}
+        - --fail-psi-mem-full=${FAIL_PSI_MEM_FULL}
+        - --fail-psi-cpu-some=${FAIL_PSI_CPU_SOME}
+        - --fail-crashed=${FAIL_CRASHED}
+        - --hold-after-fail=${HOLD_AFTER_FAIL}
         volumeMounts:
         - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
         - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }

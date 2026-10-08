@@ -14,12 +14,12 @@ kubectl -n agent-sim wait --for=condition=complete job/agentsim --timeout=10s 2>
 
 kubectl -n agent-sim logs job/agentsim > "${OUT}/run.log"
 
-kubectl -n agent-sim port-forward svc/autosuspender 18080:8080 >/dev/null 2>&1 &
+kubectl -n agent-sim port-forward svc/autosuspender ${DASH_PORT:-18080}:8080 >/dev/null 2>&1 &
 PF_PID=$!
 trap 'kill ${PF_PID} 2>/dev/null || true' EXIT
 sleep 2
-curl -s localhost:18080/occupancy.csv > "${OUT}/occupancy.csv"
-curl -s localhost:18080/metrics > "${OUT}/metrics.txt"
+curl -s localhost:${DASH_PORT:-18080}/occupancy.csv > "${OUT}/occupancy.csv"
+curl -s localhost:${DASH_PORT:-18080}/metrics > "${OUT}/metrics.txt"
 
 WORKER_COST_HR="${WORKER_COST_HR:-}"
 python3 "${SERVICE_DIR}/analysis/report.py" \
