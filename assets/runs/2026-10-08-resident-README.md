@@ -100,14 +100,14 @@ Verdict: no failure up to 600 active agents (raise --agents to push further)
 | 250 | 1622 | 164 / 179 / 188 | 5 / 6 | 12.9 / 14.8 / 21.4 | 0 + 0 | 67.1 % | 0.02 / 0.00 / 0.00 | 250 | 0 | pass |
 | 300 | 2136 | 168 / 187 / 192 | 4 / 6 | 13.0 / 14.9 / 22.1 | 0 + 0 | 59.6 % | 0.22 / 0.00 / 0.00 | 300 | 0 | pass |
 | 350 | 2652 | 166 / 182 / 193 | 4 / 6 | 13.1 / 15.5 / 23.4 | 0 + 0 | 52.1 % | 0.27 / 0.00 / 0.00 | 350 | 0 | pass |
-| level:"WARN" | msg:"step op failed" | — / — / — | — / — | None / None / None | step:"1830_heartbeat" + actor:"res-1791437043-microvm-pa-w50-0339" | None % | None / None / None | None | None | pass |
+| level:"WARN" | msg:"step op failed" | — / — / — | — / — | — / — / — | step:"1830_heartbeat" + actor:"res-1791437043-microvm-pa-w50-0339" | None % | None / None / None | None | None | pass |
 | 400 | 2934 | 167 / 177 / 183 | 4 / 6 | 13.1 / 15.5 / 26.5 | 0 + 0 | 44.6 % | 0.29 / 0.00 / 0.00 | 400 | 0 | pass |
 | 450 | 3056 | 169 / 178 / 191 | 4 / 6 | 13.1 / 15.6 / 25.6 | 0 + 0 | 36.9 % | 0.49 / 0.00 / 0.14 | 450 | 0 | pass |
 | 500 | 3291 | 170 / 185 / 195 | 4 / 6 | 13.2 / 15.9 / 29.1 | 0 + 0 | 29.2 % | 0.51 / 0.00 / 0.00 | 500 | 0 | pass |
 | 550 | 3808 | 171 / 188 / 205 | 4 / 6 | 13.3 / 16.0 / 33.2 | 1 + 0 | 21.7 % | 0.43 / 0.00 / 0.00 | 550 | 0 | pass |
-| level:"WARN" | msg:"step op failed" | — / — / — | — / — | None / None / None | step:"1836_save_it" + actor:"res-1791437043-microvm-pa-w50-0325" | None % | None / None / None | None | None | pass |
+| level:"WARN" | msg:"step op failed" | — / — / — | — / — | — / — / — | step:"1836_save_it" + actor:"res-1791437043-microvm-pa-w50-0325" | None % | None / None / None | None | None | pass |
 | 600 | 4327 | 185 / 505 / 747 | 4 / 7 | 13.3 / 16.9 / 37.9 | 0 + 0 | 13.9 % | 0.57 / 0.00 / 0.29 | 600 | 0 | pass |
-| level:"WARN" | msg:"step op failed" | — / — / — | — / — | None / None / None | step:"1518_web_check" + actor:"res-1791437043-microvm-pa-w50-0359" | None % | None / None / None | None | None | pass |
+| level:"WARN" | msg:"step op failed" | — / — / — | — / — | — / — / — | step:"1518_web_check" + actor:"res-1791437043-microvm-pa-w50-0359" | None % | None / None / None | None | None | pass |
 
 ## microvm · pa · 50 pods — agents-tco-euw4 (europe-west4-c)
 
@@ -117,9 +117,9 @@ Verdict: failure at 700 active agents (errors+wake-p99+probe-p99+probe-p90-vs-ba
 |---|---|---|---|---|---|---|---|---|---|---|
 | 600 | 604 | 177 / 201 / 270 | 8 / 8 | 18.8 / 21.8 / 52.8 | 0 + 0 | 33.9 % | 0.00 / 0.00 / 0.00 | 600 | 0 | pass |
 | 650 | 1063 | 178 / 301 / 775 | 5 / 16 | 13.7 / 15.9 / 26.4 | 0 + 0 | 18.1 % | 0.00 / 0.22 / 3.07 | 650 | 0 | pass |
-| 700 | 4143 | 6,745 / 15,615 / 20,411 | 66 / 654 | 16.8 / 117.5 / 1005.0 | 27 + 19 | 10.9 % | 0.64 / 0.04 / 0.00 | 700 | 0 | errors+wake-p99+probe-p99+probe-p90-vs-baseline+turn-p90-vs-baseline |
-| level:"WARN" | msg:"step op failed" | — / — / — | — / — | None / None / None | step:"1630_heartbeat" + actor:"res-1791450176-microvm-pa-w50-0305" | None % | None / None / None | None | None | pass |
-| level:"WARN" | msg:"step op failed" | — / — / — | — / — | None / None / None | step:"1400_heartbeat_and_cron" + actor:"res-1791450176-microvm-pa-w50-0639" | None % | None / None / None | None | None | pass |
+| 700 | 4143 | 6,745 / 15,615 / 20,411 | 66 / 654 | 16.8 / 117.5 / 1,005.0 | 27 + 19 | 10.9 % | 0.64 / 0.04 / 0.00 | 700 | 0 | errors+wake-p99+probe-p99+probe-p90-vs-baseline+turn-p90-vs-baseline |
+| level:"WARN" | msg:"step op failed" | — / — / — | — / — | — / — / — | step:"1630_heartbeat" + actor:"res-1791450176-microvm-pa-w50-0305" | None % | None / None / None | None | None | pass |
+| level:"WARN" | msg:"step op failed" | — / — / — | — / — | — / — / — | step:"1400_heartbeat_and_cron" + actor:"res-1791450176-microvm-pa-w50-0639" | None % | None / None / None | None | None | pass |
 | 650 (hold) | 14934 | 0 / 0 / 0 | 4 / 7 | 13.5 / 19.6 / 39.1 | 102 + 0 | 15.3 % | 0.82 / 0.01 / 0.09 | 650 | 0 | errors |
 
 ## microvm · pa · 1 pod — agents-tco-euw4 (europe-west4-c)
@@ -185,7 +185,7 @@ Verdict: failure at 250 active agents (refusals+errors+wake-p99); last sustainab
 | 100 | 2754 | 188 / 205 / 212 | 5 / 8 | 0.0 / 0.0 / 0.0 | 0 + 0 | 92.6 % | 0.00 / 0.00 / 0.00 | 100 | 0 | pass |
 | 250 | 5761 | 31,549 / 31,946 / 32,114 | 4 / 7 | 0.0 / 0.0 / 0.0 | 323 + 1615 | 92.1 % | 0.00 / 0.00 / 0.00 | 191 | 0 | refusals+errors+wake-p99 |
 | 100 (hold) | 5932 | 0 / 0 / 0 | 5 / 7 | 0.0 / 0.0 / 0.0 | 0 + 0 | 92.5 % | 0.00 / 0.00 / 0.00 | 110 | 0 | pass |
-| level:"INFO" | msg:"wave result" | — / — / — | — / — | wake_p99_ms:0 / turn_p90_ms:4 / turn_p99_ms:7 | active_agents:100 + tag:"" | probe_p50_ms:0 % | probe_p90_ms:0 / probe_p99_ms:0 / mem_avail_pct:"92.5" | psi_cpu_some10:0 | psi_mem_full10:0 | psi_io_some10:0 |
+| level:"INFO" | msg:"wave result" | — / — / — | — / — | — / — / — | active_agents:100 + tag:"" | probe_p50_ms:0 % | probe_p90_ms:0 / probe_p99_ms:0 / mem_avail_pct:"92.5" | psi_cpu_some10:0 | psi_mem_full10:0 | psi_io_some10:0 |
 
 ## microvm · ping · 50 pods — agents-tco-euw4 (europe-west4-c)
 
@@ -193,14 +193,14 @@ Verdict: failure at 1000 active agents (refusals+errors+wake-p99+turn-p99+crashe
 
 | Awake agents | Activations in window | Wake P50 / P90 / P99 ms (newly woken) | Turn P90 / P99 ms (awake request) | CPU probe P50 / P90 / P99 ms | Err + refusals | Node mem avail | PSI cpu some / mem full / io some | Running | Crashed | Failed on |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 100 | 2755 | 134 / 145 / 153 | 4 / 6 | NaN / NaN / NaN | 0 + 0 | 95.2 % | 0.00 / 0.00 / 0.00 | 100 | 0 | pass |
-| 250 | 6940 | 135 / 143 / 156 | 4 / 6 | NaN / NaN / NaN | 0 + 0 | 93.0 % | 0.00 / 0.00 / 0.00 | 250 | 0 | pass |
-| 400 | 11440 | 140 / 148 / 160 | 4 / 6 | NaN / NaN / NaN | 0 + 0 | 90.8 % | 0.00 / 0.00 / 0.06 | 400 | 0 | pass |
-| 550 | 15959 | 143 / 153 / 162 | 4 / 6 | NaN / NaN / NaN | 0 + 0 | 88.6 % | 0.00 / 0.00 / 0.00 | 550 | 0 | pass |
-| 700 | 20675 | 147 / 162 / 174 | 4 / 6 | NaN / NaN / NaN | 0 + 0 | 86.4 % | 0.00 / 0.00 / 0.01 | 700 | 0 | pass |
-| 850 | 25148 | 152 / 162 / 192 | 4 / 6 | NaN / NaN / NaN | 0 + 0 | 84.2 % | 0.00 / 0.00 / 0.00 | 850 | 0 | pass |
-| 1000 | 26774 | 8,470 / 31,590 / 32,079 | 4 / 3,144 | NaN / NaN / NaN | 309 + 240 | 82.1 % | 0.00 / 0.00 / 0.00 | 993 | 7 | refusals+errors+wake-p99+turn-p99+crashed |
-| 850 (hold) | 49701 | nan / nan / nan | 4 / 621 | NaN / NaN / NaN | 49 + 0 | 82.1 % | 0.00 / 0.00 / 0.32 | 993 | 7 | crashed |
+| 100 | 2755 | 134 / 145 / 153 | 4 / 6 | — / — / — | 0 + 0 | 95.2 % | 0.00 / 0.00 / 0.00 | 100 | 0 | pass |
+| 250 | 6940 | 135 / 143 / 156 | 4 / 6 | — / — / — | 0 + 0 | 93.0 % | 0.00 / 0.00 / 0.00 | 250 | 0 | pass |
+| 400 | 11440 | 140 / 148 / 160 | 4 / 6 | — / — / — | 0 + 0 | 90.8 % | 0.00 / 0.00 / 0.06 | 400 | 0 | pass |
+| 550 | 15959 | 143 / 153 / 162 | 4 / 6 | — / — / — | 0 + 0 | 88.6 % | 0.00 / 0.00 / 0.00 | 550 | 0 | pass |
+| 700 | 20675 | 147 / 162 / 174 | 4 / 6 | — / — / — | 0 + 0 | 86.4 % | 0.00 / 0.00 / 0.01 | 700 | 0 | pass |
+| 850 | 25148 | 152 / 162 / 192 | 4 / 6 | — / — / — | 0 + 0 | 84.2 % | 0.00 / 0.00 / 0.00 | 850 | 0 | pass |
+| 1000 | 26774 | 8,470 / 31,590 / 32,079 | 4 / 3,144 | — / — / — | 309 + 240 | 82.1 % | 0.00 / 0.00 / 0.00 | 993 | 7 | refusals+errors+wake-p99+turn-p99+crashed |
+| 850 (hold) | 49701 | — / — / — | 4 / 621 | — / — / — | 49 + 0 | 82.1 % | 0.00 / 0.00 / 0.32 | 993 | 7 | crashed |
 
 ## microvm · ping · 50 pods — agents-tco-euw4 (europe-west4-c)
 
