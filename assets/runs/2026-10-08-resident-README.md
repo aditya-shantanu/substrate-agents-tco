@@ -1,5 +1,7 @@
 # Resident host fill — awake agents one c3-standard-192-metal node sustains, no pause/suspend (measured 2026-10-07/08)
 
+**Machine under test (one per cell, two in parallel):** GKE bare-metal node **c3-standard-192-metal** — 192 vCPU (Intel Sapphire Rapids, native KVM), 768 GiB RAM (755 GiB visible to the kernel), 3 TB Hyperdisk Balanced boot disk at 100k IOPS / 2,400 MiB/s, COS, GKE 1.36.4, 256 pods/node. Nodes: `agents-tco-east` (us-east4-a) ran the gVisor cells, `agents-tco-euw4` (europe-west4-c) the microVM cells. Substrate perf/resume-latency @ 584d0318; worker pods unsized (no requests/limits); every actor limited to **1 vCPU** plus 3 GiB (gVisor assistant), 1.5 GiB (microVM assistant) or 256 MiB (ping).
+
 Two workloads, two runtimes, two pool shapes. **Nothing parks**: actors are created once (parked), each wave wakes a batch and they stay resident for the rest of the run (autosuspender idle timeout 24 h, driver lifecycle `none`). Personal-assistant agents keep playing their day (61 steps, think ×0.02, ~1 GiB resident, 3 GiB / 1.5 GiB limit, **1 vCPU limit**); ping agents are the one-ping actors (256 MiB, 1 vCPU) each pinged on a Poisson schedule with a 10 s mean. Waves add agents every 5 minutes; after the first wave that trips a gate, that wave's agents are stopped and the last clean level holds for 10 minutes and is scored again.
 
 **Gates (any one fails the wave):** in-sandbox CPU probe or awake-request (turn) P90 above 2× the first wave's; probe or turn P99 above 1 s; errors or router refusals above 0.5 % of activations; node MemAvailable below 10 %; memory PSI full avg10 above 10 %; CPU PSI some avg10 above 50 %; any actor CRASHED. First-wave wake P90 is also reported per wave (provisioning signal; 10 s P99 hard gate).
@@ -8,12 +10,12 @@ Two workloads, two runtimes, two pool shapes. **Nothing parks**: actors are crea
 
 Question asked: with pause/suspend taken out of the picture, how many agents can one bare-metal node hold **awake**, and what tells us to stop adding? Two workloads (the personal-assistant day at think ×0.02 with ~1 GiB resident, and the one-ping actor at 256 MiB), two runtimes, two pool shapes, on two c3-standard-192-metal nodes in parallel, every actor limited to 1 vCPU. Agents were pre-created parked and woken in waves; nothing was parked again.
 
-| Workload | Runtime | 50 pods: last clean / first fail (awake agents on the node) | What tripped | 1 pod: last clean / first fail |
-|---|---|---|---|---|
-| Personal assistant | gVisor (3 GiB limit) | **650 / 700** | node memory below 10 % available | 150 / 200 |
-| Personal assistant | microVM (1.5 GiB limit) | **650 / 700** | memory reclaim: CPU probe P90 15 → 117 ms, request P90 5 → 65 ms, wakes 6.7 s | 150 / 200 |
-| Ping | gVisor | **≥ 4,000** (fleet exhausted; 62 % memory free, CPU idle) | nothing | 100 / 250 |
-| Ping | microVM | **3,550 / 3,850** | wake P99 of the newly added 300 above 10 s | 100 / 250 |
+| Workload | Runtime | 50 pods: last clean / first fail (awake agents on the node) | Configured oversubscription at the last clean level (memory · CPU) | What tripped | 1 pod: last clean / first fail (oversubscription) |
+|---|---|---|---|---|---|
+| Personal assistant | gvisor (3 GiB limit) | **650 / 700** | memory 2.5× · CPU 3.4× | node memory below 10 % available | 150 / 200 (memory 0.59× · CPU 0.78×) |
+| Personal assistant | microvm (1.5 GiB limit) | **650 / 700** | memory 1.3× · CPU 3.4× | memory reclaim: CPU probe P90 15 → 117 ms, request P90 5 → 65 ms, wakes 6.7 s P50 | 150 / 200 (memory 0.29× · CPU 0.78×) |
+| Ping | gvisor (0.25 GiB limit) | **≥ 4,000** (fleet exhausted) | memory 1.3× · CPU 20.8× | nothing — fleet exhausted (62 % memory free, CPU idle) | 100 / 250 (memory 0.03× · CPU 0.52×) |
+| Ping | microvm (0.25 GiB limit) | **3,550 / 3,850** | memory 1.2× · CPU 18.5× | wake P99 of the newly added 300 above 10 s | 100 / 250 (memory 0.03× · CPU 0.52×) |
 
 **What the signals showed**
 
@@ -25,16 +27,6 @@ Question asked: with pause/suspend taken out of the picture, how many agents can
 **Stop rule that actually fired, per cell:** MemAvailable (gVisor PA), relative latency degradation + errors (microVM PA, the early-warning gates), wake P99 (microVM ping and all one-pod cells), the crash gate (the pre-fix ping cells — caused by the ARP wall). Errors/refusals were 0 in every clean wave.
 
 **Caveats recorded in the tables below:** the first hold for gVisor PA is invalid (the harness did not yet park the agents it dropped, fixed before all later cells); one gVisor ping extension attempt was aborted by a single crash in its 850-agent opening wave under the crash gate of 1 (then set to 5) and is shown as its own row; the two largest runs' wave tables were recovered from the node's rotated container logs after `kubectl logs` returned nothing.
-
-## Why the one-pod numbers are so bad
-
-They are not a capacity number; they are a wake-concurrency number. Read the one-pod rows against the 50-pod rows:
-
-- **Serving was fine.** With one ateom pod hosting 150 assistant agents (or 100 ping agents), the agents already awake answered in 4 ms P90 and the CPU probe sat at 15 ms — identical to the 50-pod cells. Host memory was 75–95 % free, CPU idle. Nothing about running many sandboxes under one ateom was slow.
-- **Waking was not.** Every one-pod failure happened in the wave that *added* agents: the 50 (assistant) or 150 (ping) newly woken actors queued behind each other until the router gave up — wake P90 pinned at the 30 s client limit, refusals 4 % (assistant) to 28 % (ping), errors 0.8–5.6 % — while the already-awake agents on the same pod were untouched. The numbers are the same on gVisor and microVM to the decimal, which rules out the sandbox runtime.
-- **Why one worker serializes wakes.** A resume from PAUSED/SUSPENDED goes through scheduling: the control plane claims the worker and persists the actor as RESUMING with the assignment, and a version conflict on that write is retried under a bounded backoff (`cmd/ateapi/internal/controlapi/workflow_resume.go`, `ensureWorkerAssigned` / `assignWorkerAttempt`; conflicts are retried transparently and deliberately not counted as errors, `schedulerRecordable`). With 50 pods a batch of 50 wakes spreads over 50 worker records and rarely collides; with one pod every wake in the batch claims the same worker record, the writes conflict, back off and retry in turn, and the batch drains at roughly the rate one worker record can be updated. The restore itself (node-local retained snapshot, ~150–350 ms) is not the bottleneck — the 50-pod cells restored 300 agents per wave at that speed.
-- **It also gets worse as the pod fills.** The same +50 wave passed at 50 → 100 → 150 hosted agents and failed at 150 → 200: per-wake work on a worker grows with what it already hosts (the worker's allocation record and the hosted-actor checks), so the per-worker wake budget shrinks as the pod fills.
-- **What it means for sizing.** Keep worker pods numerous enough that no single pod has to absorb more than a few dozen simultaneous wakes; the awake capacity per node is set by memory (650 assistants) regardless of how they are spread. The per-worker wake path is the thing to fix if fewer, bigger pods are wanted: it is a control-plane property, not a host or runtime one, and the exact choke point (worker-record contention vs. a per-worker lock in the bind step) is worth confirming with the assignment latency breakdown the resume workflow already records (`dSchedule / dBind / dUpdate`).
 
 ## Ceilings at a glance
 
@@ -237,3 +229,40 @@ Verdict: failure at 250 active agents (refusals+errors+wake-p99); last sustainab
 - **Configured oversubscription at a level L:** memory L × limit ÷ 768 GB (3 GiB gVisor / 1.5 GiB microVM personal-assistant; 256 MiB ping), CPU L × 1 vCPU ÷ 192. Real host usage is in the node-memory and PSI columns.
 - **What each gate catches:** the CPU probe (sha256 over 8 MiB inside the sandbox) drifts when the sandbox is CPU-starved; the turn is the request RTT to an awake actor (router + sandbox); wake is the restore of a newly added agent (provisioning under load); MemAvailable / PSI are the host; crashes are hard failures.
 - **Compare with the park/wake host fill** (`host-fill-personal-assistant-gvisor-vs-microvm-metal-2026-10-07.md`): there the ceiling was 60–90 agents, set by checkpoint disk traffic. Here nothing is written to disk between steps, so the ceiling is RAM/CPU/router — the "active" number ACE quotes.
+
+## Why the one-pod numbers are so bad — and why that matters
+
+The one-pod cells are not a capacity result. Read them against the 50-pod cells on the same nodes:
+
+| | 50 pods | 1 pod |
+|---|---|---|
+| Awake assistants, last clean / first fail | 650 / 700 (both runtimes) | 150 / 200 (both runtimes) |
+| Awake ping actors, last clean / first fail | ≥ 4,000 gVisor; 3,550 / 3,850 microVM | 100 / 250 (both runtimes) |
+| Request P90 of already-awake agents at the last clean level | 4 ms | 4 ms |
+| CPU probe P90 at the last clean level | 15–16 ms | 14–16 ms |
+| Host memory free at the first fail | 6–11 % (assistant) | 74 % (assistant), 92–94 % (ping) |
+| Wake P90 of the batch added in the failing wave | 0.5–1.1 s (while clean) | 31.7 s — the client's timeout |
+| Refusals (503) in the failing wave | 0 % (clean waves) | 4 % (+50 assistants), 28 % (+150 ping actors) |
+
+**1. Serving is not the problem.** One ateom pod hosting 150 assistant sandboxes (or 100 ping sandboxes) answered requests exactly as fast as fifty pods did, the in-sandbox CPU probe did not move, and the host was three-quarters empty. Multi-actor packing itself costs nothing measurable.
+
+**2. Waking is.** Every one-pod failure happened in the wave that *added* agents, and only the newly woken batch suffered: its wakes queued until the sim's 30 s client limit, refusals climbed with the size of the batch (4 % for 50, 28 % for 150), while the agents already awake on the same pod kept answering in 4 ms. The numbers are identical on gVisor and microVM to the decimal, so the sandbox runtime is not involved.
+
+**3. The mechanism: wakes to one worker serialize on that worker's database row.** A resume of a parked actor runs through the control plane's assignment step (`cmd/ateapi/internal/controlapi/workflow_resume.go`, `ensureWorkerAssigned` → `assignWorkerAttempt`):
+
+- the scheduler picks a worker from a cache (with 50 pods, power-of-two choices spreads a batch; with one pod there is one candidate);
+- the store **binds the actor to the worker under the Worker's row lock** — `BindActorToWorker` re-checks eligibility and room "under the Worker's row lock, where the answer holds until the bind commits, so two claims for the last place cannot both be admitted" (around line 690–702);
+- the actor is then written as RESUMING with the assignment; a version conflict there is retried under a bounded backoff, and those retries are deliberately not counted as errors (`schedulerRecordable`).
+
+With one pod, every wake in a batch of 50 or 150 takes a turn on the same row lock. The restores start late, one after another. Meanwhile the router has parked each waiting request with a **5 s budget** (`cmd/atenet/internal/router/ingress/parking.go`, `DefaultParkedRequestBudget`); when the budget runs out the request gets a 503 (`budget_exhausted`), the client retries with backoff, and after five retries the wake has consumed ~30 s — the P90 we measured. The restore itself is fast (150–350 ms from the node-local retained snapshot; the 50-pod cells restored 300 agents per wave at that speed), so the queue in front of it is the whole story.
+
+**4. It gets worse as the pod fills.** The same +50 wave passed at 50 → 100 → 150 hosted assistants and failed at 150 → 200. Each bind rewrites the worker's allocation record, which grows with every hosted actor, and each assignment re-validates what the worker hosts; both make the lock hold time grow with the pod's population, so the wake budget of a single worker shrinks as it fills. (Confirming the split between the bind and the actor update is a matter of reading the `dSchedule / dBind / dUpdate` timings the resume workflow already records.)
+
+**5. Other reasons not to run few, large worker pods**, beyond this measurement:
+
+- *Blast radius.* An ateom pod that is OOM-killed, evicted or rolled takes every actor it hosts with it; the epoch reconciler crashes actors bound to the old pod rather than migrating them. One pod per node means one failure domain per node.
+- *Upgrades and drains* move whole pods; a pod with 600 live sandboxes is a 600-agent outage, a pod with 12 is not.
+- *One tunnel.* All traffic to a pod's sandboxes shares that pod's atunnel and network namespace; the ping runs did not reach that limit, but it is one more serial resource.
+- *Capacity accounting* is per worker record; a single giant record is a hotspot for every assignment and release on the node.
+
+**6. What it means for sizing.** Awake capacity per node is memory-bound at ~650 assistants no matter how they are spread across pods. Spread them anyway: keep enough worker pods on a node that no single pod has to absorb more than a few dozen simultaneous wakes (50 pods × 13 agents each worked; 1 pod × 150 did not), and treat the per-worker wake path as the thing to fix if fewer, bigger pods are ever wanted — it is a control-plane property, not a host or runtime one. A 5-pod cell would bracket the per-pod wake budget precisely; the 1-pod and 50-pod points say it lies between 50 and 150 concurrent wakes per worker.
