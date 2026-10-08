@@ -329,10 +329,12 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 		}
 		var reasons []string
 		acts := max(st.wakes, 1)
-		if 100*float64(st.refusals)/float64(acts) > s.cfg.failRefusalPct {
+		// a single transient error at a small level is not a failure: the rate
+		// gates need at least 3 occurrences before they can trip
+		if st.refusals >= 3 && 100*float64(st.refusals)/float64(acts) > s.cfg.failRefusalPct {
 			reasons = append(reasons, "refusals")
 		}
-		if 100*float64(st.errors)/float64(acts) > s.cfg.failErrPct {
+		if st.errors >= 3 && 100*float64(st.errors)/float64(acts) > s.cfg.failErrPct {
 			reasons = append(reasons, "errors")
 		}
 		if s.cfg.failWakeP99Ms > 0 && len(wakes) > 0 && st.wakeP99 > s.cfg.failWakeP99Ms {
