@@ -1,0 +1,2 @@
+gvisor pa pods=1 fleet=800 node=agents-tco-east/us-east4-a run_rc=1 first_wave=50
+LOADTEST VERDICT: failure at 200 active agents (refusals+errors+wake-p99); last sustainable level = 150; hold at 150 also failed (errors)

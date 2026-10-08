@@ -1,0 +1,2 @@
+microvm pa pods=50 fleet=900 node=agents-tco-euw4/europe-west4-c run_rc=1 first_wave=600
+LOADTEST VERDICT: failure at 700 active agents (errors+wake-p99+probe-p99+probe-p90-vs-baseline+turn-p90-vs-baseline); last sustainable level = 650; hold at 650 also failed (errors)

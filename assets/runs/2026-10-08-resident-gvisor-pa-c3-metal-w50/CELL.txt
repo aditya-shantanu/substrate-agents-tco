@@ -1,0 +1,2 @@
+gvisor pa pods=50 fleet=800 node=agents-tco-east/us-east4-a run_rc=1 first_wave=50
+LOADTEST VERDICT: failure at 700 active agents (mem-available); last sustainable level = 650; hold at 650 also failed (errors+mem-available)

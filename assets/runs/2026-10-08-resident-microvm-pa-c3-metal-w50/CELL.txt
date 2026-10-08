@@ -1,0 +1,2 @@
+microvm pa pods=50 fleet=600 node=agents-tco-euw4/europe-west4-c run_rc=1 first_wave=50
+LOADTEST VERDICT: no failure up to 600 active agents (raise --agents to push further)
