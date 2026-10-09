@@ -117,6 +117,69 @@ At 21/s the node's CPUs are ~35 % busy (user 46 cores, system 20, irq 5 of 192),
 
 """
 
+IDEAS = """## How to break the remaining bottlenecks — ranked proposals (code-grounded; no idea excluded)
+
+Every proposal names the measured cost it attacks (from the stage tables above and the node probes), the code it touches on main 66f8a888, an estimate of what it buys, and effort. Facts about what the code can and cannot do today were checked in the tree, not assumed.
+
+### A. microVM: take work off the per-activation path (the 17 → 20+ swaps/s wall)
+
+1. **Stop reading the whole memory image eagerly on restore — use Cloud Hypervisor's on-demand mode.** The worker already implements both modes (`cmd/ateom-microvm/internal/ch/prefault.go:23-30`: `OnDemand` = userfaultfd demand paging, `Copy` = eager) but `restoreMemMode()` (`restore.go:56-67`) forces eager on CH ≥ v53 because CH started prefaulting unconditionally (PRs #8150/#8556). We run CH v53. Eager restore is why `vm_restore` costs 140 ms alone and 1.5 s at 21/s (it copies 128 MiB per VM into the memfd, 2.7 GB/s of page allocation at 21/s), and why the next snapshot is the full 128 MiB again. Fix: get CH to honour the on-demand/no-prefault request again (newer CH exposes it as a restore option; otherwise pin a CH build that does) and re-enable `MemRestoreOnDemand`. Expected: `vm_restore` → tens of ms, memory churn per swap ÷ 3, images sparser, and the delta-merge path (`mergeOnDemandDelta`, `checkpoint.go:304-311`) gives incremental checkpoints. Effort: small in Substrate, depends on the CH side. This is the single largest lever on microVM.
+
+2. **Pool the network namespace *with its tap* per worker.** The namespace pool ported from the gVisor work only applies to the veth shape (`internal/ateomnet/netpool.go:118`); the microVM path still creates and destroys a namespace (1 bind mount + unmount, `netns.go:55-88`) and does 5–6 netlink round trips under `rtnl_lock` per tap (`net.go:54-99`), and `tap` is the stage that goes 2 → 1,347 ms at 21/s. The tap's MAC and address are constants (`net.go:36-45`) and CH takes the tap by file descriptor (`restorefds.go:143-147`), so a pooled namespace can keep its tap and hand the same FDs to the next VM. Expected: removes the `tap` stage and the namespace mount/unmount from every activation; at 21/s that is ~1.3 s of the 5.5 s restore and part of the 1.5 s teardown. Effort: a day; the pool machinery exists.
+
+3. **Pre-spawn idle VMMs.** `LaunchVMM` (`restorefds.go:62-87`) execs `cloud-hypervisor --api-socket` and pings it every 10 ms; 12–15 ms alone, 190–290 ms at 20/s because fork/exec convoys with everything else. A per-worker pool of N idle VMM processes (no VM yet) that a restore claims, plus `vm.delete` and re-use after teardown, removes `vmm_launch` and half the process churn of teardown (`Process.Kill()+Wait` for CH and virtiofsd, `checkpoint.go:369-377`). CH supports `vm.delete` followed by another `vm.restore` on the same VMM; the code never exercises it. Expected: −0.2–0.3 s per restore at load, fewer forks on the node. Effort: 1–2 days.
+
+4. **One virtiofsd per worker instead of one per VM.** `StartVirtiofsd` (`overlay_linux.go:143-172`) spawns a daemon per actor with `--shared-dir=<SharedDir(id)>` and find-paths pinned to `<baseID>/rootfs`; it is spawned in `lowers` (16 → 514 ms at 21/s) and killed in teardown. A per-worker daemon serving a share root with per-actor subdirectories removes a spawn and a kill per activation and most of the `lowers` growth. Effort: medium (find-paths and the snapshot's recorded paths must stay stable).
+
+5. **Stop scanning the node twice per activation.** `cleanupSandboxState` runs at restore (`restore.go:234`) and again at teardown (`checkpoint.go:385`); each parses `/proc/self/mountinfo` (2,500 lines on this node), MNT_DETACHes under two trees, and scans `/proc/*/cmdline` across ~6,300 processes to find orphans (`cleanup_linux.go:50-130`). That is O(processes) work, 40 times a second at 20/s, taking mount and task-list locks every time. The worker tracks its `runningActor`; skip the scans when the actor is known and reserve the full sweep for recovery. Also `imagecache.UnmountAllUnder` parses mountinfo again. Expected: cuts `prep` (11 → 1,034 ms at 21/s) and part of teardown; nearly free to do.
+
+6. **Reuse the cgroup leaf and the bundle overlay.** `OpenActorLeaf`/`RemoveActorLeaf` mkdir+rmdir a cgroup per activation (`ateomcgroup/actor.go:47-70`); the bundle lower overlay (`imagecache.SetupBundleRootfs`, one `fsmount` per container) is content-addressed and could stay mounted across the actor-dir reset that atelet performs. Each saves a mount or a cgroup operation under a global lock per activation. Effort: small each; the gVisor campaign measured cgroup ops at 7 → 24 ms (mkdir) and 1 → 157 ms (rmdir) under load.
+
+7. **Make teardown asynchronous and batched.** After `vm.snapshot` returns, the suspend's client-visible latency still includes kill/wait of two processes, the unmounts and the namespace release (`teardown` 120 → 1,458 ms). Return the checkpoint once the files are listed (`checkpoint.go:224`) and run teardown on a worker-local queue that holds the per-actor lock, coalescing unmounts and process reaps. Expected: suspend P50 −0.2 s at 15/s, more at 20/s; it also smooths the convoy because teardown no longer competes with the restores of the same tick. Effort: a day, with care for the restore-while-tearing-down ordering (the lock already exists).
+
+### B. Fewer bytes per snapshot (helps every stage: download, decode, write, VMM restore, upload, network)
+
+8. **Drop the guest page cache before `vm.snapshot`.** The 128 MiB image of a 256 MiB guest is mostly page cache from reading the rootfs over virtiofs; it compresses to 42 MiB and a denser zstd level only reached 40. The kata agent exposes `ExecProcess` and `MemAgentMemcgSet`/`MemAgentCompactSet` (`agent.proto:33,64-65`) which the worker does not wrap today (`agentclient.go` wraps 13 RPCs, none of them). `sync; echo 3 > /proc/sys/vm/drop_caches` via `ExecProcess` right before the snapshot (or memcg eviction via the mem-agent) should take the image to tens of MiB. Expected: ×2–4 fewer bytes everywhere: the transfer term at 20/s (≈1.9 GB/s) and the memory churn of restore both shrink proportionally. Effort: small (one RPC + a sandbox exec), needs a check that `/proc/sys` is writable in the exec context.
+
+9. **Add a balloon with free-page reporting to the VM config.** `createvm.go:25-36` has no balloon device; with `balloon {size: 0, free_page_reporting: true}` the guest reports freed pages and CH punches them out of the memfd, so pages freed after the page-cache drop (or by the workload) stop appearing in later snapshots. Pairs with 8 and with on-demand restore (1). Effort: small, but it changes the VM config so existing snapshots must be regenerated (the golden snapshot too).
+
+10. **Deduplicate against the golden image / between actors.** All 5,000 actors boot from one golden snapshot; the kernel, agent and rootfs pages are byte-identical across them. Content-addressed page chunks (4 KiB or CDC) with a per-node cache of the golden pages means an upload carries only the actor's unique pages and a restore fetches only the delta over a node-cached base. Firecracker's diff snapshots and the OnDemand delta merge already in this tree (`ch/merge.go`) are the existing shapes of this. Expected: order-of-magnitude fewer bytes for idle agents. Effort: large; the biggest structural win for cost as well as throughput (GCS egress and storage).
+
+11. **Train a zstd dictionary on the golden image** and compress with it (`zstd.WithEncoderDict`/`WithDecoderDicts`): cheap to try, typically 10–30 % on page-image data that a plain level could not improve. Effort: hours.
+
+### C. The transfer path
+
+12. **Resume from the node-local copy when the actor comes back to the same node.** Branch commit 0ccab235 (`cmd/atelet/retained_snapshot.go`, `--retain-uploaded-snapshots`) kept the uploaded checkpoint on the node and restored from it when the URI matched; it is not on main. In this test (and in any node-affine scheduler) every resume lands on the node that suspended the actor, so the whole download stage (0.6–1.0 s, ~0.9 GB/s of GCS egress at 20/s) disappears; main already has the plumbing for local checkpoints (`CHECKPOINT_TYPE_LOCAL`, `LocalSnapshotDir`, `PreserveRestoreDir`) used by the pause path. Expected: resume P50 −0.6 s, download bandwidth → 0 for same-node resumes; needs a disk/tmpfs budget and an eviction policy. Effort: small to port, medium to make safe (invalidate on a newer snapshot).
+
+13. **Spread transfers across the worker pods instead of one node process.** The plugin is a node singleton (`cmd/atelet/main.go:118`, `internal/objectstoreplugin/node.go`); every byte on the node goes through one process and one pod network interface, and its intrinsic ceiling in a quiet probe is ~0.8–0.9 GB/s of compressed intake. The workers (100 pods) could fetch and push their own snapshots given a new `ateompb` RPC (or the plugin socket mounted into them) and storage credentials; that multiplies connections, veths and processes by 100. Effort: medium; also removes the atelet restart as a disruption point.
+
+14. **Keep one request per object for uploads, more streams for downloads** (done), and consider gRPC/direct-connect or HTTP/3 for GCS later; per-stream GCS throughput measured here is ~45 MB/s, so stream count is what matters.
+
+### D. gVisor: the mount-namespace lock, cgroups, and the sentry
+
+15. **Fewer mounts and chroots per sandbox in runsc.** The worker passes no runsc tuning flags at all (`cmd/ateom-gvisor/runsc.go:85-106`): upstream defaults, i.e. a rootfs overlay set up per container and a gofer with its own chroot per sandbox, each a burst of mounts under the global mount lock that the node probe measured at 2.4 → 19 ms per bind+umount pair at 12/s. Try `--overlay2=none` (or a shared backing directory), and `--shared-root` (already added by the campaign, keep it); longer term runsc needs a long-lived gofer chroot or fewer `mount(2)` calls per create. Expected: this is the `pause_create` growth (90 → 600–700 ms at 12/s). Effort: flags are hours; the runsc change is upstream work.
+
+16. **Cheaper cgroup migrations.** Each activation does 1 mkdir + 2 `cgroup.procs` writes + 1 rmdir; each write is a `cgroup_threadgroup_rwsem` writer that stalls every fork on the node. `favordynmods` measured 42 → 2.7 ms per attach pair but has to be set where it sticks (kernel command line `cgroup_favordynmods=1`, or a privileged DaemonSet that remounts before the pool starts and after every roll); runsc using `CLONE_INTO_CGROUP` avoids the attach write entirely. The reusable-slot approach was tried and does not work (gofers die in a reused cgroup).
+
+17. **gVisor restore itself** (app_restore 100 → 400–570 ms at 12/s) is inside the sentry: page-image loading and the restore of the kernel state. Options are upstream: parallel page loading, lazy restore (gVisor has a lazy-load mode for pages.img in recent releases), or keeping the sentry process alive across suspend/resume (checkpoint without exiting, "pause-to-disk" instead of full restore).
+
+### E. Node and kernel
+
+18. **Newer kernel.** Two of the convoys are known kernel scalability items: per-network-namespace `rtnl_lock` (merged upstream in 6.13-era networking) and finer mount-namespace locking work; GKE's COS node image pins the kernel, so this is a node-image choice, not a Substrate change. Worth testing on a newer COS/Ubuntu image when available.
+
+19. **Isolate the sandbox lifecycle from the running fleet.** Pin the 650 running VMs' vCPU threads and the plugin to distinct CPU sets (or NUMA nodes) so the create/teardown path and the compression threads do not share run queues with the guests; the load average of 140 at 21/s says the scheduler is part of the convoy even at 35 % utilisation.
+
+20. **Two nodes' worth of control on one node.** Run two worker pools and two snapshot plugins per node (sharded by actor), each with its own network interface and process space: it halves every per-process and per-interface ceiling without new hardware.
+
+### F. Measurement and operations
+
+21. The relative 2.5× latency rule should become an absolute SLO per runtime (e.g. resume P90 ≤ 1.5 s) for the production target; the relative rule was right for finding knees, but at the end of the day microVM delivers 17 swaps/s at P90 1.4 s and the rule, not the users, is what stops it.
+22. The router's 5-s parked-request budget (`parking.go`) should be tied to the measured restore P99 so that a latency knee degrades instead of returning 503s.
+23. Keep the fixes to the harness that this day produced (1-s ticks, catch-up off, readiness check that cannot roll the pool, fleet exclusion of DELETING/CRASHED actors, per-stage timing extraction) as the standard way to run this test.
+
+**If only three things get done:** (1) on-demand restore + page-cache drop before snapshot (A1 + B8: fewer bytes and no eager copy), (2) a tap-carrying namespace pool and the removal of the two per-activation node scans (A2 + A5), (3) same-node resume from the retained local copy (C12). Together they remove most of the per-activation kernel work and most of the bytes; the expected ceiling is then set by VMM restore and transfer again, well above 20 swaps/s on this node.
+"""
+
 RATE_TABLE = ["### Activations per second with resume and suspend latency, start of the day vs. end\n",
 "One activation = one actor resumed from its suspended snapshot and answering a request; the test keeps 650 awake by suspending one actor for every one it resumes, so activations/s = swaps/s = suspends/s = resumes/s. Latencies are what the client saw (resume = request round trip through the router including the restore; suspend = SuspendActor call). ms, P50 / P90 / P99. \"pass\" = within the bounds (P90 ≤ 2.5× the run's first level, errors + refusals < 0.5 %, no backlog growth).\n"]
 VERDICT = {"": "pass"}
@@ -158,6 +221,7 @@ BOTTLENECK = ("""## Where the bottleneck moved, and what is happening now (for w
 md.append("\n".join(RATE_TABLE))
 md.append(SUMMARY_TAIL)
 md.append(BOTTLENECK)
+md.append(IDEAS)
 for tag, cls in (("metal2", "microVM (agents-tco-euw4, actor 2 vCPU + 256 MiB)"), ("east", "gVisor (agents-tco-east, actor 2 vCPU + 2 GiB)")):
     md.append(f"## {cls}\n")
     for d, title, note in ITER[tag]:
