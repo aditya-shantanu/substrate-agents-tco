@@ -1,0 +1,344 @@
+goroutine profile: total 278
+61 @ 0x49112a 0x44fb37 0x490325 0x4ef327 0x4f03a8 0x4f0396 0x5c5ee5 0x5d52c5 0x64b614 0x64867b 0x64ee28 0x64ee29 0x69c0b3 0x4ce243 0x6dd785 0x6dd753 0x6ddde7 0x6de578 0x6fda1b 0x6fcfd2 0x498641
+#	0x490324	internal/poll.runtime_pollWait+0x84			runtime/netpoll.go:351
+#	0x4ef326	internal/poll.(*pollDesc).wait+0x26			internal/poll/fd_poll_runtime.go:84
+#	0x4f03a7	internal/poll.(*pollDesc).waitRead+0x2a7		internal/poll/fd_poll_runtime.go:89
+#	0x4f0395	internal/poll.(*FD).Read+0x295				internal/poll/fd_unix.go:170
+#	0x5c5ee4	net.(*netFD).Read+0x24					net/fd_posix.go:68
+#	0x5d52c4	net.(*conn).Read+0x44					net/net.go:196
+#	0x64b613	crypto/tls.(*Conn).readFromUntil+0xf3			crypto/tls/conn.go:820
+#	0x64867a	crypto/tls.(*Conn).readRecordOrCCS+0x3fa		crypto/tls/conn.go:626
+#	0x64ee27	crypto/tls.(*Conn).readRecord+0x147			crypto/tls/conn.go:588
+#	0x64ee28	crypto/tls.(*Conn).Read+0x148				crypto/tls/conn.go:1392
+#	0x69c0b2	bufio.(*Reader).Read+0x192				bufio/bufio.go:245
+#	0x4ce242	io.ReadAtLeast+0x82					io/io.go:335
+#	0x6dd784	io.ReadFull+0x64					io/io.go:354
+#	0x6dd752	net/http/internal/http2.readFrameHeader+0x32		net/http/internal/http2/frame.go:252
+#	0x6ddde6	net/http/internal/http2.(*Framer).ReadFrameHeader+0x66	net/http/internal/http2/frame.go:525
+#	0x6de577	net/http/internal/http2.(*Framer).ReadFrame+0x17	net/http/internal/http2/frame.go:584
+#	0x6fda1a	net/http/internal/http2.(*clientConnReadLoop).run+0xda	net/http/internal/http2/transport.go:2047
+#	0x6fcfd1	net/http/internal/http2.(*ClientConn).readLoop+0x51	net/http/internal/http2/transport.go:1913
+
+30 @ 0x49112a 0x4690f7 0x6fa4ae 0x6f97f8 0x498641
+#	0x6fa4ad	net/http/internal/http2.(*clientStream).writeRequest+0xc6d	net/http/internal/http2/transport.go:1355
+#	0x6f97f7	net/http/internal/http2.(*clientStream).doRequest+0x17		net/http/internal/http2/transport.go:1216
+
+30 @ 0x49112a 0x492ad3 0x492ab3 0x4a1593 0x6e5b7b 0x6ff639 0xb11138 0x109a6c9 0x10a532c 0x4ce243 0x4ce365 0x162e054 0x162ef5a 0x498641
+#	0x492ab2	sync.runtime_notifyListWait+0x192								runtime/sema.go:617
+#	0x4a1592	sync.(*Cond).Wait+0x72										sync/cond.go:71
+#	0x6e5b7a	net/http/internal/http2.(*pipe).Read+0xda							net/http/internal/http2/pipe.go:76
+#	0x6ff638	net/http/internal/http2.transportResponseBody.Read+0x58						net/http/internal/http2/transport.go:2355
+#	0xb11137	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp.(*wrappedBody).Read+0x37		go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@v0.70.0/transport.go:258
+#	0x109a6c8	cloud.google.com/go/storage.(*httpReader).Read+0xa8						cloud.google.com/go/storage@v1.62.1/http_client.go:1405
+#	0x10a532b	cloud.google.com/go/storage.(*Reader).Read+0x2b							cloud.google.com/go/storage@v1.62.1/reader.go:363
+#	0x4ce242	io.ReadAtLeast+0x82										io/io.go:335
+#	0x4ce364	io.ReadFull+0x24										io/io.go:354
+#	0x162e053	github.com/agent-substrate/substrate/pkg/objectstorage.(*gcsClient).fetchRange.func1+0x233	github.com/agent-substrate/substrate/pkg/objectstorage/gcsranged.go:68
+#	0x162ef59	github.com/agent-substrate/substrate/pkg/objectstorage.(*rangedReader).schedule.func1+0x239	github.com/agent-substrate/substrate/pkg/objectstorage/rangedget.go:140
+
+15 @ 0x49112a 0x41c96e 0x41c492 0x162a208 0x4ce243 0x15f4814 0x15f47da 0x15edde8 0x160b990 0x15f7dab 0x498641
+#	0x162a207	github.com/agent-substrate/substrate/pkg/objectstorage.(*rangedReader).Read+0xc7	github.com/agent-substrate/substrate/pkg/objectstorage/rangedget.go:159
+#	0x4ce242	io.ReadAtLeast+0x82									io/io.go:335
+#	0x15f4813	io.ReadFull+0x73									io/io.go:354
+#	0x15f47d9	github.com/klauspost/compress/zstd.(*readerWrapper).readBig+0x39			github.com/klauspost/compress@v1.19.1/zstd/bytebuf.go:104
+#	0x15edde7	github.com/klauspost/compress/zstd.(*blockDec).reset+0x287				github.com/klauspost/compress@v1.19.1/zstd/blockdec.go:200
+#	0x160b98f	github.com/klauspost/compress/zstd.(*frameDec).next+0x2f				github.com/klauspost/compress@v1.19.1/zstd/framedec.go:285
+#	0x15f7daa	github.com/klauspost/compress/zstd.(*Decoder).startStreamDecoder+0x68a			github.com/klauspost/compress@v1.19.1/zstd/decoder.go:887
+
+15 @ 0x49112a 0x41c96e 0x41c4b2 0x15f68f4 0x15f5074 0x4ce9c3 0x4ce730 0x4ce516 0x162cd0e 0x1627e4f 0x162793a 0x1627498 0x1635c8d 0x113e6d0 0x498641
+#	0x15f68f3	github.com/klauspost/compress/zstd.(*Decoder).nextBlock+0x133						github.com/klauspost/compress@v1.19.1/zstd/decoder.go:439
+#	0x15f5073	github.com/klauspost/compress/zstd.(*Decoder).Read+0x133						github.com/klauspost/compress@v1.19.1/zstd/decoder.go:140
+#	0x4ce9c2	io.(*LimitedReader).Read+0x42										io/io.go:479
+#	0x4ce72f	io.copyBuffer+0x18f											io/io.go:429
+#	0x4ce515	io.CopyBuffer+0x35											io/io.go:402
+#	0x162cd0d	github.com/agent-substrate/substrate/pkg/objectstorage.readSparseZstd+0x76d				github.com/agent-substrate/substrate/pkg/objectstorage/sparsezstd.go:189
+#	0x1627e4e	github.com/agent-substrate/substrate/pkg/objectstorage.decodeContent+0x1ce				github.com/agent-substrate/substrate/pkg/objectstorage/objects.go:415
+#	0x1627939	github.com/agent-substrate/substrate/pkg/objectstorage.fetchFromGCSWithZstd+0x2f9			github.com/agent-substrate/substrate/pkg/objectstorage/objects.go:380
+#	0x1627497	github.com/agent-substrate/substrate/pkg/objectstorage.FetchFileFromGCSWithZstd+0x1d7			github.com/agent-substrate/substrate/pkg/objectstorage/objects.go:353
+#	0x1635c8c	github.com/agent-substrate/substrate/internal/objectstoreplugin.(*NodePlugin).FetchSnapshot.func1+0x2ec	github.com/agent-substrate/substrate/internal/objectstoreplugin/node.go:90
+#	0x113e6cf	golang.org/x/sync/errgroup.(*Group).Go.func1+0x4f							golang.org/x/sync@v0.22.0/errgroup/errgroup.go:93
+
+15 @ 0x49112a 0x41c96e 0x41c4b2 0x161422d 0x498641
+#	0x161422c	github.com/klauspost/compress/zstd.(*Decoder).startStreamDecoder.func2+0xac	github.com/klauspost/compress@v1.19.1/zstd/decoder.go:723
+
+15 @ 0x49112a 0x41c96e 0x41c4b2 0x161495a 0x498641
+#	0x1614959	github.com/klauspost/compress/zstd.(*Decoder).startStreamDecoder.func1+0x79	github.com/klauspost/compress@v1.19.1/zstd/decoder.go:667
+
+15 @ 0x49112a 0x469e92 0x469e69 0x49284e 0x4a3225 0x113e41e 0x163333f 0x14c7a53 0x9e06a7 0x9e47c7 0x9f65ff 0x498641
+#	0x49284d	sync.runtime_SemacquireWaitGroup+0x2d											runtime/sema.go:114
+#	0x4a3224	sync.(*WaitGroup).Wait+0x84												sync/waitgroup.go:206
+#	0x113e41d	golang.org/x/sync/errgroup.(*Group).Wait+0x1d										golang.org/x/sync@v0.22.0/errgroup/errgroup.go:56
+#	0x163333e	github.com/agent-substrate/substrate/internal/objectstoreplugin.(*NodePlugin).FetchSnapshot+0x53e			github.com/agent-substrate/substrate/internal/objectstoreplugin/node.go:98
+#	0x14c7a52	github.com/agent-substrate/substrate/pkg/proto/objectstoresnapshotpb/v1._NodeProvider_FetchSnapshot_Handler+0x1b2	github.com/agent-substrate/substrate/pkg/proto/objectstoresnapshotpb/v1/objectstoresnapshot_grpc.pb.go:175
+#	0x9e06a6	google.golang.org/grpc.(*Server).processUnaryRPC+0x1206									google.golang.org/grpc@v1.83.2/server.go:1443
+#	0x9e47c6	google.golang.org/grpc.(*Server).handleStream+0xb06									google.golang.org/grpc@v1.83.2/server.go:1858
+#	0x9f65fe	google.golang.org/grpc.(*Server).serveStreams.func2.1+0x7e								google.golang.org/grpc@v1.83.2/server.go:1078
+
+10 @ 0x49112a 0x41c96e 0x41c492 0x10b237f 0x1621dc5 0x16219b4 0x1626ba7 0x1625ead 0x16255d7 0x16366b8 0x113e6d0 0x498641
+#	0x10b237e	cloud.google.com/go/storage.(*Writer).Close+0x2de								cloud.google.com/go/storage@v1.62.1/writer.go:390
+#	0x1621dc4	github.com/agent-substrate/substrate/pkg/objectstorage.(*gcsClient).putSingle+0x144				github.com/agent-substrate/substrate/pkg/objectstorage/gcs.go:165
+#	0x16219b3	github.com/agent-substrate/substrate/pkg/objectstorage.(*gcsClient).PutObject+0x273				github.com/agent-substrate/substrate/pkg/objectstorage/gcs.go:145
+#	0x1626ba6	github.com/agent-substrate/substrate/pkg/objectstorage.sendStreamingZstd+0x206					github.com/agent-substrate/substrate/pkg/objectstorage/objects.go:278
+#	0x1625eac	github.com/agent-substrate/substrate/pkg/objectstorage.sendZstd+0x6ac						github.com/agent-substrate/substrate/pkg/objectstorage/objects.go:223
+#	0x16255d6	github.com/agent-substrate/substrate/pkg/objectstorage.SendFileToGCSWithZstd+0xf6				github.com/agent-substrate/substrate/pkg/objectstorage/objects.go:130
+#	0x16366b7	github.com/agent-substrate/substrate/internal/objectstoreplugin.(*NodePlugin).UploadSnapshot.func1+0x5d7	github.com/agent-substrate/substrate/internal/objectstoreplugin/node.go:140
+#	0x113e6cf	golang.org/x/sync/errgroup.(*Group).Go.func1+0x4f								golang.org/x/sync@v0.22.0/errgroup/errgroup.go:93
+
+10 @ 0x49112a 0x4690f7 0x10b2d73 0x498641
+#	0x10b2d72	cloud.google.com/go/storage.(*Writer).monitorCancel+0x72	cloud.google.com/go/storage@v1.62.1/writer.go:453
+
+10 @ 0x49112a 0x4690f7 0x4d0445 0x4d081a 0x6b8b92 0x4da349 0x4ce63d 0xb006e5 0xb006ca 0x498641
+#	0x4d0444	io.(*pipe).write+0x1e4							io/pipe.go:86
+#	0x4d0819	io.(*PipeWriter).Write+0x19						io/pipe.go:161
+#	0x6b8b91	mime/multipart.(*part).Write+0x31					mime/multipart/writer.go:209
+#	0x4da348	bytes.(*Reader).WriteTo+0x68						bytes/reader.go:143
+#	0x4ce63c	io.copyBuffer+0x9c							io/io.go:411
+#	0xb006e4	io.Copy+0xc4								io/io.go:388
+#	0xb006c9	google.golang.org/api/internal/gensupport.newMultipartReader.func1+0xa9	google.golang.org/api@v0.274.0/internal/gensupport/media.go:55
+
+10 @ 0x49112a 0x4690f7 0x6f91cf 0x6f5571 0x6f5560 0x75d59f 0x71bc22 0x71c419 0x741805 0x755218 0xb12cdd 0xb104ec 0xb14745 0x711114 0x710950 0x712af7 0xaffdcf 0xaffdbf 0xaff67e 0xb5b3c5 0xb5b5cf 0x10b9d25 0x498641
+#	0x6f91ce	net/http/internal/http2.(*ClientConn).roundTrip+0x56e						net/http/internal/http2/transport.go:1186
+#	0x6f5570	net/http/internal/http2.(*ClientConn).RoundTrip+0x150						net/http/internal/http2/transport.go:1100
+#	0x6f555f	net/http/internal/http2.(*Transport).RoundTripOpt+0x13f						net/http/internal/http2/transport.go:425
+#	0x75d59e	net/http/internal/http2.(*Transport).RoundTrip+0x1e						net/http/internal/http2/transport.go:380
+#	0x71bc21	net/http.http2RoundTrip+0x1c1									net/http/http2.go:321
+#	0x71c418	net/http.http2RoundTripper.RoundTrip+0x38							net/http/http2.go:438
+#	0x741804	net/http.(*Transport).roundTrip+0x524								net/http/transport.go:644
+#	0x755217	net/http.(*Transport).RoundTrip+0x17								net/http/roundtrip.go:33
+#	0xb12cdc	cloud.google.com/go/auth/httptransport.(*headerTransport).RoundTrip+0x2bc			cloud.google.com/go/auth@v0.19.0/httptransport/transport.go:176
+#	0xb104eb	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp.(*Transport).RoundTrip+0x74b	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@v0.70.0/transport.go:145
+#	0xb14744	cloud.google.com/go/auth/httptransport.(*authTransport).RoundTrip+0x384				cloud.google.com/go/auth@v0.19.0/httptransport/transport.go:315
+#	0x711113	net/http.send+0x653										net/http/client.go:266
+#	0x71094f	net/http.(*Client).send+0x24f									net/http/client.go:187
+#	0x712af6	net/http.(*Client).do+0x9f6									net/http/client.go:745
+#	0xaffdce	net/http.(*Client).Do+0x6ae									net/http/client.go:604
+#	0xaffdbe	google.golang.org/api/internal/gensupport.sendAndRetry+0x69e					google.golang.org/api@v0.274.0/internal/gensupport/send.go:196
+#	0xaff67d	google.golang.org/api/internal/gensupport.SendRequestWithRetry+0x7d				google.golang.org/api@v0.274.0/internal/gensupport/send.go:132
+#	0xb5b3c4	google.golang.org/api/storage/v1.(*ObjectsInsertCall).doRequest+0x844				google.golang.org/api@v0.274.0/storage/v1/storage-gen.go:11162
+#	0xb5b5ce	google.golang.org/api/storage/v1.(*ObjectsInsertCall).Do+0x6e					google.golang.org/api@v0.274.0/storage/v1/storage-gen.go:11174
+#	0x10b9d24	cloud.google.com/go/storage.(*httpStorageClient).OpenWriter.func1+0xb24				cloud.google.com/go/storage@v1.62.1/http_client.go:1132
+
+10 @ 0x49112a 0x469e92 0x469e69 0x49284e 0x4a3225 0x113e41e 0x1633994 0x14c7c73 0x9e06a7 0x9e47c7 0x9f65ff 0x498641
+#	0x49284d	sync.runtime_SemacquireWaitGroup+0x2d											runtime/sema.go:114
+#	0x4a3224	sync.(*WaitGroup).Wait+0x84												sync/waitgroup.go:206
+#	0x113e41d	golang.org/x/sync/errgroup.(*Group).Wait+0x1d										golang.org/x/sync@v0.22.0/errgroup/errgroup.go:56
+#	0x1633993	github.com/agent-substrate/substrate/internal/objectstoreplugin.(*NodePlugin).UploadSnapshot+0x533			github.com/agent-substrate/substrate/internal/objectstoreplugin/node.go:146
+#	0x14c7c72	github.com/agent-substrate/substrate/pkg/proto/objectstoresnapshotpb/v1._NodeProvider_UploadSnapshot_Handler+0x1b2	github.com/agent-substrate/substrate/pkg/proto/objectstoresnapshotpb/v1/objectstoresnapshot_grpc.pb.go:193
+#	0x9e06a6	google.golang.org/grpc.(*Server).processUnaryRPC+0x1206									google.golang.org/grpc@v1.83.2/server.go:1443
+#	0x9e47c6	google.golang.org/grpc.(*Server).handleStream+0xb06									google.golang.org/grpc@v1.83.2/server.go:1858
+#	0x9f65fe	google.golang.org/grpc.(*Server).serveStreams.func2.1+0x7e								google.golang.org/grpc@v1.83.2/server.go:1078
+
+6 @ 0x49112a 0x492ad3 0x492ab3 0x4a1593 0x6fc465 0x6fbdeb 0x6fa249 0x6f97f8 0x498641
+#	0x492ab2	sync.runtime_notifyListWait+0x192				runtime/sema.go:617
+#	0x4a1592	sync.(*Cond).Wait+0x72						sync/cond.go:71
+#	0x6fc464	net/http/internal/http2.(*clientStream).awaitFlowControl+0xe4	net/http/internal/http2/transport.go:1814
+#	0x6fbdea	net/http/internal/http2.(*clientStream).writeRequestBody+0x66a	net/http/internal/http2/transport.go:1711
+#	0x6fa248	net/http/internal/http2.(*clientStream).writeRequest+0xa08	net/http/internal/http2/transport.go:1331
+#	0x6f97f7	net/http/internal/http2.(*clientStream).doRequest+0x17		net/http/internal/http2/transport.go:1216
+
+3 @ 0x49112a 0x41c96e 0x41c4b2 0x90204e 0x498641
+#	0x90204d	google.golang.org/grpc/internal/grpcsync.(*CallbackSerializer).run+0xed	google.golang.org/grpc@v1.83.2/internal/grpcsync/callback_serializer.go:114
+
+2 @ 0x49112a 0x41ba3c 0x41b637 0x4d013c 0xafa71d 0xafa714 0xb03f85 0x7424a7 0x6fbb5e 0x6fa249 0x6f97f8 0x498641
+#	0x4d013b	io.(*pipe).read+0xfb											io/pipe.go:60
+#	0xafa71c	io.(*PipeReader).Read+0x1c										io/pipe.go:134
+#	0xafa713	google.golang.org/api/internal/gensupport.(*multipartReader).Read+0x13					google.golang.org/api@v0.274.0/internal/gensupport/media.go:70
+#	0xb03f84	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp/internal/request.(*BodyWrapper).Read+0x24	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@v0.70.0/internal/request/body_wrapper.go:43
+#	0x7424a6	net/http.(*readTrackingBody).Read+0x26									net/http/transport.go:795
+#	0x6fbb5d	net/http/internal/http2.(*clientStream).writeRequestBody+0x3dd						net/http/internal/http2/transport.go:1672
+#	0x6fa248	net/http/internal/http2.(*clientStream).writeRequest+0xa08						net/http/internal/http2/transport.go:1331
+#	0x6f97f7	net/http/internal/http2.(*clientStream).doRequest+0x17							net/http/internal/http2/transport.go:1216
+
+2 @ 0x49112a 0x44fb37 0x490325 0x4ef327 0x4f03a8 0x4f0396 0x5c5ee5 0x5d52c5 0x72b950 0x69bb83 0x69bcb2 0x7317d3 0x498641
+#	0x490324	internal/poll.runtime_pollWait+0x84		runtime/netpoll.go:351
+#	0x4ef326	internal/poll.(*pollDesc).wait+0x26		internal/poll/fd_poll_runtime.go:84
+#	0x4f03a7	internal/poll.(*pollDesc).waitRead+0x2a7	internal/poll/fd_poll_runtime.go:89
+#	0x4f0395	internal/poll.(*FD).Read+0x295			internal/poll/fd_unix.go:170
+#	0x5c5ee4	net.(*netFD).Read+0x24				net/fd_posix.go:68
+#	0x5d52c4	net.(*conn).Read+0x44				net/net.go:196
+#	0x72b94f	net/http.(*connReader).Read+0x14f		net/http/server.go:856
+#	0x69bb82	bufio.(*Reader).fill+0x102			bufio/bufio.go:113
+#	0x69bcb1	bufio.(*Reader).Peek+0x51			bufio/bufio.go:152
+#	0x7317d2	net/http.(*conn).serve+0x832			net/http/server.go:2173
+
+1 @ 0x4224e9 0x493478 0x820773 0x498641
+#	0x493477	os/signal.signal_recv+0x97	runtime/sigqueue.go:152
+#	0x820772	os/signal.loop+0x12		os/signal/signal_unix.go:23
+
+1 @ 0x44c211 0x48fe9d 0x795d11 0x7959e5 0x792949 0x7adc74 0x7ae6bc 0x733349 0x734f2f 0x7552ee 0x73167c 0x498641
+#	0x795d10	runtime/pprof.writeRuntimeProfile+0xb0	runtime/pprof/pprof.go:848
+#	0x7959e4	runtime/pprof.writeGoroutine+0x44	runtime/pprof/pprof.go:781
+#	0x792948	runtime/pprof.(*Profile).WriteTo+0x148	runtime/pprof/pprof.go:405
+#	0x7adc73	net/http/pprof.handler.ServeHTTP+0x553	net/http/pprof/pprof.go:272
+#	0x7ae6bb	net/http/pprof.Index+0xdb		net/http/pprof/pprof.go:391
+#	0x733348	net/http.HandlerFunc.ServeHTTP+0x28	net/http/server.go:2338
+#	0x734f2e	net/http.(*ServeMux).ServeHTTP+0x1ce	net/http/server.go:2903
+#	0x7552ed	net/http.serverHandler.ServeHTTP+0x8d	net/http/server.go:3413
+#	0x73167b	net/http.(*conn).serve+0x6db		net/http/server.go:2137
+
+1 @ 0x49112a 0x41c96e 0x41c492 0x19617de 0x498641
+#	0x19617dd	main.main.func2+0x3d	github.com/agent-substrate/substrate/cmd/snapshot-plugin/main.go:125
+
+1 @ 0x49112a 0x44fb37 0x490325 0x4ef327 0x4f3dbd 0x4f3dab 0x5c7b89 0x5de1db 0x5dd4f0 0x736819 0x7363b1 0x19618df 0x196188f 0x498641
+#	0x490324	internal/poll.runtime_pollWait+0x84		runtime/netpoll.go:351
+#	0x4ef326	internal/poll.(*pollDesc).wait+0x26		internal/poll/fd_poll_runtime.go:84
+#	0x4f3dbc	internal/poll.(*pollDesc).waitRead+0x27c	internal/poll/fd_poll_runtime.go:89
+#	0x4f3daa	internal/poll.(*FD).Accept+0x26a		internal/poll/fd_unix.go:618
+#	0x5c7b88	net.(*netFD).accept+0x28			net/fd_unix.go:149
+#	0x5de1da	net.(*TCPListener).accept+0x1a			net/tcpsock_posix.go:159
+#	0x5dd4ef	net.(*TCPListener).Accept+0x2f			net/tcpsock.go:387
+#	0x736818	net/http.(*Server).Serve+0x378			net/http/server.go:3551
+#	0x7363b0	net/http.(*Server).ListenAndServe+0x70		net/http/server.go:3462
+#	0x19618de	net/http.ListenAndServe+0x5e			net/http/server.go:3813
+#	0x196188e	main.main.func1+0xe				github.com/agent-substrate/substrate/cmd/snapshot-plugin/main.go:73
+
+1 @ 0x49112a 0x44fb37 0x490325 0x4ef327 0x4f3dbd 0x4f3dab 0x5c7b89 0x5e4a56 0x5e3690 0x9dd503 0x1961418 0x456b47 0x498641
+#	0x490324	internal/poll.runtime_pollWait+0x84		runtime/netpoll.go:351
+#	0x4ef326	internal/poll.(*pollDesc).wait+0x26		internal/poll/fd_poll_runtime.go:84
+#	0x4f3dbc	internal/poll.(*pollDesc).waitRead+0x27c	internal/poll/fd_poll_runtime.go:89
+#	0x4f3daa	internal/poll.(*FD).Accept+0x26a		internal/poll/fd_unix.go:618
+#	0x5c7b88	net.(*netFD).accept+0x28			net/fd_unix.go:149
+#	0x5e4a55	net.(*UnixListener).accept+0x15			net/unixsock_posix.go:172
+#	0x5e368f	net.(*UnixListener).Accept+0x2f			net/unixsock.go:275
+#	0x9dd502	google.golang.org/grpc.(*Server).Serve+0x462	google.golang.org/grpc@v1.83.2/server.go:934
+#	0x1961417	main.main+0xbd7					github.com/agent-substrate/substrate/cmd/snapshot-plugin/main.go:131
+#	0x456b46	runtime.main+0x426				runtime/proc.go:302
+
+1 @ 0x49112a 0x44fb37 0x490325 0x4ef327 0x4f4847 0x4f4830 0x5d8dd6 0x9461e7 0x946593 0x4ce243 0x9334a5 0x933473 0x933b07 0x968f25 0x95c43a 0x498641
+#	0x490324	internal/poll.runtime_pollWait+0x84								runtime/netpoll.go:351
+#	0x4ef326	internal/poll.(*pollDesc).wait+0x26								internal/poll/fd_poll_runtime.go:84
+#	0x4f4846	internal/poll.(*pollDesc).waitRead+0x126							internal/poll/fd_poll_runtime.go:89
+#	0x4f482f	internal/poll.(*FD).RawRead+0x10f								internal/poll/fd_unix.go:715
+#	0x5d8dd5	net.(*rawConn).Read+0x35									net/rawconn.go:44
+#	0x9461e6	google.golang.org/grpc/internal/transport/readyreader.(*nonBlockingReader).ReadOnReady+0xa6	google.golang.org/grpc@v1.83.2/internal/transport/readyreader/ready_reader.go:114
+#	0x946592	google.golang.org/grpc/internal/transport/readyreader.(*bufReadyReader).Read+0x172		google.golang.org/grpc@v1.83.2/internal/transport/readyreader/ready_reader.go:221
+#	0x4ce242	io.ReadAtLeast+0x82										io/io.go:335
+#	0x9334a4	io.ReadFull+0x64										io/io.go:354
+#	0x933472	golang.org/x/net/http2.readFrameHeader+0x32							golang.org/x/net@v0.58.0/http2/frame.go:250
+#	0x933b06	golang.org/x/net/http2.(*Framer).ReadFrameHeader+0x66						golang.org/x/net@v0.58.0/http2/frame.go:513
+#	0x968f24	google.golang.org/grpc/internal/transport.(*framer).readFrame+0x44				google.golang.org/grpc@v1.83.2/internal/transport/http_util.go:493
+#	0x95c439	google.golang.org/grpc/internal/transport.(*http2Client).reader+0x1b9				google.golang.org/grpc@v1.83.2/internal/transport/http2_client.go:1707
+
+1 @ 0x49112a 0x44fb37 0x490325 0x4ef327 0x4f4847 0x4f4830 0x5d8dd6 0x9461e7 0x946593 0x4ce243 0x9334a5 0x933473 0x933b07 0x968f25 0x961b5f 0x9de513 0x9f63d6 0x498641
+#	0x490324	internal/poll.runtime_pollWait+0x84								runtime/netpoll.go:351
+#	0x4ef326	internal/poll.(*pollDesc).wait+0x26								internal/poll/fd_poll_runtime.go:84
+#	0x4f4846	internal/poll.(*pollDesc).waitRead+0x126							internal/poll/fd_poll_runtime.go:89
+#	0x4f482f	internal/poll.(*FD).RawRead+0x10f								internal/poll/fd_unix.go:715
+#	0x5d8dd5	net.(*rawConn).Read+0x35									net/rawconn.go:44
+#	0x9461e6	google.golang.org/grpc/internal/transport/readyreader.(*nonBlockingReader).ReadOnReady+0xa6	google.golang.org/grpc@v1.83.2/internal/transport/readyreader/ready_reader.go:114
+#	0x946592	google.golang.org/grpc/internal/transport/readyreader.(*bufReadyReader).Read+0x172		google.golang.org/grpc@v1.83.2/internal/transport/readyreader/ready_reader.go:221
+#	0x4ce242	io.ReadAtLeast+0x82										io/io.go:335
+#	0x9334a4	io.ReadFull+0x64										io/io.go:354
+#	0x933472	golang.org/x/net/http2.readFrameHeader+0x32							golang.org/x/net@v0.58.0/http2/frame.go:250
+#	0x933b06	golang.org/x/net/http2.(*Framer).ReadFrameHeader+0x66						golang.org/x/net@v0.58.0/http2/frame.go:513
+#	0x968f24	google.golang.org/grpc/internal/transport.(*framer).readFrame+0x44				google.golang.org/grpc@v1.83.2/internal/transport/http_util.go:493
+#	0x961b5e	google.golang.org/grpc/internal/transport.(*http2Server).HandleStreams+0xfe			google.golang.org/grpc@v1.83.2/internal/transport/http2_server.go:652
+#	0x9de512	google.golang.org/grpc.(*Server).serveStreams+0x392						google.golang.org/grpc@v1.83.2/server.go:1072
+#	0x9f63d5	google.golang.org/grpc.(*Server).handleRawConn.func1+0x55					google.golang.org/grpc@v1.83.2/server.go:1006
+
+1 @ 0x49112a 0x4690f7 0x18fffef 0x190be3c 0x4a346a 0x498641
+#	0x18fffee	go.opentelemetry.io/otel/sdk/trace.(*batchSpanProcessor).processQueue+0x10e	go.opentelemetry.io/otel/sdk@v1.45.0/trace/batch_span_processor.go:328
+#	0x190be3b	go.opentelemetry.io/otel/sdk/trace.NewBatchSpanProcessor.func2+0x1b		go.opentelemetry.io/otel/sdk@v1.45.0/trace/batch_span_processor.go:128
+#	0x4a3469	sync.(*WaitGroup).Go.func1+0x49							sync/waitgroup.go:258
+
+1 @ 0x49112a 0x4690f7 0x820abc 0x498641
+#	0x820abb	os/signal.NotifyContext.func1+0x7b	os/signal/signal.go:304
+
+1 @ 0x49112a 0x4690f7 0x94a3ea 0x94ab98 0x96eb7b 0x498641
+#	0x94a3e9	google.golang.org/grpc/internal/transport.(*controlBuffer).get+0x109	google.golang.org/grpc@v1.83.2/internal/transport/controlbuf.go:420
+#	0x94ab97	google.golang.org/grpc/internal/transport.(*loopyWriter).run+0x77	google.golang.org/grpc@v1.83.2/internal/transport/controlbuf.go:595
+#	0x96eb7a	google.golang.org/grpc/internal/transport.NewHTTP2Client.func6+0xda	google.golang.org/grpc@v1.83.2/internal/transport/http2_client.go:478
+
+1 @ 0x49112a 0x4690f7 0x94a3ea 0x94ab98 0x970007 0x498641
+#	0x94a3e9	google.golang.org/grpc/internal/transport.(*controlBuffer).get+0x109	google.golang.org/grpc@v1.83.2/internal/transport/controlbuf.go:420
+#	0x94ab97	google.golang.org/grpc/internal/transport.(*loopyWriter).run+0x77	google.golang.org/grpc@v1.83.2/internal/transport/controlbuf.go:595
+#	0x970006	google.golang.org/grpc/internal/transport.NewServerTransport.func3+0xe6	google.golang.org/grpc@v1.83.2/internal/transport/http2_server.go:350
+
+1 @ 0x49112a 0x4690f7 0x965d88 0x498641
+#	0x965d87	google.golang.org/grpc/internal/transport.(*http2Server).keepalive+0x1e7	google.golang.org/grpc@v1.83.2/internal/transport/http2_server.go:1220
+
+1 @ 0x49112a 0x4690f7 0x977bd9 0x498641
+#	0x977bd8	google.golang.org/grpc/internal/resolver/dns.(*dnsResolver).watcher+0x1f8	google.golang.org/grpc@v1.83.2/internal/resolver/dns/dns_resolver.go:224
+
+1 @ 0x4b1105 0x4aef58 0x4f0314 0x4f02ff 0x4f0241 0x5c5ee5 0x5d52c5 0x64b614 0x649005 0x64ee28 0x64ee29 0x69c0b3 0x4ce243 0x6dd785 0x6dd753 0x6ddde7 0x6de578 0x6fda1b 0x6fcfd2 0x498641
+#	0x4b1104	syscall.Syscall+0x24					syscall/syscall_linux.go:74
+#	0x4aef57	syscall.read+0x37					syscall/zsyscall_linux_amd64.go:736
+#	0x4f0313	syscall.Read+0x213					syscall/syscall_unix.go:183
+#	0x4f02fe	internal/poll.ignoringEINTRIO+0x1fe			internal/poll/fd_unix.go:743
+#	0x4f0240	internal/poll.(*FD).Read+0x140				internal/poll/fd_unix.go:166
+#	0x5c5ee4	net.(*netFD).Read+0x24					net/fd_posix.go:68
+#	0x5d52c4	net.(*conn).Read+0x44					net/net.go:196
+#	0x64b613	crypto/tls.(*Conn).readFromUntil+0xf3			crypto/tls/conn.go:820
+#	0x649004	crypto/tls.(*Conn).readRecordOrCCS+0xd84		crypto/tls/conn.go:677
+#	0x64ee27	crypto/tls.(*Conn).readRecord+0x147			crypto/tls/conn.go:588
+#	0x64ee28	crypto/tls.(*Conn).Read+0x148				crypto/tls/conn.go:1392
+#	0x69c0b2	bufio.(*Reader).Read+0x192				bufio/bufio.go:245
+#	0x4ce242	io.ReadAtLeast+0x82					io/io.go:335
+#	0x6dd784	io.ReadFull+0x64					io/io.go:354
+#	0x6dd752	net/http/internal/http2.readFrameHeader+0x32		net/http/internal/http2/frame.go:252
+#	0x6ddde6	net/http/internal/http2.(*Framer).ReadFrameHeader+0x66	net/http/internal/http2/frame.go:525
+#	0x6de577	net/http/internal/http2.(*Framer).ReadFrame+0x17	net/http/internal/http2/frame.go:584
+#	0x6fda1a	net/http/internal/http2.(*clientConnReadLoop).run+0xda	net/http/internal/http2/transport.go:2047
+#	0x6fcfd1	net/http/internal/http2.(*ClientConn).readLoop+0x51	net/http/internal/http2/transport.go:1913
+
+1 @ 0x4b1105 0x4aef58 0x4f0314 0x4f02ff 0x4f0241 0x5c5ee5 0x5d52c5 0x72b532 0x498641
+#	0x4b1104	syscall.Syscall+0x24				syscall/syscall_linux.go:74
+#	0x4aef57	syscall.read+0x37				syscall/zsyscall_linux_amd64.go:736
+#	0x4f0313	syscall.Read+0x213				syscall/syscall_unix.go:183
+#	0x4f02fe	internal/poll.ignoringEINTRIO+0x1fe		internal/poll/fd_unix.go:743
+#	0x4f0240	internal/poll.(*FD).Read+0x140			internal/poll/fd_unix.go:166
+#	0x5c5ee4	net.(*netFD).Read+0x24				net/fd_posix.go:68
+#	0x5d52c4	net.(*conn).Read+0x44				net/net.go:196
+#	0x72b531	net/http.(*connReader).backgroundRead+0x31	net/http/server.go:746
+
+1 @ 0x4b1105 0x4af11b 0x4f1ff9 0x4f1feb 0x4f1f64 0x5c6785 0x5d5485 0x64bf09 0x64c66e 0x64dbbb 0x6e54fa 0x6f50fd 0x69d96c 0x6dd944 0x6ded5a 0x6fbee5 0x6fbe39 0x6fa249 0x6f97f8 0x498641
+#	0x4b1104	syscall.Syscall+0x24						syscall/syscall_linux.go:74
+#	0x4af11a	syscall.write+0x3a						syscall/zsyscall_linux_amd64.go:964
+#	0x4f1ff8	syscall.Write+0x238						syscall/syscall_unix.go:211
+#	0x4f1fea	internal/poll.ignoringEINTRIO+0x22a				internal/poll/fd_unix.go:743
+#	0x4f1f63	internal/poll.(*FD).Write+0x1a3					internal/poll/fd_unix.go:379
+#	0x5c6784	net.(*netFD).Write+0x24						net/fd_posix.go:109
+#	0x5d5484	net.(*conn).Write+0x44						net/net.go:208
+#	0x64bf08	crypto/tls.(*Conn).write+0x108					crypto/tls/conn.go:953
+#	0x64c66d	crypto/tls.(*Conn).writeRecordLocked+0x64d			crypto/tls/conn.go:1034
+#	0x64dbba	crypto/tls.(*Conn).Write+0x37a					crypto/tls/conn.go:1253
+#	0x6e54f9	net/http/internal/http2.writeWithByteTimeout+0x59		net/http/internal/http2/http2.go:328
+#	0x6f50fc	net/http/internal/http2.stickyErrWriter.Write+0x3c		net/http/internal/http2/transport.go:344
+#	0x69d96b	bufio.(*Writer).Write+0xeb					bufio/bufio.go:682
+#	0x6dd943	net/http/internal/http2.(*Framer).endWrite+0xa3			net/http/internal/http2/frame.go:398
+#	0x6ded59	net/http/internal/http2.(*Framer).WriteDataPadded+0x39		net/http/internal/http2/frame.go:730
+#	0x6fbee4	net/http/internal/http2.(*Framer).WriteData+0x764		net/http/internal/http2/frame.go:714
+#	0x6fbe38	net/http/internal/http2.(*clientStream).writeRequestBody+0x6b8	net/http/internal/http2/transport.go:1719
+#	0x6fa248	net/http/internal/http2.(*clientStream).writeRequest+0xa08	net/http/internal/http2/transport.go:1331
+#	0x6f97f7	net/http/internal/http2.(*clientStream).doRequest+0x17		net/http/internal/http2/transport.go:1216
+
+1 @ 0x4ba13d 0x6fda46 0x6fcfd2 0x498641
+#	0x4ba13c	time.(*Timer).Reset+0x5c				time/sleep.go:138
+#	0x6fda45	net/http/internal/http2.(*clientConnReadLoop).run+0x105	net/http/internal/http2/transport.go:2049
+#	0x6fcfd1	net/http/internal/http2.(*ClientConn).readLoop+0x51	net/http/internal/http2/transport.go:1913
+
+1 @ 0x64bf34 0x64c66e 0x64dbbb 0x6e54fa 0x6f50fd 0x69d96c 0x6dd944 0x6ded5a 0x6fbee5 0x6fbe39 0x6fa249 0x6f97f8 0x498641
+#	0x64bf33	crypto/tls.(*Conn).write+0x133					crypto/tls/conn.go:947
+#	0x64c66d	crypto/tls.(*Conn).writeRecordLocked+0x64d			crypto/tls/conn.go:1034
+#	0x64dbba	crypto/tls.(*Conn).Write+0x37a					crypto/tls/conn.go:1253
+#	0x6e54f9	net/http/internal/http2.writeWithByteTimeout+0x59		net/http/internal/http2/http2.go:328
+#	0x6f50fc	net/http/internal/http2.stickyErrWriter.Write+0x3c		net/http/internal/http2/transport.go:344
+#	0x69d96b	bufio.(*Writer).Write+0xeb					bufio/bufio.go:682
+#	0x6dd943	net/http/internal/http2.(*Framer).endWrite+0xa3			net/http/internal/http2/frame.go:398
+#	0x6ded59	net/http/internal/http2.(*Framer).WriteDataPadded+0x39		net/http/internal/http2/frame.go:730
+#	0x6fbee4	net/http/internal/http2.(*Framer).WriteData+0x764		net/http/internal/http2/frame.go:714
+#	0x6fbe38	net/http/internal/http2.(*clientStream).writeRequestBody+0x6b8	net/http/internal/http2/transport.go:1719
+#	0x6fa248	net/http/internal/http2.(*clientStream).writeRequest+0xa08	net/http/internal/http2/transport.go:1331
+#	0x6f97f7	net/http/internal/http2.(*clientStream).doRequest+0x17		net/http/internal/http2/transport.go:1216
+
+1 @ 0x64efc6 0x69c0b3 0x4ce243 0x6dd785 0x6dd753 0x6ddde7 0x6de578 0x6fda1b 0x6fcfd2 0x498641
+#	0x64efc5	crypto/tls.(*Conn).Read+0x2e5				crypto/tls/conn.go:1418
+#	0x69c0b2	bufio.(*Reader).Read+0x192				bufio/bufio.go:245
+#	0x4ce242	io.ReadAtLeast+0x82					io/io.go:335
+#	0x6dd784	io.ReadFull+0x64					io/io.go:354
+#	0x6dd752	net/http/internal/http2.readFrameHeader+0x32		net/http/internal/http2/frame.go:252
+#	0x6ddde6	net/http/internal/http2.(*Framer).ReadFrameHeader+0x66	net/http/internal/http2/frame.go:525
+#	0x6de577	net/http/internal/http2.(*Framer).ReadFrame+0x17	net/http/internal/http2/frame.go:584
+#	0x6fda1a	net/http/internal/http2.(*clientConnReadLoop).run+0xda	net/http/internal/http2/transport.go:2047
+#	0x6fcfd1	net/http/internal/http2.(*ClientConn).readLoop+0x51	net/http/internal/http2/transport.go:1913
+

@@ -110,21 +110,30 @@ index 0dee7b7a..1bd34fdd 100644
  	return nil
  }
 diff --git a/pkg/objectstorage/gcs.go b/pkg/objectstorage/gcs.go
-index e0328708..8bd8d509 100644
+index e0328708..cc9492c3 100644
 --- a/pkg/objectstorage/gcs.go
 +++ b/pkg/objectstorage/gcs.go
-@@ -20,7 +20,10 @@ import (
+@@ -20,12 +20,19 @@ import (
  	"errors"
  	"fmt"
  	"io"
++	"log/slog"
++	"net/http"
 +	"os"
++	"sort"
 +	"strconv"
  	"sync"
 +	"sync/atomic"
  	"time"
  
  	"cloud.google.com/go/storage"
-@@ -38,6 +41,26 @@ type gcsClient struct {
+ 	"github.com/googleapis/gax-go/v2"
+ 	"google.golang.org/api/option"
++	htransport "google.golang.org/api/transport/http"
+ )
+ 
+ type gcsClient struct {
+@@ -38,6 +45,26 @@ type gcsClient struct {
  	// built on first use by uploadClient.
  	poolOnce sync.Once
  	pool     []*storage.Client
@@ -151,7 +160,98 @@ index e0328708..8bd8d509 100644
  }
  
  // NewGCSClient returns a GCS-backed ObjectStorage. It builds its own
-@@ -90,13 +113,36 @@ const uploadChunkSize = 64 << 20
+@@ -46,7 +73,13 @@ type gcsClient struct {
+ // RetryAlways policy (see setRetry) that is only safe for this package's own
+ // operations and must not leak onto a client shared with other code.
+ func NewGCSClient(ctx context.Context, opts ...option.ClientOption) (ObjectStorage, error) {
+-	client, err := storage.NewClient(ctx, opts...)
++	copts := opts
++	if ho, err := gcsHTTPOption(ctx, opts...); err != nil {
++		return nil, err
++	} else if ho != nil {
++		copts = append(append([]option.ClientOption{}, opts...), ho)
++	}
++	client, err := storage.NewClient(ctx, copts...)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+@@ -54,6 +87,75 @@ func NewGCSClient(ctx context.Context, opts ...option.ClientOption) (ObjectStora
+ 	return &gcsClient{client: client, opts: opts}, nil
+ }
+ 
++// EXPERIMENT (agents-tco worktree): count every GCS HTTP response by method and status
++// class and report once per 10 s, so throttling (429/5xx + the client's backoff sleeps)
++// becomes visible. ATE_GCS_HTTP_STATS=1 enables it.
++type gcsStats struct {
++	mu   sync.Mutex
++	n    map[string]int
++	durs []float64
++}
++
++var gcsStatsOnce sync.Once
++var gcsStatsG = &gcsStats{n: map[string]int{}}
++
++type countingRT struct{ base http.RoundTripper }
++
++func (c countingRT) RoundTrip(r *http.Request) (*http.Response, error) {
++	t := time.Now()
++	resp, err := c.base.RoundTrip(r)
++	k := r.Method + " "
++	if err != nil {
++		k += "ERR"
++	} else {
++		k += strconv.Itoa(resp.StatusCode)
++	}
++	gcsStatsG.mu.Lock()
++	gcsStatsG.n[k]++
++	if len(gcsStatsG.durs) < 100000 {
++		gcsStatsG.durs = append(gcsStatsG.durs, float64(time.Since(t).Milliseconds()))
++	}
++	gcsStatsG.mu.Unlock()
++	return resp, err
++}
++
++func startGCSStatsLogger() {
++	gcsStatsOnce.Do(func() {
++		go func() {
++			for range time.Tick(10 * time.Second) {
++				gcsStatsG.mu.Lock()
++				n := gcsStatsG.n
++				d := gcsStatsG.durs
++				gcsStatsG.n = map[string]int{}
++				gcsStatsG.durs = nil
++				gcsStatsG.mu.Unlock()
++				if len(d) == 0 {
++					continue
++				}
++				sort.Float64s(d)
++				slog.Info("GCS HTTP stats (10 s)", slog.Any("responses", n), slog.Int("requests", len(d)),
++					slog.Float64("p50_ms", d[len(d)/2]), slog.Float64("p90_ms", d[int(0.9*float64(len(d)))]), slog.Float64("p99_ms", d[int(0.99*float64(len(d)))]), slog.Float64("max_ms", d[len(d)-1]))
++			}
++		}()
++	})
++}
++
++// gcsHTTPOption returns a client option carrying an authenticated, instrumented HTTP
++// client with its own transport (one HTTP/2 connection per storage.Client), or nil
++// when the instrumentation is off.
++func gcsHTTPOption(ctx context.Context, opts ...option.ClientOption) (option.ClientOption, error) {
++	if os.Getenv("ATE_GCS_HTTP_STATS") != "1" {
++		return nil, nil
++	}
++	startGCSStatsLogger()
++	base := http.DefaultTransport.(*http.Transport).Clone()
++	tr, err := htransport.NewTransport(ctx, base, append(opts, option.WithScopes(storage.ScopeFullControl))...)
++	if err != nil {
++		return nil, err
++	}
++	return option.WithHTTPClient(&http.Client{Transport: countingRT{tr}}), nil
++}
++
+ // setRetry makes every operation on c retry transient errors (408, 429, 5xx)
+ // with backoff. The client's default RetryIdempotent policy never retries an
+ // object write without a precondition, so a single 429 — routine while GCS
+@@ -90,13 +192,36 @@ const uploadChunkSize = 64 << 20
  // PutObject writes reader to the object, in a single request below
  // uploadCompositeMin and as parallel parts above it. The size is not known up front,
  // so this reads that many bytes to find out which case it is, then hands them on.
@@ -190,7 +290,7 @@ index e0328708..8bd8d509 100644
  	case err != nil:
  		return fmt.Errorf("while reading object body: %w", err)
  	}
-@@ -104,9 +150,14 @@ func (g *gcsClient) PutObject(ctx context.Context, bucket, object string, reader
+@@ -104,9 +229,14 @@ func (g *gcsClient) PutObject(ctx context.Context, bucket, object string, reader
  }
  
  // putSingle writes the whole body in one resumable request.
@@ -208,10 +308,18 @@ index e0328708..8bd8d509 100644
  	// GCS upload (auth, permissions, transient). Join both so the caller
  	// doesn't lose either.
 diff --git a/pkg/objectstorage/gcscompose.go b/pkg/objectstorage/gcscompose.go
-index c093de76..ed29e040 100644
+index c093de76..9b819d3f 100644
 --- a/pkg/objectstorage/gcscompose.go
 +++ b/pkg/objectstorage/gcscompose.go
-@@ -32,13 +32,15 @@ import (
+@@ -20,6 +20,7 @@ import (
+ 	"encoding/hex"
+ 	"errors"
+ 	"fmt"
++	"google.golang.org/api/option"
+ 	"io"
+ 	"log/slog"
+ 
+@@ -32,15 +33,21 @@ import (
  // every part onto it, so parts that should be independent share one TCP stream:
  // measured on a GKE worker node at 8 streams, 334 MB/s shared against 518 MB/s with a
  // connection each.
@@ -227,8 +335,15 @@ index c093de76..ed29e040 100644
 +		slog.InfoContext(ctx, "Building GCS client pool", slog.Int("size", n))
 +		for range n {
  			// The clients outlive this call, so they must not hold its cancellation.
- 			c, err := storage.NewClient(context.WithoutCancel(ctx), g.opts...)
+-			c, err := storage.NewClient(context.WithoutCancel(ctx), g.opts...)
++			copts := g.opts
++			if ho, herr := gcsHTTPOption(context.WithoutCancel(ctx), g.opts...); herr == nil && ho != nil {
++				copts = append(append([]option.ClientOption{}, g.opts...), ho)
++			}
++			c, err := storage.NewClient(context.WithoutCancel(ctx), copts...)
  			if err != nil {
+ 				slog.WarnContext(ctx, "Falling back to one client for part uploads", slog.Any("err", err))
+ 				return
 diff --git a/pkg/objectstorage/gcsranged.go b/pkg/objectstorage/gcsranged.go
 index f23d2157..a72d90ec 100644
 --- a/pkg/objectstorage/gcsranged.go

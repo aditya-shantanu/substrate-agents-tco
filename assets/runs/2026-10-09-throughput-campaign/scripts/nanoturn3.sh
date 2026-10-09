@@ -19,7 +19,7 @@ capture() { # bg: keep the sim's key lines (cold starts, swap levels, cycle) eve
 # ---------- (B) register 5000, fill 650, ramp, hold, cycle
 export COLD_START_ONLY=false AGENTS=5000 SETUP_CONCURRENCY=32 WORKER_COUNT=100 ACTOR_PREFIX="${FLEET_PREFIX:?}" DURATION=${DURATION_OVERRIDE:-60m} SETUP_PARK_EXISTING=true
 export THINK_SCALE=1 SCRIPT_LOOP=true SCRIPT_SUSPEND=idle RAMP_SECONDS=0 SETUP_SUSPEND=true
-export SWAP_FILL=650 SWAP_START=${SWAP_START_OVERRIDE:-2} SWAP_MULT=${SWAP_MULT_OVERRIDE:-1.5} SWAP_EVERY=${SWAP_EVERY_OVERRIDE:-1s} WAVE_INTERVAL=${WAVE_OVERRIDE:-2m} HOLD_AFTER_FAIL=${HOLD_OVERRIDE:-4m} SWAP_CYCLE_ALL=false
+export SCRIPT_CATCHUP=${SCRIPT_CATCHUP_OVERRIDE:-false} SWAP_FILL=650 SWAP_START=${SWAP_START_OVERRIDE:-2} SWAP_MULT=${SWAP_MULT_OVERRIDE:-1.5} SWAP_EVERY=${SWAP_EVERY_OVERRIDE:-1s} WAVE_INTERVAL=${WAVE_OVERRIDE:-2m} HOLD_AFTER_FAIL=${HOLD_OVERRIDE:-4m} SWAP_CYCLE_ALL=false
 export FAIL_REL_P90=${FAIL_REL_P90_OVERRIDE:-2.5} FAIL_WAKE_P99_MS=0 FAIL_REFUSAL_PCT=0.5 FAIL_ERROR_PCT=0.5 FAIL_MEM_AVAIL_PCT=10 FAIL_PSI_MEM_FULL=10 FAIL_PSI_CPU_SOME=50 FAIL_CRASHED=${FAIL_CRASHED_OVERRIDE:-20}
 log "######## (B) register $AGENTS, $SWAP_FILL awake at think x1, swap N=$SWAP_START x$SWAP_MULT per $SWAP_EVERY, ${WAVE_INTERVAL} levels, hold $HOLD_AFTER_FAIL, then cycle all ########"
 kubectl -n agent-sim delete job agentsim --ignore-not-found --wait=true >/dev/null 2>&1; log "fleet reuse: no clean / no workload redeploy (pool $(kubectl -n benchmark-workloads get workerpool benchmark-ateom -o jsonpath='{.status.readyReplicas}') ready)"

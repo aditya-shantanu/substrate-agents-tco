@@ -102,6 +102,36 @@ _14 passes, 17 fails: the plugin's download stage goes from 1.1 s to 7.2 s media
 | 14 per tick | 14.00 | **13.77** | 1,660 / 2,449 / 2,842 | 1,296 / 1,665 / 2,036 | 0 + 0 | 14 | 0 | pass |
 | 17 per tick | 17.00 | **16.03** | 8,294 / 9,373 / 10,170 | 1,482 / 1,921 / 2,332 | 0 + 33 | 136 | 0 | refusals+wake-p90-vs-baseline+backlog |
 
+### Iteration 10: same build, ramp from 8 ×1.3
+
+_8 and 11 pass; 15 fails with PSI io 13 % (it had passed in iterations 6-7 at PSI io 7) — the disk is back in the hot path_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.93** | 860 / 1,139 / 3,048 | 1,003 / 1,193 / 1,442 | 0 + 1 | 8 | 0 | pass |
+| 11 per tick | 11.00 | **10.82** | 1,128 / 1,602 / 2,388 | 1,200 / 1,569 / 1,884 | 0 + 2 | 11 | 0 | pass |
+| 15 per tick | 15.00 | **13.88** | 2,743 / 10,607 / 11,094 | 1,492 / 1,944 / 2,562 | 0 + 303 | 135 | 0 | refusals+wake-p90-vs-baseline+backlog |
+
+### Iteration 11: /var/lib/ate/actors moved onto tmpfs (restore and checkpoint staging no longer touch the boot disk)
+
+_8 passes with a long tail, 11 fails — PSI io 0 but the sim's own first-wake catch-up storm (see iteration 12) was found in this run's router log_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.87** | 1,142 / 2,333 / 4,109 | 964 / 1,141 / 1,348 | 0 + 0 | 8 | 0 | pass |
+| 11 per tick | 11.00 | **10.18** | 4,888 / 13,776 / 14,069 | 1,019 / 1,204 / 1,531 | 0 + 520 | 110 | 0 | refusals+wake-p90-vs-baseline+backlog |
+
+### Iteration 12: tmpfs + sim first-wake catch-up OFF (SCRIPT_CATCHUP=false)
+
+_the catch-up replayed every skipped step's ops on an agent's first wake: ~46 requests per wake, a storm proportional to the swap rate, present in every earlier iteration on both nodes_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.93** | 790 / 864 / 984 | 958 / 1,151 / 1,441 | 0 + 0 | 8 | 0 | pass |
+| 11 per tick | 11.00 | **10.83** | 935 / 1,032 / 1,221 | 1,008 / 1,197 / 1,426 | 0 + 0 | 11 | 0 | pass |
+| 15 per tick | 15.00 | **14.77** | 1,305 / 1,468 / 1,974 | 1,133 / 1,360 / 1,653 | 0 + 0 | 15 | 0 | pass |
+| 20 per tick | 20.00 | **18.82** | 6,294 / 7,085 / 9,337 | 1,226 / 1,506 / 2,024 | 0 + 15 | 160 | 0 | refusals+wake-p90-vs-baseline+backlog |
+
 ### Iteration 5: same build, ramp from 8 in ×1.2 steps
 
 _baseline for the relative gate is the 8 swaps/s level here; the 12 swaps/s resume P90 (1,839 ms) is also within 2.5× of the 2 swaps/s baseline of iteration 4 (751 ms × 2.5 = 1,878)_
@@ -207,3 +237,27 @@ _see the agent's report for the change set_
 | 5 per tick | 5.00 | **4.92** | 885 / 1,025 / 1,190 | 750 / 893 / 1,046 | 0 + 0 | 5 | 0 | pass |
 | 8 per tick | 8.00 | **7.87** | 1,165 / 1,420 / 1,640 | 943 / 1,129 / 1,312 | 0 + 0 | 8 | 0 | pass |
 | 12 per tick | 12.00 | **11.80** | 1,824 / 2,565 / 3,151 | 1,293 / 1,654 / 2,063 | 0 + 0 | 12 | 0 | wake-p90-vs-baseline |
+
+### gVisor agent iteration 8
+
+_see the agent's report for the change set_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 2 per tick | 2.00 | **1.98** | 619 / 703 / 782 | 543 / 635 / 716 | 0 + 0 | 0 | 0 | pass |
+| 3 per tick | 3.00 | **2.97** | 668 / 779 / 943 | 531 / 642 / 895 | 0 + 0 | 0 | 0 | pass |
+| 5 per tick | 5.00 | **4.96** | 819 / 939 / 1,085 | 600 / 719 / 951 | 0 + 0 | 0 | 0 | pass |
+| 8 per tick | 8.00 | **7.87** | 1,144 / 1,324 / 1,535 | 844 / 1,085 / 1,260 | 0 + 0 | 8 | 0 | pass |
+| 12 per tick | 12.00 | **11.77** | 1,937 / 2,738 / 3,295 | 1,328 / 1,802 / 2,199 | 0 + 0 | 24 | 0 | wake-p90-vs-baseline+park-p90-vs-baseline |
+
+### gVisor agent iteration 9
+
+_see the agent's report for the change set_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 2 per tick | 2.00 | **1.98** | 493 / 602 / 853 | 471 / 549 / 740 | 0 + 0 | 0 | 0 | pass |
+| 3 per tick | 3.00 | **2.97** | 520 / 592 / 704 | 458 / 517 / 600 | 0 + 0 | 0 | 0 | pass |
+| 5 per tick | 5.00 | **4.96** | 659 / 795 / 963 | 511 / 581 / 688 | 0 + 0 | 0 | 0 | pass |
+| 8 per tick | 8.00 | **7.87** | 912 / 1,090 / 1,322 | 575 / 726 / 876 | 0 + 0 | 8 | 0 | pass |
+| 12 per tick | 12.00 | **11.80** | 1,337 / 1,651 / 2,154 | 895 / 1,112 / 1,308 | 0 + 0 | 12 | 0 | wake-p90-vs-baseline |
