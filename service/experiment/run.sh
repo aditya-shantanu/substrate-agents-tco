@@ -85,7 +85,8 @@ workloads_ready() {
   local ate="${SUBSTRATE_REPO}/bin/kubectl-ate"
   [[ -x "$ate" ]] || ate=$(command -v kubectl-ate 2>/dev/null || true)
   [[ -n "$ate" ]] || return 0   # CLI not built; trust the pool
-  "$ate" get actor-templates -a benchmark-workloads 2>/dev/null | grep -q "glutton .*gs://" || return 1
+  # main prints the golden snapshot as a UUID tag (older builds printed a gs:// URL): accept either
+  "$ate" get actor-templates -a benchmark-workloads 2>/dev/null | grep -qE "glutton +SANDBOX_CLASS_[A-Z]+ +([0-9a-f-]{36}|gs://)" || return 1
   # The per-actor memory limit lives in the template: redeploy if it changed.
   local cur
   cur=$("$ate" get actor-template glutton -a benchmark-workloads -o json 2>/dev/null \
