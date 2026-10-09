@@ -521,11 +521,18 @@ func (s *sim) swapCycle(ctx context.Context, deadline time.Time, n int, ever *ma
 	defer tk.Stop()
 	var wg sync.WaitGroup
 	lastLog := time.Now()
+	stall := time.Now()
+	lastDone := -1
 	for {
 		mu.Lock()
 		done = len(*ever)
 		mu.Unlock()
-		if done >= total || time.Now().After(deadline) || ctx.Err() != nil {
+		if done != lastDone {
+			lastDone, stall = done, time.Now()
+		}
+		// actors that cannot be woken (crashed, stuck) would hold the cycle open forever: stop once nothing has
+		// joined the resident-once set for three minutes and report the shortfall
+		if done >= total || time.Since(stall) > 3*time.Minute || time.Now().After(deadline) || ctx.Err() != nil {
 			break
 		}
 		select {
@@ -546,6 +553,9 @@ func (s *sim) swapCycle(ctx context.Context, deadline time.Time, n int, ever *ma
 	mu.Lock()
 	done = len(*ever)
 	mu.Unlock()
+	if done < total {
+		slog.Warn("swap cycle: not every actor could be woken", "missing", total-done)
+	}
 	msg := fmt.Sprintf("cycle at %d per %s: %d of %d actors resident at least once in %s (%d wakes, %d parks; wake p50/p90/p99 %.0f/%.0f/%.0f ms, park p50/p90/p99 %.0f/%.0f/%.0f ms, errors %d, refusals %d)",
 		n, s.cfg.swapEvery, done, total, time.Since(start).Round(time.Second), st.wakes, st.parks, st.wakeP50, st.wakeP90, st.wakeP99, st.parkP50, st.parkP90, st.parkP99, st.errors, st.refusals)
 	slog.Info("swap cycle done", "msg", msg)
