@@ -121,6 +121,44 @@ _8 passes with a long tail, 11 fails — PSI io 0 but the sim's own first-wake c
 | 8 per tick | 8.00 | **7.87** | 1,142 / 2,333 / 4,109 | 964 / 1,141 / 1,348 | 0 + 0 | 8 | 0 | pass |
 | 11 per tick | 11.00 | **10.18** | 4,888 / 13,776 / 14,069 | 1,019 / 1,204 / 1,531 | 0 + 520 | 110 | 0 | refusals+wake-p90-vs-baseline+backlog |
 
+### Iteration 13: plugin with an instrumented GCS transport (ATE_GCS_HTTP_STATS=1), ramp started at 11
+
+_collapsed at the first level; the counters showed no GCS throttling (all 2xx, per-request p50 55 ms) — the instrumented transport and the cold first level are both suspects_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 11 per tick | 11.00 | **10.07** | 6,918 / 16,771 / 19,258 | 1,019 / 1,243 / 3,087 | 0 + 568 | 165 | 0 | refusals+backlog |
+
+### Iteration 14: same image, default transport again, ramp from 8
+
+_collapsed at 8 swaps/s (download stage 15 s mean) although a quiet 1/20-wake probe on the same build is normal (0.55 s / 1.2 s) — cause not pinned; the plugin's intrinsic aggregate ceiling in the quiet probe is ~0.75-0.9 GB/s of compressed intake, i.e. ~15-16 swaps/s at 42 MiB per snapshot_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.12** | 16,890 / 21,229 / 24,695 | 949 / 1,119 / 1,384 | 0 + 647 | 144 | 0 | refusals+backlog |
+
+### Iteration 15: plugin v8 — 4 MiB download ranges with 12 in flight per object, composite uploads in 8 MiB parts from 8 MiB (per-stream GCS throughput here is ~45 MB/s, so more streams per object)
+
+_best resume yet at 15 swaps/s (P50 1,087 / P90 1,256 ms) but the composite uploads made suspend worse (P99 7.8 s). At 21 swaps/s everything on the node slows at once: worker tap setup 2 → 1,282 ms, VM restore 136 → 1,537, prep 13 → 1,038, teardown 232 → 1,462, load average 142, 300 upload goroutines waiting on HTTP/2 flow control (outbound network saturated with 8 MiB parts); the plugin's own download stayed ~1.0 s. The microVM wall above ~15-20 swaps/s is the node's sandbox create/teardown path (tap/netlink, mounts, VMM launch) plus ~2 GB/s of combined transfer_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.93** | 786 / 873 / 952 | 1,273 / 1,366 / 1,760 | 0 + 1 | 8 | 0 | pass |
+| 11 per tick | 11.00 | **10.91** | 924 / 1,014 / 2,133 | 1,400 / 1,506 / 4,060 | 0 + 0 | 11 | 0 | pass |
+| 15 per tick | 15.00 | **14.77** | 1,087 / 1,256 / 1,351 | 1,603 / 2,271 / 7,817 | 0 + 1 | 30 | 0 | pass |
+| 21 per tick | 21.00 | **19.79** | 6,384 / 8,928 / 10,977 | 6,860 / 7,588 / 8,386 | 0 + 86 | 210 | 0 | refusals+wake-p90-vs-baseline+park-p90-vs-baseline+backlog |
+
+### Iteration 16: plugin v9b — the 4 MiB/12 downloads kept, uploads back to one request per object
+
+_15 swaps/s clean (resume 1,113 / 1,508 ms, suspend 1,119 / 1,352); 21 collapses the same way as iteration 15 — the ceiling is not in the plugin any more_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.93** | 728 / 807 / 949 | 954 / 1,138 / 1,805 | 0 + 0 | 0 | 0 | pass |
+| 11 per tick | 11.00 | **10.91** | 922 / 1,295 / 3,091 | 1,040 / 1,262 / 1,528 | 0 + 0 | 11 | 0 | pass |
+| 15 per tick | 15.00 | **14.75** | 1,113 / 1,508 / 3,111 | 1,119 / 1,352 / 1,770 | 0 + 0 | 15 | 0 | pass |
+| 21 per tick | 21.00 | **19.62** | 6,749 / 9,883 / 12,320 | 2,504 / 3,368 / 4,062 | 0 + 213 | 231 | 0 | refusals+wake-p90-vs-baseline+park-p90-vs-baseline+backlog |
+
 ### Iteration 12: tmpfs + sim first-wake catch-up OFF (SCRIPT_CATCHUP=false)
 
 _the catch-up replayed every skipped step's ops on an agent's first wake: ~46 requests per wake, a storm proportional to the swap rate, present in every earlier iteration on both nodes_
@@ -169,7 +207,7 @@ _8 swaps/s fails on errors: resume P50 crosses the router's 5-s parked-request b
 
 ### gVisor agent iteration 1
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -181,7 +219,7 @@ _see the agent's report for the change set_
 
 ### gVisor agent iteration 2
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -193,7 +231,7 @@ _see the agent's report for the change set_
 
 ### gVisor agent iteration 3
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -205,7 +243,7 @@ _see the agent's report for the change set_
 
 ### gVisor agent iteration 4
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -217,7 +255,7 @@ _see the agent's report for the change set_
 
 ### gVisor agent iteration 5
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -228,7 +266,7 @@ _see the agent's report for the change set_
 
 ### gVisor agent iteration 6
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -240,7 +278,7 @@ _see the agent's report for the change set_
 
 ### gVisor agent iteration 8
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -252,7 +290,7 @@ _see the agent's report for the change set_
 
 ### gVisor agent iteration 9
 
-_see the agent's report for the change set_
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
 
 | Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
 |---|---|---|---|---|---|---|---|---|
@@ -261,3 +299,29 @@ _see the agent's report for the change set_
 | 5 per tick | 5.00 | **4.96** | 659 / 795 / 963 | 511 / 581 / 688 | 0 + 0 | 0 | 0 | pass |
 | 8 per tick | 8.00 | **7.87** | 912 / 1,090 / 1,322 | 575 / 726 / 876 | 0 + 0 | 8 | 0 | pass |
 | 12 per tick | 12.00 | **11.80** | 1,337 / 1,651 / 2,154 | 895 / 1,112 / 1,308 | 0 + 0 | 12 | 0 | wake-p90-vs-baseline |
+
+### gVisor agent iteration 10
+
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 2 per tick | 2.00 | **1.98** | 483 / 588 / 800 | 455 / 543 / 662 | 0 + 0 | 0 | 0 | pass |
+| 3 per tick | 3.00 | **2.97** | 510 / 617 / 752 | 446 / 512 / 611 | 0 + 0 | 0 | 0 | pass |
+| 5 per tick | 5.00 | **4.96** | 653 / 806 / 942 | 503 / 576 / 837 | 0 + 0 | 0 | 0 | pass |
+| 8 per tick | 8.00 | **7.92** | 877 / 1,061 / 1,386 | 558 / 705 / 815 | 0 + 0 | 8 | 0 | pass |
+| 12 per tick | 12.00 | **11.81** | 1,326 / 1,625 / 2,190 | 862 / 1,117 / 1,417 | 0 + 0 | 12 | 0 | wake-p90-vs-baseline |
+
+### gVisor agent iteration 11
+
+_builds: 1 baseline; 2 plugin/atelet patch; 3 + sandbox netns pool; 4 + runsc --shared-root; 5 --ignore-cgroups (rejected); 6 build 4 + cgroup2 favordynmods (lost on roll); 7 reusable cgroup slots (crashed, rejected); 8-9 build C: lean teardown + no app cgroup (fixes a ~30 % cgroup leak per suspend); 10 build D + sim catch-up off; 11 build D on a ×1.25 ramp → 9 swaps/s clean, 12 delivered error-free. Remaining limiters measured on the node: the kernel mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, and gVisor's own restore. Full report: gv-report.md_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 2 per tick | 2.00 | **1.98** | 486 / 618 / 696 | 462 / 541 / 645 | 0 + 0 | 0 | 0 | pass |
+| 3 per tick | 3.00 | **2.97** | 509 / 637 / 823 | 440 / 511 / 623 | 0 + 0 | 0 | 0 | pass |
+| 4 per tick | 4.00 | **3.97** | 576 / 703 / 837 | 467 / 539 / 688 | 0 + 0 | 0 | 0 | pass |
+| 5 per tick | 5.00 | **4.96** | 644 / 777 / 984 | 493 / 563 / 671 | 0 + 0 | 0 | 0 | pass |
+| 7 per tick | 7.00 | **6.94** | 802 / 966 / 1,203 | 532 / 646 / 727 | 0 + 0 | 0 | 0 | pass |
+| 9 per tick | 9.00 | **8.92** | 959 / 1,194 / 1,449 | 589 / 742 / 932 | 0 + 0 | 9 | 0 | pass |
+| 12 per tick | 12.00 | **11.80** | 1,449 / 1,997 / 2,481 | 893 / 1,114 / 1,473 | 0 + 0 | 12 | 0 | wake-p90-vs-baseline |
