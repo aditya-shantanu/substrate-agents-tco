@@ -1,0 +1,68 @@
+Deploying workloads (worker_count=100, actor_memory=256Mi, worker_memory=unset, otlp_endpoint=http://opentelemetry-collector.gke-managed-otel.svc.cluster.local:4317)...
+2026/10/08 17:27:44 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/ateom-microvm
+2026/10/08 17:27:45 git is in a dirty state
+Please check in your pipeline what can be changing the following files:
+ M benchmarking/workloads/deploy.sh
+ M benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+
+2026/10/08 17:27:45 Building github.com/agent-substrate/substrate/cmd/ateom-microvm for linux/amd64
+2026/10/08 17:27:46 Publishing gcr.io/gke-ai-eco-dev/ate-images/ateom-microvm-ce7c0caaf28274c479909896b2a51a7e:latest
+2026/10/08 17:27:47 existing manifest: sha256-9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3.sbom@sha256:a412d0289850358866df8420a7f71e1784f3efb2b25f32a2b18117d64010329f
+2026/10/08 17:27:47 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/ateom-microvm-ce7c0caaf28274c479909896b2a51a7e:sha256-9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3.sbom
+2026/10/08 17:27:47 existing manifest: latest@sha256:9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3
+2026/10/08 17:27:47 Published gcr.io/gke-ai-eco-dev/ate-images/ateom-microvm-ce7c0caaf28274c479909896b2a51a7e@sha256:9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3
+namespace/benchmark-workloads unchanged
+workerpool.ate.dev/benchmark-ateom unchanged
+Waiting for worker pool to be ready (timeout: 300s)...
+deployment.apps/benchmark-ateom condition met
+deployment "benchmark-ateom" successfully rolled out
+ATESPACE              NAME    SANDBOX CLASS           GOLDEN TAG   ERROR   AGE
+benchmark-workloads   sleep   SANDBOX_CLASS_MICROVM                        0s
+2026/10/08 17:28:15 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton
+2026/10/08 17:28:15 git is in a dirty state
+Please check in your pipeline what can be changing the following files:
+ M benchmarking/workloads/deploy.sh
+ M benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+
+2026/10/08 17:28:15 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64
+2026/10/08 17:28:17 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest
+2026/10/08 17:28:18 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c
+2026/10/08 17:28:18 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom
+2026/10/08 17:28:18 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27
+2026/10/08 17:28:18 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27
+ATESPACE              NAME      SANDBOX CLASS           GOLDEN TAG   ERROR   AGE
+benchmark-workloads   glutton   SANDBOX_CLASS_MICROVM                        0s
+2026/10/08 17:28:27 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton
+2026/10/08 17:28:28 git is in a dirty state
+Please check in your pipeline what can be changing the following files:
+ M benchmarking/workloads/deploy.sh
+ M benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+
+2026/10/08 17:28:28 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64
+2026/10/08 17:28:29 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest
+2026/10/08 17:28:31 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c
+2026/10/08 17:28:31 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom
+2026/10/08 17:28:31 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27
+2026/10/08 17:28:31 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27
+ATESPACE              NAME                  SANDBOX CLASS           GOLDEN TAG   ERROR   AGE
+benchmark-workloads   glutton-durdir-data   SANDBOX_CLASS_MICROVM                        0s
+2026/10/08 17:28:40 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton
+2026/10/08 17:28:41 git is in a dirty state
+Please check in your pipeline what can be changing the following files:
+ M benchmarking/workloads/deploy.sh
+ M benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+
+2026/10/08 17:28:41 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64
+2026/10/08 17:28:42 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest
+2026/10/08 17:28:43 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27
+2026/10/08 17:28:43 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c
+2026/10/08 17:28:43 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom
+2026/10/08 17:28:43 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27
+ATESPACE              NAME                  SANDBOX CLASS           GOLDEN TAG   ERROR   AGE
+benchmark-workloads   glutton-durdir-full   SANDBOX_CLASS_MICROVM                        0s
+Waiting for the benchmark-workloads/sleep golden snapshot...
+Waiting for the benchmark-workloads/glutton golden snapshot...
+Waiting for the benchmark-workloads/glutton-durdir-data golden snapshot...
+Waiting for the benchmark-workloads/glutton-durdir-full golden snapshot...
+NAMESPACE             NAME              DESIRED   REPLICAS   READY   AGE
+benchmark-workloads   benchmark-ateom   100       100        100     29h

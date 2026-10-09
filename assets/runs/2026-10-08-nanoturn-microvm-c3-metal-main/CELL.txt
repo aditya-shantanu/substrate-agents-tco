@@ -1,0 +1,4 @@
+microvm nano-personal-agent suspend-only on Substrate main 66f8a888; node=agents-tco-euw4/europe-west4-c c3-standard-192-metal
+cold start: ready ms       p50=567 p90=959 p99=1061 max=1073   (CreateActor → first answered ping)
+levels (JSON): 4 rows; cycle progress lines: 16
+turn.txt = the sim's key JSON lines captured live (the sim's final table was not printed: the job was ended when the cycle plateaued)

@@ -1,0 +1,158 @@
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [1/5] GKE cluster 'agents-tco-east' + snapshot bucket + IAM  [2m(~10-15 min first time)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [2/5] Substrate control plane  [2m(ateapi · scheduler · router · atelet)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [3/5] Sandbox workload (glutton) + 100-worker pool[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mDeploying workloads (worker_count=100, actor_memory=2Gi, worker_memory=unset, otlp_endpoint=http://opentelemetry-collector.gke-managed-otel.svc.cluster.local:4317)...[0m
+   [2m2026/10/08 17:28:04 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/ateom-gvisor[0m
+   [2m2026/10/08 17:28:05 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:28:05 Building github.com/agent-substrate/substrate/cmd/ateom-gvisor for linux/amd64[0m
+   [2m2026/10/08 17:28:06 Publishing gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor-715889664656de67e44382a8d6ab981d:latest[0m
+   [2m2026/10/08 17:28:07 existing manifest: latest@sha256:fb141ab683418ca3715bc2ecdfa270200f232ea23fa8dcb1e070817427e66b6e[0m
+   [2m2026/10/08 17:28:07 existing manifest: sha256-fb141ab683418ca3715bc2ecdfa270200f232ea23fa8dcb1e070817427e66b6e.sbom@sha256:ed528d36178632b3d53f39383d574c947b6a24b4ade9649f1c70c8bd5024d12e[0m
+   [2m2026/10/08 17:28:07 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor-715889664656de67e44382a8d6ab981d:sha256-fb141ab683418ca3715bc2ecdfa270200f232ea23fa8dcb1e070817427e66b6e.sbom[0m
+   [2m2026/10/08 17:28:07 Published gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor-715889664656de67e44382a8d6ab981d@sha256:fb141ab683418ca3715bc2ecdfa270200f232ea23fa8dcb1e070817427e66b6e[0m
+   [2mnamespace/benchmark-workloads unchanged[0m
+   [2mworkerpool.ate.dev/benchmark-ateom unchanged[0m
+   [2mWaiting for worker pool to be ready (timeout: 300s)...[0m
+   [2mdeployment.apps/benchmark-ateom condition met[0m
+   [2mdeployment "benchmark-ateom" successfully rolled out[0m
+   [2mATESPACE              NAME    SANDBOX CLASS          GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   sleep   SANDBOX_CLASS_GVISOR                        0s[0m
+   [2m2026/10/08 17:28:26 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton[0m
+   [2m2026/10/08 17:28:27 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:28:27 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64[0m
+   [2m2026/10/08 17:28:28 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest[0m
+   [2m2026/10/08 17:28:29 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2m2026/10/08 17:28:29 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c[0m
+   [2m2026/10/08 17:28:29 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom[0m
+   [2m2026/10/08 17:28:29 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2mATESPACE              NAME      SANDBOX CLASS          GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   glutton   SANDBOX_CLASS_GVISOR                        0s[0m
+   [2m2026/10/08 17:28:36 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton[0m
+   [2m2026/10/08 17:28:37 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:28:37 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64[0m
+   [2m2026/10/08 17:28:39 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest[0m
+   [2m2026/10/08 17:28:40 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c[0m
+   [2m2026/10/08 17:28:40 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom[0m
+   [2m2026/10/08 17:28:40 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2m2026/10/08 17:28:40 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2mATESPACE              NAME                  SANDBOX CLASS          GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   glutton-durdir-data   SANDBOX_CLASS_GVISOR                        0s[0m
+   [2m2026/10/08 17:28:46 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton[0m
+   [2m2026/10/08 17:28:47 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:28:47 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64[0m
+   [2m2026/10/08 17:28:48 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest[0m
+   [2m2026/10/08 17:28:50 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c[0m
+   [2m2026/10/08 17:28:50 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom[0m
+   [2m2026/10/08 17:28:50 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2m2026/10/08 17:28:50 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2mATESPACE              NAME                  SANDBOX CLASS          GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   glutton-durdir-full   SANDBOX_CLASS_GVISOR                        0s[0m
+   [2mWaiting for the benchmark-workloads/sleep golden snapshot...[0m
+   [2mWaiting for the benchmark-workloads/glutton golden snapshot...[0m
+   [2mWaiting for the benchmark-workloads/glutton-durdir-data golden snapshot...[0m
+   [2mWaiting for the benchmark-workloads/glutton-durdir-full golden snapshot...[0m
+   [2mNAMESPACE             NAME              DESIRED   REPLICAS   READY   AGE[0m
+   [2mbenchmark-workloads   benchmark-ateom   100       100        100     3d1h[0m
+[32m[1m ✓ done in 76s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [4/5] Experiment services  [2m(auto-suspender + 5000 simulated personal agents)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mcleaning previous run artifacts (atespace agents-sim)...[0m
+   [2m  actors purged ({"deleted":0,"remaining":0})[0m
+   [2m  stale snapshots removed[0m
+   [2m  autosuspender counters reset[0m
+   [2mclean.[0m
+   [2m2026/10/08 17:29:25 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender[0m
+   [2m2026/10/08 17:29:26 git doesn't contain any tags. Tag info will not be available[0m
+   [2m2026/10/08 17:29:26 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender for linux/amd64[0m
+   [2m2026/10/08 17:29:27 Publishing gcr.io/gke-ai-eco-dev/ate-images/autosuspender:latest[0m
+   [2m2026/10/08 17:29:28 existing manifest: latest@sha256:714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb[0m
+   [2m2026/10/08 17:29:28 existing manifest: sha256-714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb.sbom@sha256:a412931f166a779adbee0fe12951fb5d0e79623f806b8ba566c0df756b54a4c0[0m
+   [2m2026/10/08 17:29:28 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/autosuspender:sha256-714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb.sbom[0m
+   [2m2026/10/08 17:29:28 Published gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb[0m
+   [2m2026/10/08 17:29:29 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim[0m
+   [2m2026/10/08 17:29:29 git doesn't contain any tags. Tag info will not be available[0m
+   [2m2026/10/08 17:29:29 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim for linux/amd64[0m
+   [2m2026/10/08 17:29:30 Publishing gcr.io/gke-ai-eco-dev/ate-images/agentsim:latest[0m
+   [2m2026/10/08 17:29:31 existing manifest: sha256-cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f.sbom@sha256:e96b35cafe2e2613df2049ecbdddbe3797324be8a2db74ddccb2bfd92c5af2ed[0m
+   [2m2026/10/08 17:29:31 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/agentsim:sha256-cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f.sbom[0m
+   [2m2026/10/08 17:29:31 existing manifest: latest@sha256:cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f[0m
+   [2m2026/10/08 17:29:31 Published gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f[0m
+   [2mautosuspender: gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb[0m
+   [2magentsim:      gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f[0m
+   [2mworkload: nano-personal-agent (script=nano-personal-agent, think ×1, suspend=idle, 1 sessions/tasks + 0 wakes per day, actor memory 2Gi)[0m
+   [2mnamespace/agent-sim configured[0m
+   [2mdeployment.apps/autosuspender unchanged[0m
+   [2mservice/autosuspender unchanged[0m
+   [2mjob.batch/agentsim created[0m
+   [2mdeployment "autosuspender" successfully rolled out[0m
+   [2mNAME                             READY   STATUS    RESTARTS   AGE[0m
+   [2magentsim-p6799                   1/1     Running   0          2s[0m
+   [2mautosuspender-65d889d79f-j2mvw   1/1     Running   0          17s[0m
+   [2m[0m
+   [2mLive dashboard:  kubectl -n agent-sim port-forward svc/autosuspender 8080 &[0m
+   [2m                 open http://localhost:8080/[0m
+   [2mJob logs:        kubectl -n agent-sim logs -f job/agentsim | tee run.log[0m
+[32m[1m ✓ done in 27s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [5/5] TEST RUNNING — 5000 agents · 100 workers · window 180m (wall ≈ prep + window + drain) · time ×1[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mlive dashboard: http://localhost:18080/   (kept open while this runs)[0m
+
+[17:29:44] agents:  0 awake /   0 asleep | workers [....................................................................................................] 0/100 | 0 suspends, avg 0.0s | density now -
+[17:30:07] agents: 32 awake / 343 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 12.1:1
+[17:30:30] agents: 32 awake / 725 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 24.4:1
+[17:30:54] agents: 32 awake / 1061 asleep | workers [################################....................................................................] 32/100 | 0 suspends, avg 0.0s | density now 34.2:1
+[17:31:17] agents: 32 awake / 1450 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 47.8:1
+[17:31:40] agents: 32 awake / 1866 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 63.3:1
+[17:32:04] agents: 32 awake / 2200 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 72.0:1
+[17:32:27] agents: 31 awake / 2600 asleep | workers [################################....................................................................] 32/100 | 0 suspends, avg 0.0s | density now 82.2:1
+[17:32:50] agents: 31 awake / 3040 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 102.4:1
+[17:33:14] agents: 32 awake / 3374 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 109.9:1
+[17:33:37] agents: 32 awake / 3769 asleep | workers [################################....................................................................] 32/100 | 0 suspends, avg 0.0s | density now 118.8:1
+[17:34:01] agents: 32 awake / 4208 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 136.8:1
+[17:34:24] agents: 32 awake / 4589 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 149.1:1
+[17:34:47] agents: 47 awake / 4953 asleep | workers [######################################################################..............................] 70/100 | 0 suspends, avg 0.0s | density now 71.4:1
+[17:35:11] agents: 430 awake / 4570 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 50.0:1
+           sim: 321 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 484ms | refusals 0 errors 0
+[17:35:34] agents: 650 awake / 4350 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 50.0:1
+           sim: 573 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 527ms | refusals 0 errors 0
+[17:35:58] agents: 650 awake / 4350 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 50.0:1
+           sim: 672 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 535ms | refusals 0 errors 0
+[17:36:21] agents: 650 awake / 4350 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 50.0:1
+           sim: 724 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 542ms | refusals 0 errors 0
+           sim: 8150 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2147ms | refusals 0 errors 1
+           sim: 8224 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2147ms | refusals 0 errors 1
+           sim: 8292 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2146ms | refusals 0 errors 1
+           sim: 8364 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2146ms | refusals 0 errors 1
+           sim: 8443 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2146ms | refusals 0 errors 1
+           sim: 8531 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2144ms | refusals 0 errors 1

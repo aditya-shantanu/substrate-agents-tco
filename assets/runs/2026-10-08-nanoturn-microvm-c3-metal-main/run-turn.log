@@ -1,0 +1,200 @@
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [1/5] GKE cluster 'agents-tco-euw4' + snapshot bucket + IAM  [2m(~10-15 min first time)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [2/5] Substrate control plane  [2m(ateapi · scheduler · router · atelet)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [3/5] Sandbox workload (glutton) + 100-worker pool[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mDeploying workloads (worker_count=100, actor_memory=256Mi, worker_memory=unset, otlp_endpoint=http://opentelemetry-collector.gke-managed-otel.svc.cluster.local:4317)...[0m
+   [2m2026/10/08 17:29:27 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/ateom-microvm[0m
+   [2m2026/10/08 17:29:28 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:29:28 Building github.com/agent-substrate/substrate/cmd/ateom-microvm for linux/amd64[0m
+   [2m2026/10/08 17:29:29 Publishing gcr.io/gke-ai-eco-dev/ate-images/ateom-microvm-ce7c0caaf28274c479909896b2a51a7e:latest[0m
+   [2m2026/10/08 17:29:30 existing manifest: latest@sha256:9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3[0m
+   [2m2026/10/08 17:29:30 existing manifest: sha256-9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3.sbom@sha256:a412d0289850358866df8420a7f71e1784f3efb2b25f32a2b18117d64010329f[0m
+   [2m2026/10/08 17:29:30 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/ateom-microvm-ce7c0caaf28274c479909896b2a51a7e:sha256-9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3.sbom[0m
+   [2m2026/10/08 17:29:30 Published gcr.io/gke-ai-eco-dev/ate-images/ateom-microvm-ce7c0caaf28274c479909896b2a51a7e@sha256:9c5df1c96ea87f1d94f8f8876b91082895efd7754cb30b51c34c83589137b3b3[0m
+   [2mnamespace/benchmark-workloads unchanged[0m
+   [2mworkerpool.ate.dev/benchmark-ateom unchanged[0m
+   [2mWaiting for worker pool to be ready (timeout: 300s)...[0m
+   [2mdeployment.apps/benchmark-ateom condition met[0m
+   [2mdeployment "benchmark-ateom" successfully rolled out[0m
+   [2mATESPACE              NAME    SANDBOX CLASS           GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   sleep   SANDBOX_CLASS_MICROVM                        0s[0m
+   [2m2026/10/08 17:29:59 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton[0m
+   [2m2026/10/08 17:30:00 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:30:00 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64[0m
+   [2m2026/10/08 17:30:01 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest[0m
+   [2m2026/10/08 17:30:03 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c[0m
+   [2m2026/10/08 17:30:03 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom[0m
+   [2m2026/10/08 17:30:03 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2m2026/10/08 17:30:03 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2mATESPACE              NAME      SANDBOX CLASS           GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   glutton   SANDBOX_CLASS_MICROVM                        0s[0m
+   [2m2026/10/08 17:30:12 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton[0m
+   [2m2026/10/08 17:30:13 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:30:13 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64[0m
+   [2m2026/10/08 17:30:15 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest[0m
+   [2m2026/10/08 17:30:16 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2m2026/10/08 17:30:16 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c[0m
+   [2m2026/10/08 17:30:16 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom[0m
+   [2m2026/10/08 17:30:16 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2mATESPACE              NAME                  SANDBOX CLASS           GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   glutton-durdir-data   SANDBOX_CLASS_MICROVM                        0s[0m
+   [2m2026/10/08 17:30:26 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/benchmarking/glutton[0m
+   [2m2026/10/08 17:30:26 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m[0m
+   [2m2026/10/08 17:30:26 Building github.com/agent-substrate/substrate/cmd/benchmarking/glutton for linux/amd64[0m
+   [2m2026/10/08 17:30:28 Publishing gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:latest[0m
+   [2m2026/10/08 17:30:29 existing manifest: latest@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2m2026/10/08 17:30:29 existing manifest: sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom@sha256:3127f2e76894054cb72c84df4e45841a05ab30506cd9c9e879b31b95900f1a2c[0m
+   [2m2026/10/08 17:30:29 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9:sha256-209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27.sbom[0m
+   [2m2026/10/08 17:30:29 Published gcr.io/gke-ai-eco-dev/ate-images/glutton-cfe962bb0fa41a57d9c1bc35ec50d6e9@sha256:209ad8ed22d364e4685ddf979856e7686b093b0e4acee8f2070692455d403e27[0m
+   [2mATESPACE              NAME                  SANDBOX CLASS           GOLDEN TAG   ERROR   AGE[0m
+   [2mbenchmark-workloads   glutton-durdir-full   SANDBOX_CLASS_MICROVM                        0s[0m
+   [2mWaiting for the benchmark-workloads/sleep golden snapshot...[0m
+   [2mWaiting for the benchmark-workloads/glutton golden snapshot...[0m
+   [2mWaiting for the benchmark-workloads/glutton-durdir-data golden snapshot...[0m
+   [2mWaiting for the benchmark-workloads/glutton-durdir-full golden snapshot...[0m
+   [2mNAMESPACE             NAME              DESIRED   REPLICAS   READY   AGE[0m
+   [2mbenchmark-workloads   benchmark-ateom   100       100        100     29h[0m
+[32m[1m ✓ done in 94s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [4/5] Experiment services  [2m(auto-suspender + 5000 simulated personal agents)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mcleaning previous run artifacts (atespace agents-sim)...[0m
+   [2m  actors purged ({"deleted":0,"remaining":0})[0m
+   [2m  stale snapshots removed[0m
+   [2m  autosuspender counters reset[0m
+   [2mclean.[0m
+   [2m2026/10/08 17:31:06 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender[0m
+   [2m2026/10/08 17:31:07 git doesn't contain any tags. Tag info will not be available[0m
+   [2m2026/10/08 17:31:07 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender for linux/amd64[0m
+   [2m2026/10/08 17:31:07 Publishing gcr.io/gke-ai-eco-dev/ate-images/autosuspender:latest[0m
+   [2m2026/10/08 17:31:09 existing manifest: latest@sha256:714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb[0m
+   [2m2026/10/08 17:31:09 existing manifest: sha256-714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb.sbom@sha256:a412931f166a779adbee0fe12951fb5d0e79623f806b8ba566c0df756b54a4c0[0m
+   [2m2026/10/08 17:31:09 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/autosuspender:sha256-714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb.sbom[0m
+   [2m2026/10/08 17:31:09 Published gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb[0m
+   [2m2026/10/08 17:31:09 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim[0m
+   [2m2026/10/08 17:31:10 git doesn't contain any tags. Tag info will not be available[0m
+   [2m2026/10/08 17:31:10 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim for linux/amd64[0m
+   [2m2026/10/08 17:31:10 Publishing gcr.io/gke-ai-eco-dev/ate-images/agentsim:latest[0m
+   [2m2026/10/08 17:31:12 existing manifest: latest@sha256:cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f[0m
+   [2m2026/10/08 17:31:12 existing manifest: sha256-cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f.sbom@sha256:e96b35cafe2e2613df2049ecbdddbe3797324be8a2db74ddccb2bfd92c5af2ed[0m
+   [2m2026/10/08 17:31:12 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/agentsim:sha256-cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f.sbom[0m
+   [2m2026/10/08 17:31:12 Published gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f[0m
+   [2mautosuspender: gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:714567474a7f0353d82912e0cc5fc471be7e9346d9b2351ae627bb0afc1caadb[0m
+   [2magentsim:      gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:cdd4312a88c18473ff2803159f6823362c664065b5f4f5417bb198afabec839f[0m
+   [2mworkload: nano-personal-agent (script=nano-personal-agent, think ×1, suspend=idle, 1 sessions/tasks + 0 wakes per day, actor memory 256Mi)[0m
+   [2mnamespace/agent-sim configured[0m
+   [2mdeployment.apps/autosuspender unchanged[0m
+   [2mservice/autosuspender unchanged[0m
+   [2mjob.batch/agentsim created[0m
+   [2mdeployment "autosuspender" successfully rolled out[0m
+   [2mNAME                             READY   STATUS    RESTARTS   AGE[0m
+   [2magentsim-6kscl                   1/1     Running   0          2s[0m
+   [2mautosuspender-5fdd4956c5-qp7bk   1/1     Running   0          18s[0m
+   [2m[0m
+   [2mLive dashboard:  kubectl -n agent-sim port-forward svc/autosuspender 8080 &[0m
+   [2m                 open http://localhost:8080/[0m
+   [2mJob logs:        kubectl -n agent-sim logs -f job/agentsim | tee run.log[0m
+[32m[1m ✓ done in 32s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [5/5] TEST RUNNING — 5000 agents · 100 workers · window 180m (wall ≈ prep + window + drain) · time ×1[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mlive dashboard: http://localhost:18180/   (kept open while this runs)[0m
+
+[17:31:26] agents: 32 awake /   0 asleep | workers [#############################.......................................................................] 29/100 | 0 suspends, avg 0.0s | density now 1.1:1
+[17:31:51] agents: 32 awake /  65 asleep | workers [################################....................................................................] 32/100 | 0 suspends, avg 0.0s | density now 3.0:1
+[17:32:16] agents: 32 awake / 135 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 5.4:1
+[17:32:41] agents: 32 awake / 207 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 7.7:1
+[17:33:06] agents: 32 awake / 313 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 11.1:1
+[17:33:31] agents: 32 awake / 442 asleep | workers [#############################.......................................................................] 29/100 | 0 suspends, avg 0.0s | density now 16.3:1
+[17:33:56] agents: 32 awake / 588 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 20.7:1
+[17:34:21] agents: 32 awake / 769 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 25.8:1
+[17:34:46] agents: 32 awake / 923 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 30.8:1
+[17:35:11] agents: 32 awake / 1074 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 35.7:1
+[17:35:36] agents: 32 awake / 1224 asleep | workers [#############################.......................................................................] 29/100 | 0 suspends, avg 0.0s | density now 43.3:1
+[17:36:00] agents: 32 awake / 1404 asleep | workers [#############################.......................................................................] 29/100 | 0 suspends, avg 0.0s | density now 49.5:1
+[17:36:25] agents: 32 awake / 1557 asleep | workers [################################....................................................................] 32/100 | 0 suspends, avg 0.0s | density now 49.7:1
+           sim: 3607 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2142ms | refusals 110 errors 25
+           sim: 3861 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2168ms | refusals 110 errors 25
+           sim: 3908 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2168ms | refusals 110 errors 25
+           sim: 3956 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2170ms | refusals 110 errors 25
+           sim: 4006 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2177ms | refusals 110 errors 25
+           sim: 4055 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2177ms | refusals 110 errors 25
+           sim: 4099 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2181ms | refusals 110 errors 25
+           sim: 4197 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2179ms | refusals 110 errors 25
+           sim: 4242 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2179ms | refusals 110 errors 25
+           sim: 4291 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2181ms | refusals 110 errors 25
+           sim: 4340 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2190ms | refusals 110 errors 26
+           sim: 4369 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2180ms | refusals 110 errors 26
+           sim: 4463 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2192ms | refusals 110 errors 26
+           sim: 4515 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2194ms | refusals 110 errors 26
+           sim: 4565 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2201ms | refusals 110 errors 26
+           sim: 4613 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2204ms | refusals 110 errors 26
+           sim: 4657 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2210ms | refusals 110 errors 26
+           sim: 4705 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2215ms | refusals 110 errors 26
+           sim: 4803 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2216ms | refusals 110 errors 26
+           sim: 4854 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2218ms | refusals 110 errors 26
+           sim: 4905 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2212ms | refusals 110 errors 26
+           sim: 4954 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2218ms | refusals 110 errors 26
+           sim: 5005 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2219ms | refusals 110 errors 26
+           sim: 5102 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2219ms | refusals 110 errors 26
+           sim: 5152 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2223ms | refusals 110 errors 26
+           sim: 5201 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2221ms | refusals 110 errors 26
+           sim: 5253 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2225ms | refusals 110 errors 26
+           sim: 5303 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2220ms | refusals 110 errors 26
+           sim: 5399 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2226ms | refusals 110 errors 26
+           sim: 5447 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2228ms | refusals 110 errors 26
+           sim: 5493 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2230ms | refusals 110 errors 26
+           sim: 5542 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2228ms | refusals 110 errors 26
+           sim: 5592 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2230ms | refusals 110 errors 26
+           sim: 5639 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2231ms | refusals 110 errors 26
+           sim: 5739 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2231ms | refusals 110 errors 26
+           sim: 5786 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2230ms | refusals 110 errors 27
+           sim: 5835 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2231ms | refusals 110 errors 27
+           sim: 5885 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2234ms | refusals 110 errors 27
+           sim: 5938 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2231ms | refusals 110 errors 27
+           sim: 5985 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2235ms | refusals 110 errors 27
+           sim: 6086 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2237ms | refusals 110 errors 27
+           sim: 6141 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2236ms | refusals 110 errors 27
+           sim: 6186 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2234ms | refusals 110 errors 27
+           sim: 6234 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2234ms | refusals 110 errors 27
+           sim: 6283 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2233ms | refusals 110 errors 27
+           sim: 6430 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2228ms | refusals 120 errors 29
+           sim: 6502 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2226ms | refusals 120 errors 30
+           sim: 6579 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2223ms | refusals 120 errors 30
+           sim: 6657 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2218ms | refusals 120 errors 30
+           sim: 6731 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2216ms | refusals 120 errors 31
+           sim: 6807 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2216ms | refusals 120 errors 32
+           sim: 6959 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2212ms | refusals 120 errors 32
+           sim: 7043 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2210ms | refusals 120 errors 33
+           sim: 7122 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2208ms | refusals 120 errors 35
+           sim: 7202 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2206ms | refusals 120 errors 35
+           sim: 7277 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2202ms | refusals 120 errors 36
+           sim: 7424 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 2201ms | refusals 120 errors 37
