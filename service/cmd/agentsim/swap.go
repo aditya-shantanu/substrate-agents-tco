@@ -185,6 +185,9 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 				if err = s.swapWake(ctx, id, "fill"); err == nil {
 					break
 				}
+				if permanentWakeError(err) { // crashed / deleting / gone: no amount of retrying wakes it
+					break
+				}
 				time.Sleep(time.Duration(5+attempt*5) * time.Second)
 			}
 			fmu.Lock()
@@ -564,4 +567,21 @@ func (s *sim) swapCycle(ctx context.Context, deadline time.Time, n int, ever *ma
 		n, s.cfg.swapEvery, done, total, time.Since(start).Round(time.Second), st.wakes, st.parks, st.wakeP50, st.wakeP90, st.wakeP99, st.parkP50, st.parkP90, st.parkP99, st.errors, st.refusals)
 	slog.Info("swap cycle done", "msg", msg)
 	return msg
+}
+
+// permanentWakeError reports a wake failure that retrying cannot fix: the actor
+// is CRASHED, on its way out, or gone. (Measured: a handful of such actors held
+// the 8 fill slots for 12 attempts × up to 60 s each and stalled a run's fill
+// for 15+ minutes.)
+func permanentWakeError(err error) bool {
+	if err == nil {
+		return false
+	}
+	m := err.Error()
+	for _, s := range []string{"ACTOR_STATE_CRASHED", "ACTOR_STATE_DELETING", "not found", "NotFound"} {
+		if strings.Contains(m, s) {
+			return true
+		}
+	}
+	return false
 }
