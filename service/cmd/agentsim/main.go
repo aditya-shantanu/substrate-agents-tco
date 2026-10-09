@@ -448,8 +448,16 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 	if s.cfg.setupParkExisting && s.cfg.setupSuspend {
 		// Reused fleet: whatever state the previous run left the actor in,
 		// start this one with it parked (FailedPrecondition = already parked).
+		// Actors on their way out or crashed cannot be part of the fleet: a
+		// wake would 503 all run long ("got: ACTOR_STATE_DELETING").
 		cctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 		defer cancel()
+		if a, gerr := s.api.GetActor(cctx, &ateapipb.GetActorRequest{Actor: ref}); gerr == nil {
+			switch st := a.GetStatus().GetState(); st {
+			case ateapipb.ActorState_ACTOR_STATE_DELETING, ateapipb.ActorState_ACTOR_STATE_CRASHED:
+				return fmt.Errorf("existing actor %s is %s: excluded from the fleet", name, st)
+			}
+		}
 		return s.setupPark(cctx, name, ref)
 	}
 	return nil
