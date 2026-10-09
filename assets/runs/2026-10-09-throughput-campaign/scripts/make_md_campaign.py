@@ -49,6 +49,8 @@ SUMMARY = """## Result in one table
 | Delivered error-free beyond the latency rule | 17 (20 swaps/s collapses: resume P90 8.7 s, refusals) | 12 swaps/s (11.8 achieved, 0 errors, 0 refusals) |
 | Where it breaks now | 18–21 swaps/s: every per-VM step on the node convoys at once (tap device setup 2 → 1,300 ms, VMM restore 140 → 1,500, teardown 230 → 1,460, load average 140) with the CPUs only ~35 % busy and nothing blocked on IO — kernel/VMM-level serialisation of sandbox create/teardown, plus ~2 GB/s of snapshot transfer | 12 swaps/s: the kernel's mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, gVisor's own restore (measured on the node) |
 
+@@RATE@@
+
 **What moved the numbers, in order of effect**
 
 1. **Measuring correctly** (harness): issuing swaps steadily (1-s ticks) instead of bursts of N every 10 s. Every earlier latency figure was burst queueing. 2 → 5 swaps/s on both runtimes with no Substrate change.
@@ -64,7 +66,8 @@ SUMMARY = """## Result in one table
 md = ["# Activation throughput with 650 awake nano agents — optimization campaign (2026-10-09)\n",
       "Goal: raise steady-state suspend+resume throughput (swaps/s) with 650 nano-personal-agent actors awake and 5,000 registered, one c3-standard-192-metal node per runtime, Substrate main 66f8a888 plus the experimental patches listed per iteration. Full method, assumptions and the original numbers: `nano-personal-agent-cold-start-and-turnover-5000-gvisor-vs-microvm-main-2026-10-08.md`.\n",
       "Each level runs 2 minutes (4 in the original test); the gates are: resume or suspend P90 > 2.5× the first level, errors or refusals > 0.5 % of wakes, more than 5 s' worth of swaps still in flight at the level's end (backlog), host memory/PSI limits, crashed actors (5, later 20). A level marked `pass` with a higher achieved rate than the last clean one but a `wake-p90-vs-baseline` verdict means the system delivered the rate with zero errors and only the relative-latency rule stopped the ramp.\n"]
-md.append(SUMMARY)
+SUMMARY_HEAD, SUMMARY_TAIL = SUMMARY.split("@@RATE@@")
+md.append(SUMMARY_HEAD)
 
 def _rows(path):
     out=[]
@@ -76,7 +79,45 @@ def _rows(path):
 def _fmt(r, tick):
     rate = r["n_per_tick"]/tick
     return (f"{rate:g}", r["achieved_swaps_per_s"], f"{r['wake_p50_ms']:,} / {r['wake_p90_ms']:,} / {r['wake_p99_ms']:,}", f"{r['park_p50_ms']:,} / {r['park_p90_ms']:,} / {r['park_p99_ms']:,}", f"{r['errors']} + {r['refusals']}", ("pass" if not r["failed_on"] else r["failed_on"]))
-RATE_TABLE = ["## Activations per second with resume and suspend latency — start of the day vs. end\n",
+DETAIL = """The limiter changed five times during the day. Each hand-off below says what was measured, where in the code or kernel it sits, and what state it is in now.
+
+**1. The test itself (fixed).** The original harness issued all N suspends and N resumes of a tick at the same instant every 10 s. Latency then grows linearly with N (microVM resume P50 1.26 / 2.27 / 3.03 s at 1 / 2 / 4 swaps/s) because the burst queues, and a 2.5× relative-latency gate trips on burst size, not on the system. Evidence: the same build at 1-s ticks passes 5 swaps/s on both runtimes. Anyone re-running this must use `SWAP_EVERY=1s` and start the ramp at least two levels below the suspected ceiling, because the first level is also the gate's baseline and a cold start.
+
+**2. The harness's first-wake catch-up (fixed).** In swap mode the sim replayed every skipped step's ingest/write ops on an agent's first lap, i.e. right after its first wake. The router log showed 133 first-time wakes producing 6,170 requests in 30 s (~46 per wake), each also costing a `ResumeActor` call at the api-server. The storm scaled with the swap rate and was present in every run until iteration 12. `--script-catchup=false` (commit 605abef) removes it; all figures from iteration 12 on exclude it.
+
+**3. The snapshot plugin, one process per node (fixed as far as it matters).** Three things inside `cmd/snapshot-plugin` / `pkg/objectstorage` bounded throughput before anything on the node did:
+- *One GCS connection.* One `storage.Client` (one HTTP/2 connection) carried every transfer on the node; the pooled clients were only used for parts of objects over 16 MiB (download) / 64 MiB (upload), and the 10 MiB gVisor and 42 MiB microVM snapshots never qualified. Quiet probe, 20 concurrent restores: download 1,645 → 1,233 ms with a 64-client pool. (Upstream commit e2a9e2e by dberkov makes the same fix minus the `GetObject` head range; this build routes that too.)
+- *Allocation churn.* Each upload allocated a fresh 64 MiB head buffer plus a 64 MiB media buffer for a 42 MiB object; each download 128 MiB of range buffers; every transfer a new zstd encoder or decoder. At 12 swaps/s that was 24 cores in the plugin, 8 of them page faults and zeroing (`runtime.memclrNoHeapPointers` 18 % of CPU, ~150k minor faults/s, RSS swinging 4–17 GB). Bounded free lists for the big buffers, pooled codecs, writer chunk sized to the object and a 1 MiB copy buffer took faults to ~300/s and CPU per swap down ~20 %. The ceiling did not move for that alone — the churn was a cost, not the limit.
+- *Per-stream throughput.* A single GCS stream from this node delivers ~45 MB/s, so a 42 MiB object over three 16 MiB ranges capped at ~140 MB/s per restore. 4 MiB ranges with 12 in flight per object brought resume P90 at 15 swaps/s from 1,508 to 1,256 ms. Composite uploads in 8 MiB parts were tried and rejected (suspend P99 7.8 s: compose round trips and HTTP/2 flow control on the upload side). A denser zstd level was tried and rejected (guest memory compresses 41 → 40 MiB only, 3× the CPU). GC settings (GOGC 200/400, GOMEMLIMIT) changed nothing.
+State now: at 17 swaps/s the plugin uses ~25 cores, its download stage is ~0.7–1.0 s per 128 MiB image (GCS first byte 50 ms, write 50 ms, the rest decode and body transfer), and it is no longer what gives out first.
+
+**4. microVM worker defects on the path (fixed for the experiment, need proper flags).** (a) After a restore the worker asks the guest agent to reseed the CRNG with a 5-s timeout and no retry; under load ~1 restore in 500–1,000 timed out and the actor was marked CRASHED — and deleting a crashed actor whose worker pod is gone hangs in DELETING, which then answers 503 to every wake. 15 s + one retry: zero crashes since. (b) Every checkpoint fsynced its rootfs-upper tar on the shared boot disk (`internal/tarutil`), 0.5 → 2.4 s at 40 concurrent; skipped. (c) The graceful VMM shutdown after a checkpoint (p50 178 / p90 370 ms) was skipped; teardown did not get measurably shorter, so the rest of teardown dominates.
+
+**5. Where it is now: the node's sandbox create/teardown path, in the kernel and the VMM.** This is the limiter on both runtimes and it is not Substrate Go code.
+
+*microVM, 17 swaps/s clean, 20 collapses.* Worker-side stage medians from the `Restore/Checkpoint timing breakdown` lines (iteration 17; identical shape in 15, 16 and 19):
+
+| stage (ms, median) | 8/s | 15/s | 21/s |
+|---|---|---|---|
+| restore: prep (egress prepare, sandbox-state cleanup, dirs) | 11 | 43 | 1,034 |
+| restore: lowers (overlay mounts + virtiofsd spawn) | 16 | 60 | 514 |
+| restore: tap device setup (netlink in the actor netns) | 2 | 3 | 1,347 |
+| restore: vmm_launch (cloud-hypervisor spawn + API socket) | 12 | 15 | 191 |
+| restore: vm_restore (CH restore of the 128 MiB image) | 114 | 168 | 1,541 |
+| restore total (worker) | 205 | 389 | 5,492 |
+| atelet download (plugin) | 548 | 629 | 886 |
+| checkpoint: teardown (kill VMM + virtiofsd, unmount, netns/tap release) | 120 | 222 | 1,458 |
+| checkpoint total (worker) | 193 | 302 | 1,561 |
+
+At 21/s the node's CPUs are ~35 % busy (user 46 cores, system 20, irq 5 of 192), `procs_blocked` ≈ 0 (no IO wait), PSI io 0 with the state directory on tmpfs, load average ~140. Every unrelated per-VM syscall path slows 10–100× together: that is lock convoying — `rtnl_lock` for tap/veth/netns work, the mount namespace lock for the overlay/virtiofs mounts, cgroup and mm locks around 20 process spawns and kills per second, plus cloud-hypervisor's own restore of 128 MiB per VM. The pooled network namespaces (ported from the gVisor work) removed namespace creation but not the tap, and changed nothing here. Transfer is the second term: 20/s × (42 MiB down + 50 MiB up) ≈ 1.9 GB/s, where uploads start queuing on HTTP/2 flow control.
+
+*gVisor, 9 swaps/s clean, 12 delivered error-free but over the latency rule.* From the gVisor agent's node probes (gv-report.md): sandbox network setup went 170–330 ms → 1 ms with the namespace pool; the per-sandbox gofer namespace went away with `runsc --shared-root`; a ~30 % cgroup leak per suspend (8,157 cgroups for 650 actors) was fixed by a lean teardown. What remains and grows with rate is `pause_create` (90 ms alone → 600–700 ms at 12/s), and the probe pins it: a bind+umount pair on the node goes 2.4 → 19 ms and `unshare -m` 1.5 → 18 ms at 12/s — runsc's gofer and sentry each build a chroot per sandbox under the kernel's global mount-namespace lock. Then cgroup v2 task migration (1 mkdir + 2 `cgroup.procs` writes + 1 rmdir per activation; each write takes `cgroup_threadgroup_rwsem` as a writer and stalls every fork on the node; the `favordynmods` mount option measured 42 → 2.7 ms per attach pair but did not survive a pool roll and needs the kernel command line), and gVisor's own restore inside the sentry (app_restore 100 → 400–570 ms at 12/s). Download is flat at ~170 ms for the 10 MiB image.
+
+*Not limiting on either node:* the control plane (actors table 4 MB, outbox 9 MB, resume RPC handling sub-millisecond apart from the restore), the router (its 5-s parked-request budget converts the latency cliff into 503s but does not cause it), the boot disk (tmpfs made no difference), host memory (> 600 GB free), and CPU count.
+
+"""
+
+RATE_TABLE = ["### Activations per second with resume and suspend latency, start of the day vs. end\n",
 "One activation = one actor resumed from its suspended snapshot and answering a request; the test keeps 650 awake by suspending one actor for every one it resumes, so activations/s = swaps/s = suspends/s = resumes/s. Latencies are what the client saw (resume = request round trip through the router including the restore; suspend = SuspendActor call). ms, P50 / P90 / P99. \"pass\" = within the bounds (P90 ≤ 2.5× the run's first level, errors + refusals < 0.5 %, no backlog growth).\n"]
 VERDICT = {"": "pass"}
 def _verdict(v):
@@ -104,7 +145,9 @@ for cls, before, bt, after, at in (("microVM", "nanoturn-metal2", 10, "nanoturn3
             first = False
     RATE_TABLE.append("")
     RATE_TABLE.append("_Bold = the highest rate within the bounds for that build._\n")
-RATE_TABLE.append("""### Where the bottlenecks are now (measured on the nodes, not inferred)
+BOTTLENECK = ("""## Where the bottleneck moved, and what is happening now (for whoever picks this up)
+
+""" + DETAIL + """### Where the bottlenecks are now, in short
 
 **microVM — 17 activations/s clean, 20 collapses.** At 20/s every per-VM step on the node slows at once while the CPUs are ~35 % busy, nothing is blocked on IO (`procs_blocked` ≈ 0) and the load average goes to ~140: tap device setup 2 → 1,300 ms, VMM launch 12 → 190, VM restore 140 → 1,500, overlay staging 10 → 500, checkpoint teardown 230 → 1,460 (worker `Restore/Checkpoint timing breakdown` medians). That is lock serialisation in the kernel and VMM for sandbox create/teardown (netlink for the tap, mounts for the rootfs overlays and virtiofsd, process spawn and kill for cloud-hypervisor), not a Substrate loop — the snapshot plugin's own download stays at ~1.0 s at that rate and the GCS requests themselves at ~55 ms. Second term: ~2 GB/s of snapshot traffic at 20/s (42 MiB down + 50 MiB up per swap) — uploads start queuing on HTTP/2 flow control there. Levers left: a pool of pre-launched VMMs with their tap devices (takes vmm_launch, tap and most of teardown off the critical path), and fewer bytes per snapshot by dropping the guest page cache before the checkpoint (the 128 MiB memory image is mostly page cache; denser compression bought only 3 %).
 
@@ -113,6 +156,8 @@ RATE_TABLE.append("""### Where the bottlenecks are now (measured on the nodes, n
 **Common to both.** Snapshot transfer and the plugin are no longer limiting below ~20/s. The control plane (api-server, Postgres, router) never was: its tables are a few MB, resume RPC handling is sub-millisecond apart from the restore itself, and the router's only contribution is its 5-s parked-request budget, which converts a latency cliff into 503s.
 """)
 md.append("\n".join(RATE_TABLE))
+md.append(SUMMARY_TAIL)
+md.append(BOTTLENECK)
 for tag, cls in (("metal2", "microVM (agents-tco-euw4, actor 2 vCPU + 256 MiB)"), ("east", "gVisor (agents-tco-east, actor 2 vCPU + 2 GiB)")):
     md.append(f"## {cls}\n")
     for d, title, note in ITER[tag]:
