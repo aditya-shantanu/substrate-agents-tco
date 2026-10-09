@@ -86,7 +86,16 @@ workloads_ready() {
   [[ -x "$ate" ]] || ate=$(command -v kubectl-ate 2>/dev/null || true)
   [[ -n "$ate" ]] || return 0   # CLI not built; trust the pool
   # main prints the golden snapshot as a UUID tag (older builds printed a gs:// URL): accept either
-  "$ate" get actor-templates -a benchmark-workloads 2>/dev/null | grep -qE "glutton +SANDBOX_CLASS_[A-Z]+ +([0-9a-f-]{36}|gs://)" || return 1
+  # A transient CLI failure (port-forward flake, API timeout) must never trigger a
+  # redeploy: deploy.sh recreates the actor template and rolls the worker pool, which
+  # crashes every awake actor. Retry, and treat a CLI that cannot answer as "ready".
+  local tmpl rc=1
+  for attempt in 1 2 3; do
+    tmpl=$("$ate" get actor-templates -a benchmark-workloads 2>/dev/null) && rc=0 && break
+    sleep 5
+  done
+  [[ $rc -eq 0 ]] || { echo "workloads_ready: template listing unavailable; assuming deployed" >&2; return 0; }
+  grep -qE "glutton +SANDBOX_CLASS_[A-Z]+ +([0-9a-f-]{36}|gs://)" <<<"$tmpl" || return 1
   # The per-actor memory limit lives in the template: redeploy if it changed.
   local cur
   cur=$("$ate" get actor-template glutton -a benchmark-workloads -o json 2>/dev/null \
