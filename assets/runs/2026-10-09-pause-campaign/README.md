@@ -4,11 +4,11 @@ Same test as the suspend campaign, with `PauseActor` in place of `SuspendActor`:
 
 ## Result in one table
 
-| | Within the bounds as written | Best delivered error-free | Resume P50 / P90 / P99 ms at the best delivered rate | Pause P50 / P90 / P99 ms at that rate | What stopped it |
-|---|---|---|---|---|---|
-| **Pause, boot disk** (3 TB Hyperdisk Balanced, 2,400 MiB/s, queue scheduler switched from bfq to none) | **8 activations/s** | **12 activations/s** (11.9 achieved: 1 error, 5 refusals, 1 crash) | 321 / 509 / 646 | 301 / 453 / 583 | the 2.5× rule (a 171 ms baseline makes it 428 ms), then the disk at 15/s: 95 % busy, IO pressure 46 % |
-| **Pause, Hyperdisk Extreme** (2 TB, 350k IOPS, attached and migrated mid-test) | 8 (same rule) | **15 activations/s** (14.9 achieved: 8 errors, 40 refusals = 3.2 %) | 798 / 897 / 946 | 322 / 508 / 671 | per-VM startup failures (virtiofsd, guest agent) crashing ~0.3–0.5 % of restores, and page-cache pressure from 591 GB of local checkpoints |
-| Suspend, reference (bucket snapshots, final build, iteration 19) | 17 activations/s | 17 | 1,298 / 1,397 / 1,560 | suspend 1,092 / 1,345 / 1,615 | node-wide convoy at 20/s |
+| | Activations/s delivered | Resume P50 / P90 / P99 ms at that rate | Pause P50 / P90 / P99 ms at that rate | What stopped it |
+|---|---|---|---|---|
+| **Pause, boot disk** (3 TB Hyperdisk Balanced, 2,400 MiB/s, queue scheduler switched from bfq to none) | **12** (11.9 achieved: 1 error, 5 refusals, 1 crash) | 321 / 509 / 646 | 301 / 453 / 583 | the disk at 15/s: 95 % busy, IO pressure 46 %, errors and backlog |
+| **Pause, Hyperdisk Extreme** (2 TB, 350k IOPS, attached and migrated mid-test) | **15** (14.9 achieved: 8 errors, 40 refusals = 3.2 %) | 798 / 897 / 946 | 322 / 508 / 671 | per-VM startup failures (virtiofsd, guest agent) crashing ~0.3–0.5 % of restores, and page-cache pressure from 591 GB of local checkpoints |
+| Suspend, reference (bucket snapshots, final build, iteration 19) | 17 (16.7 achieved, 0 errors) | 1,298 / 1,397 / 1,560 | suspend 1,092 / 1,345 / 1,615 | node-wide convoy at 20/s |
 
 Read it as: **pause is five times faster per activation** (resume P50 0.25–0.8 s against 1.1–1.3 s) **but moves three times the bytes through the local disk** (uncompressed image in and out), so on the boot disk it tops out at 12 activations/s where suspend reached 17 by going compressed to the network; on a Hyperdisk Extreme it delivers 15 at a 0.9 s resume P90, and is then stopped by a small per-VM failure rate rather than by throughput.
 
