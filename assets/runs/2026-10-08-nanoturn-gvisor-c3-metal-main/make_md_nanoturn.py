@@ -158,4 +158,30 @@ out.append("""## Reading the numbers
 - **The host is nowhere near its limits.** CPU 5–10 % on both nodes; gVisor disk write 25 / 45 MiB/s (p50 / p90), queue depth 1–2; microVM 66 / 228 MiB/s with queue depth 5 / 45 at the bursts (the 128 MiB memory-ranges file is staged on disk before compression) — against 1–1.6 GiB/s and queue depths in the hundreds in every personal-assistant run; > 82 % of memory available. The nano agent's 10 MiB (gVisor) / 50 MiB (microVM) snapshot takes the boot disk out of the equation; what remains is the control plane / router / worker wake path.
 - **Cycle:** at 2 swaps/s the remaining pool drains at the expected pace — 4,350 agents in ~36 min from the end of the fill (gVisor 36.2 min, microVM 36.3 min measured from the fill's end, including the slower first level and the faster failed level; the cycle phase alone moved the last ~1,560 agents in ~14 min on both).
 """)
+out.append("""
+## Where the time goes (follow-up, measured after the run)
+
+The load generator issues all N wakes and N suspends of a tick concurrently (one goroutine each, no client-side limit), so the N-linear latency is on the Substrate side. Two sources, both per node, both confirmed from Substrate's own timing lines (`Restore timing breakdown` / `Checkpoint timing breakdown` in the worker pods and the node agent) and from a quiet probe after the run (1 wake, then 20 at once, nothing else running):
+
+| Stage (median ms) | gVisor N=10 | gVisor N=20 | gVisor N=40 | microVM N=10 | microVM N=20 | microVM N=40 |
+|---|---|---|---|---|---|---|
+| Resume as seen by the client | 1,243 | 2,200 | 4,089 | 1,257 | 2,273 | 3,030 |
+| Worker restore total | 848 | 1,376 | 2,449 | 176 | 600 | 732 |
+| — of which network namespace setup | 293 | 495 | 800 | — | — | — |
+| — of which pause-sandbox create | 265 | 460 | 847 | — | — | — |
+| — of which page / VM restore | 167 | 316 | 536 | 97 | 161 | 471 |
+| Suspend as seen by the client | 951 | 1,399 | 2,507 | 2,209 | 3,931 | 8,128 |
+| Worker checkpoint total | 349 | 408 | 577 | 583 | 1,235 | 3,314 |
+| — of which checkpoint itself | 48 | 51 | 61 | 89 | 90 | 113 |
+| — of which network teardown | 299 | 354 | 510 | 109 | 224 | 720 |
+| — of which rootfs upper-layer tar | — | — | — | 475 | 1,006 | 2,448 |
+
+Quiet probe (no other traffic): gVisor 1 wake 778 ms (manifest 265, download 281, worker 231); 20 at once 1,377 ms median (manifest 67, **download 496**, worker 778 of which pause-create 249 and page restore 208). microVM 1 wake 801 ms (manifest 167, download 463, worker 170); 20 at once 1,938 ms median, all 20 finishing within 250 ms of each other (manifest 66, **download 1,645**, worker 215). The single wake on an idle node is 0.8 s on both runtimes, not 0.3 s: resume from suspend is a bucket download plus a restore, while the 0.3/0.6 s cold start is a restore from the node-cached golden snapshot.
+
+1. **One HTTP/2 connection per node for every snapshot transfer.** The `snapshot-plugin` sidecar of the node agent holds a single GCS `storage.Client`; its pooled multi-connection path is only used for objects over 16 MiB (download) / 64 MiB (upload), so the 10 MiB gVisor and 50 MiB microVM snapshots all share one TCP connection and finish together at N × size ÷ one-flow bandwidth. microVM: 20 × 50 MiB = 1 GB in 1.65 s ≈ 600 MB/s for the whole node. This is the dominant term for microVM wakes (1.6 of 2.3 s at N=20) and for microVM suspends (upload of 50 MiB each, plus the upper-layer tar). Code: `pkg/objectstorage/gcs.go:31-38`, `gcsranged.go:47-58`, `rangedget.go:35`, `gcscompose.go:35,68` on main 66f8a888.
+2. **Kernel network-namespace create/teardown convoy (gVisor).** Each gVisor wake creates two named netns, a veth pair and an nftables table (`internal/ateomnet/sandbox.go:86-250`); each suspend tears them down. Those syscalls serialise on node-global kernel locks (`rtnl_lock`, `pernet_ops_rwsem`, the single `cleanup_net` worker) across all 100 worker pods, so N simultaneous wakes + N suspends queue there: netns setup 11 ms → 293 / 495 / 800 ms and pause-sandbox create 75 → 265 / 460 / 847 ms at N = 10 / 20 / 40, and checkpoint teardown 299 → 510 ms. No CPU or disk signal, which is why the host looked idle. The microVM path pays less here (one tap per VM) but its checkpoint tars the rootfs upper layer on the shared boot disk (475 ms → 2.4 s at N=40).
+3. **Not the bottleneck:** control plane and router. Placement samples two random workers (no packing; the 20 probe wakes landed on 19 different pods), the worker-row lock is held for a few statements, the actor lease is per actor, there is no reconciler, rate limiter or semaphore on the request path, and the router's 100 ms retry cadence only applies to retryable errors. The router does carry a **5 s parked-request budget** (and a 5 s Envoy ext-proc timeout): at N=40 the P99 was 4.6 s, so around N≈45 per 10 s wakes start failing with 503 regardless of the latency gate.
+
+What would move the number: give the snapshot plugin per-transfer connections (or route small objects through its existing 8-client pool) — directly multiplies microVM wake/suspend throughput; cap or amortise netns create/teardown per node (or stop paying two namespaces per actor) for gVisor; spread the N swaps across the tick instead of a burst (the sim's choice, not Substrate's) to turn the convoy into a pipeline.
+""")
 open(OUT, "w").write("\n".join(out)); print("wrote", OUT)

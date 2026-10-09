@@ -1,0 +1,22 @@
+  0000 start +     6 ms  done +   863 ms  took    857 ms  200
+== 20 concurrent wakes: 20 wakes issued at 2026-10-09T03:02:55.025750Z
+  0006 start +     2 ms  done +   906 ms  took    904 ms  200
+  0020 start +     7 ms  done +   932 ms  took    925 ms  200
+  0007 start +     3 ms  done +  1222 ms  took   1219 ms  200
+  0001 start +     1 ms  done +  1223 ms  took   1222 ms  200
+  0002 start +     1 ms  done +  1230 ms  took   1230 ms  200
+  0012 start +     5 ms  done +  1274 ms  took   1269 ms  200
+  0015 start +     6 ms  done +  1322 ms  took   1316 ms  200
+  0018 start +     7 ms  done +  1405 ms  took   1399 ms  200
+  0003 start +     1 ms  done +  1406 ms  took   1405 ms  200
+  0005 start +     2 ms  done +  1407 ms  took   1405 ms  200
+  0014 start +     6 ms  done +  1407 ms  took   1401 ms  200
+  0019 start +     7 ms  done +  1407 ms  took   1400 ms  200
+  0011 start +     4 ms  done +  1419 ms  took   1414 ms  200
+  0008 start +     3 ms  done +  1439 ms  took   1436 ms  200
+  0017 start +     6 ms  done +  1443 ms  took   1436 ms  200
+  0016 start +     6 ms  done +  1444 ms  took   1438 ms  200
+  0004 start +     2 ms  done +  1526 ms  took   1524 ms  200
+  0010 start +     4 ms  done +  1532 ms  took   1528 ms  200
+  0013 start +     5 ms  done +  1584 ms  took   1578 ms  200
+  0009 start +     3 ms  done +  1588 ms  took   1584 ms  200

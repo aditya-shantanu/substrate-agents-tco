@@ -1,0 +1,22 @@
+  0632 start +     6 ms  done +   862 ms  took    856 ms  200
+== 20 concurrent wakes: 20 wakes issued at 2026-10-09T03:21:17.609427Z
+  0641 start +     2 ms  done +  1761 ms  took   1759 ms  200
+  0643 start +     2 ms  done +  1879 ms  took   1878 ms  200
+  0656 start +     6 ms  done +  1882 ms  took   1876 ms  200
+  0660 start +     7 ms  done +  1883 ms  took   1876 ms  200
+  0650 start +     3 ms  done +  1891 ms  took   1888 ms  200
+  0646 start +     3 ms  done +  1900 ms  took   1898 ms  200
+  0651 start +     4 ms  done +  1903 ms  took   1900 ms  200
+  0658 start +     6 ms  done +  1935 ms  took   1928 ms  200
+  0638 start +     1 ms  done +  1954 ms  took   1952 ms  200
+  0654 start +     4 ms  done +  1957 ms  took   1953 ms  200
+  0645 start +     2 ms  done +  1977 ms  took   1974 ms  200
+  0648 start +     3 ms  done +  1977 ms  took   1974 ms  200
+  0659 start +     7 ms  done +  1987 ms  took   1981 ms  200
+  0657 start +     6 ms  done +  1989 ms  took   1983 ms  200
+  0655 start +     5 ms  done +  1995 ms  took   1990 ms  200
+  0644 start +     2 ms  done +  1996 ms  took   1994 ms  200
+  0633 start +     1 ms  done +  1996 ms  took   1995 ms  200
+  0635 start +     1 ms  done +  1999 ms  took   1998 ms  200
+  0647 start +     3 ms  done +  2006 ms  took   2003 ms  200
+  0652 start +     4 ms  done +  2013 ms  took   2009 ms  200
