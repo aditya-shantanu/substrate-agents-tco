@@ -78,20 +78,32 @@ def _fmt(r, tick):
     return (f"{rate:g}", r["achieved_swaps_per_s"], f"{r['wake_p50_ms']:,} / {r['wake_p90_ms']:,} / {r['wake_p99_ms']:,}", f"{r['park_p50_ms']:,} / {r['park_p90_ms']:,} / {r['park_p99_ms']:,}", f"{r['errors']} + {r['refusals']}", ("pass" if not r["failed_on"] else r["failed_on"]))
 RATE_TABLE = ["## Activations per second with resume and suspend latency — start of the day vs. end\n",
 "One activation = one actor resumed from its suspended snapshot and answering a request; the test keeps 650 awake by suspending one actor for every one it resumes, so activations/s = swaps/s = suspends/s = resumes/s. Latencies are what the client saw (resume = request round trip through the router including the restore; suspend = SuspendActor call). ms, P50 / P90 / P99. \"pass\" = within the bounds (P90 ≤ 2.5× the run's first level, errors + refusals < 0.5 %, no backlog growth).\n"]
+VERDICT = {"": "pass"}
+def _verdict(v):
+    if not v: return "pass"
+    parts = []
+    if "refusals" in v or "errors" in v: parts.append("refusals" if "refusals" in v else "errors")
+    if "p90" in v or "p99" in v: parts.append("latency rule")
+    if "backlog" in v: parts.append("backlog")
+    return ", ".join(parts) or v
 for cls, before, bt, after, at in (("microVM", "nanoturn-metal2", 10, "nanoturn3-metal2-19", 1), ("gVisor", "nanoturn-east", 10, "nanoturn3-east-11", 1)):
     RATE_TABLE.append(f"### {cls}\n")
-    RATE_TABLE.append("| Build | Target activations/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |")
+    RATE_TABLE.append("| Build | Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |")
     RATE_TABLE.append("|---|---|---|---|---|---|---|")
-    for label, d, tick in (("start of the day: main 66f8a888, 10-s burst ticks", before, bt), ("end of the day: patched build, 1-s ticks", after, at)):
+    for label, d, tick in (("Start of the day: main 66f8a888, 10-s burst ticks", before, bt), ("End of the day: patched build, 1-s ticks", after, at)):
         pth = os.path.join("/tmp/tco-runs/fill", d, "turn.txt")
         if not os.path.exists(pth): continue
-        seen=set()
+        seen = set(); first = True
         for r in _rows(pth):
             if r["tag"] == "hold" or r["n_per_tick"] in seen: continue  # the hold repeats the last clean level
             seen.add(r["n_per_tick"])
             rate, ach, wk, pk, er, v = _fmt(r, tick)
-            RATE_TABLE.append(f"| {label} | {rate} | **{ach}** | {wk} | {pk} | {er} | {v} |")
+            best = (not r["failed_on"]) and all(x["failed_on"] or x["n_per_tick"] <= r["n_per_tick"] for x in _rows(pth) if x["tag"] != "hold")
+            b = "**" if best else ""
+            RATE_TABLE.append(f"| {label if first else ''} | {b}{rate}{b} | {b}{ach}{b} | {b}{wk}{b} | {b}{pk}{b} | {er} | {b}{_verdict(v)}{b} |")
+            first = False
     RATE_TABLE.append("")
+    RATE_TABLE.append("_Bold = the highest rate within the bounds for that build._\n")
 RATE_TABLE.append("""### Where the bottlenecks are now (measured on the nodes, not inferred)
 
 **microVM — 17 activations/s clean, 20 collapses.** At 20/s every per-VM step on the node slows at once while the CPUs are ~35 % busy, nothing is blocked on IO (`procs_blocked` ≈ 0) and the load average goes to ~140: tap device setup 2 → 1,300 ms, VMM launch 12 → 190, VM restore 140 → 1,500, overlay staging 10 → 500, checkpoint teardown 230 → 1,460 (worker `Restore/Checkpoint timing breakdown` medians). That is lock serialisation in the kernel and VMM for sandbox create/teardown (netlink for the tap, mounts for the rootfs overlays and virtiofsd, process spawn and kill for cloud-hypervisor), not a Substrate loop — the snapshot plugin's own download stays at ~1.0 s at that rate and the GCS requests themselves at ~55 ms. Second term: ~2 GB/s of snapshot traffic at 20/s (42 MiB down + 50 MiB up per swap) — uploads start queuing on HTTP/2 flow control there. Levers left: a pool of pre-launched VMMs with their tap devices (takes vmm_launch, tap and most of teardown off the critical path), and fewer bytes per snapshot by dropping the guest page cache before the checkpoint (the 128 MiB memory image is mostly page cache; denser compression bought only 3 %).

@@ -32,30 +32,34 @@ One activation = one actor resumed from its suspended snapshot and answering a r
 
 ### microVM
 
-| Build | Target activations/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |
+| Build | Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |
 |---|---|---|---|---|---|---|
-| start of the day: main 66f8a888, 10-s burst ticks | 1 | **0.96** | 1,257 / 1,379 / 1,516 | 2,209 / 2,360 / 2,458 | 0 + 0 | pass |
-| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.92** | 2,273 / 2,422 / 2,480 | 3,931 / 4,360 / 9,048 | 0 + 0 | pass |
-| start of the day: main 66f8a888, 10-s burst ticks | 4 | **3.83** | 3,030 / 3,909 / 5,405 | 8,128 / 8,566 / 8,766 | 0 + 0 | wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline |
-| end of the day: patched build, 1-s ticks | 12 | **11.90** | 908 / 951 / 1,042 | 1,041 / 1,269 / 1,637 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 14 | **13.88** | 1,005 / 1,066 / 1,119 | 1,101 / 1,809 / 13,681 | 0 + 1 | pass |
-| end of the day: patched build, 1-s ticks | 17 | **16.72** | 1,298 / 1,397 / 1,560 | 1,092 / 1,345 / 1,615 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 20 | **19.21** | 4,692 / 8,687 / 11,507 | 2,106 / 2,793 / 3,413 | 0 + 91 | refusals+wake-p90-vs-baseline |
+| Start of the day: main 66f8a888, 10-s burst ticks | 1 | 0.96 | 1,257 / 1,379 / 1,516 | 2,209 / 2,360 / 2,458 | 0 + 0 | pass |
+|  | **2** | **1.92** | **2,273 / 2,422 / 2,480** | **3,931 / 4,360 / 9,048** | 0 + 0 | **pass** |
+|  | 4 | 3.83 | 3,030 / 3,909 / 5,405 | 8,128 / 8,566 / 8,766 | 0 + 0 | latency rule |
+| End of the day: patched build, 1-s ticks | 12 | 11.90 | 908 / 951 / 1,042 | 1,041 / 1,269 / 1,637 | 0 + 0 | pass |
+|  | 14 | 13.88 | 1,005 / 1,066 / 1,119 | 1,101 / 1,809 / 13,681 | 0 + 1 | pass |
+|  | **17** | **16.72** | **1,298 / 1,397 / 1,560** | **1,092 / 1,345 / 1,615** | 0 + 0 | **pass** |
+|  | 20 | 19.21 | 4,692 / 8,687 / 11,507 | 2,106 / 2,793 / 3,413 | 0 + 91 | refusals, latency rule |
+
+_Bold = the highest rate within the bounds for that build._
 
 ### gVisor
 
-| Build | Target activations/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |
+| Build | Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |
 |---|---|---|---|---|---|---|
-| start of the day: main 66f8a888, 10-s burst ticks | 1 | **0.96** | 1,243 / 1,431 / 1,630 | 951 / 1,079 / 1,221 | 0 + 0 | pass |
-| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.92** | 2,200 / 2,434 / 2,659 | 1,399 / 1,691 / 1,966 | 0 + 0 | pass |
-| start of the day: main 66f8a888, 10-s burst ticks | 4 | **3.83** | 4,089 / 4,368 / 4,596 | 2,507 / 2,985 / 3,232 | 0 + 0 | wake-p90-vs-baseline+park-p90-vs-baseline |
-| end of the day: patched build, 1-s ticks | 2 | **1.98** | 486 / 618 / 696 | 462 / 541 / 645 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 3 | **2.97** | 509 / 637 / 823 | 440 / 511 / 623 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 4 | **3.97** | 576 / 703 / 837 | 467 / 539 / 688 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 5 | **4.96** | 644 / 777 / 984 | 493 / 563 / 671 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 7 | **6.94** | 802 / 966 / 1,203 | 532 / 646 / 727 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 9 | **8.92** | 959 / 1,194 / 1,449 | 589 / 742 / 932 | 0 + 0 | pass |
-| end of the day: patched build, 1-s ticks | 12 | **11.80** | 1,449 / 1,997 / 2,481 | 893 / 1,114 / 1,473 | 0 + 0 | wake-p90-vs-baseline |
+| Start of the day: main 66f8a888, 10-s burst ticks | 1 | 0.96 | 1,243 / 1,431 / 1,630 | 951 / 1,079 / 1,221 | 0 + 0 | pass |
+|  | **2** | **1.92** | **2,200 / 2,434 / 2,659** | **1,399 / 1,691 / 1,966** | 0 + 0 | **pass** |
+|  | 4 | 3.83 | 4,089 / 4,368 / 4,596 | 2,507 / 2,985 / 3,232 | 0 + 0 | latency rule |
+| End of the day: patched build, 1-s ticks | 2 | 1.98 | 486 / 618 / 696 | 462 / 541 / 645 | 0 + 0 | pass |
+|  | 3 | 2.97 | 509 / 637 / 823 | 440 / 511 / 623 | 0 + 0 | pass |
+|  | 4 | 3.97 | 576 / 703 / 837 | 467 / 539 / 688 | 0 + 0 | pass |
+|  | 5 | 4.96 | 644 / 777 / 984 | 493 / 563 / 671 | 0 + 0 | pass |
+|  | 7 | 6.94 | 802 / 966 / 1,203 | 532 / 646 / 727 | 0 + 0 | pass |
+|  | **9** | **8.92** | **959 / 1,194 / 1,449** | **589 / 742 / 932** | 0 + 0 | **pass** |
+|  | 12 | 11.80 | 1,449 / 1,997 / 2,481 | 893 / 1,114 / 1,473 | 0 + 0 | latency rule |
+
+_Bold = the highest rate within the bounds for that build._
 
 ### Where the bottlenecks are now (measured on the nodes, not inferred)
 
