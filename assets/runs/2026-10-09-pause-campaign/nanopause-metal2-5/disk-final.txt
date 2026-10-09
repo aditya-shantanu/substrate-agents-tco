@@ -1,0 +1,7 @@
+/dev/nvme0n1p1            2.9T    617.4G      2.3T  21% /host/mnt/stateful_partition
+595.9G	/host/var/lib/ate/actors
+57527
+4	/host/var/lib/ate/actors/26adf856-5eea-437d-b4eb-9369a2204a3f/volumes
+48	/host/var/lib/ate/actors/26adf856-5eea-437d-b4eb-9369a2204a3f/bundles
+8228	/host/var/lib/ate/actors/26adf856-5eea-437d-b4eb-9369a2204a3f/rootfs-upper
+123244	/host/var/lib/ate/actors/26adf856-5eea-437d-b4eb-9369a2204a3f/local-checkpoint
