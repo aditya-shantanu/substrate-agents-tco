@@ -65,6 +65,40 @@ md = ["# Activation throughput with 650 awake nano agents — optimization campa
       "Goal: raise steady-state suspend+resume throughput (swaps/s) with 650 nano-personal-agent actors awake and 5,000 registered, one c3-standard-192-metal node per runtime, Substrate main 66f8a888 plus the experimental patches listed per iteration. Full method, assumptions and the original numbers: `nano-personal-agent-cold-start-and-turnover-5000-gvisor-vs-microvm-main-2026-10-08.md`.\n",
       "Each level runs 2 minutes (4 in the original test); the gates are: resume or suspend P90 > 2.5× the first level, errors or refusals > 0.5 % of wakes, more than 5 s' worth of swaps still in flight at the level's end (backlog), host memory/PSI limits, crashed actors (5, later 20). A level marked `pass` with a higher achieved rate than the last clean one but a `wake-p90-vs-baseline` verdict means the system delivered the rate with zero errors and only the relative-latency rule stopped the ramp.\n"]
 md.append(SUMMARY)
+
+def _rows(path):
+    out=[]
+    for l in open(path, errors="replace"):
+        if '"msg":"swap level result"' in l:
+            try: out.append(json.loads(l))
+            except Exception: pass
+    return out
+def _fmt(r, tick):
+    rate = r["n_per_tick"]/tick
+    return (f"{rate:g}", r["achieved_swaps_per_s"], f"{r['wake_p50_ms']:,} / {r['wake_p90_ms']:,} / {r['wake_p99_ms']:,}", f"{r['park_p50_ms']:,} / {r['park_p90_ms']:,} / {r['park_p99_ms']:,}", f"{r['errors']} + {r['refusals']}", ("pass" if not r["failed_on"] else r["failed_on"]))
+RATE_TABLE = ["## Activations per second with resume and suspend latency — start of the day vs. end\n",
+"One activation = one actor resumed from its suspended snapshot and answering a request; the test keeps 650 awake by suspending one actor for every one it resumes, so activations/s = swaps/s = suspends/s = resumes/s. Latencies are what the client saw (resume = request round trip through the router including the restore; suspend = SuspendActor call). ms, P50 / P90 / P99. \"pass\" = within the bounds (P90 ≤ 2.5× the run's first level, errors + refusals < 0.5 %, no backlog growth).\n"]
+for cls, before, bt, after, at in (("microVM", "nanoturn-metal2", 10, "nanoturn3-metal2-19", 1), ("gVisor", "nanoturn-east", 10, "nanoturn3-east-11", 1)):
+    RATE_TABLE.append(f"### {cls}\n")
+    RATE_TABLE.append("| Build | Target activations/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |")
+    RATE_TABLE.append("|---|---|---|---|---|---|---|")
+    for label, d, tick in (("start of the day: main 66f8a888, 10-s burst ticks", before, bt), ("end of the day: patched build, 1-s ticks", after, at)):
+        pth = os.path.join("/tmp/tco-runs/fill", d, "turn.txt")
+        if not os.path.exists(pth): continue
+        for r in _rows(pth):
+            if r["tag"] == "hold": continue
+            rate, ach, wk, pk, er, v = _fmt(r, tick)
+            RATE_TABLE.append(f"| {label} | {rate} | **{ach}** | {wk} | {pk} | {er} | {v} |")
+    RATE_TABLE.append("")
+RATE_TABLE.append("""### Where the bottlenecks are now (measured on the nodes, not inferred)
+
+**microVM — 17 activations/s clean, 20 collapses.** At 20/s every per-VM step on the node slows at once while the CPUs are ~35 % busy, nothing is blocked on IO (`procs_blocked` ≈ 0) and the load average goes to ~140: tap device setup 2 → 1,300 ms, VMM launch 12 → 190, VM restore 140 → 1,500, overlay staging 10 → 500, checkpoint teardown 230 → 1,460 (worker `Restore/Checkpoint timing breakdown` medians). That is lock serialisation in the kernel and VMM for sandbox create/teardown (netlink for the tap, mounts for the rootfs overlays and virtiofsd, process spawn and kill for cloud-hypervisor), not a Substrate loop — the snapshot plugin's own download stays at ~1.0 s at that rate and the GCS requests themselves at ~55 ms. Second term: ~2 GB/s of snapshot traffic at 20/s (42 MiB down + 50 MiB up per swap) — uploads start queuing on HTTP/2 flow control there. Levers left: a pool of pre-launched VMMs with their tap devices (takes vmm_launch, tap and most of teardown off the critical path), and fewer bytes per snapshot by dropping the guest page cache before the checkpoint (the 128 MiB memory image is mostly page cache; denser compression bought only 3 %).
+
+**gVisor — 9 activations/s clean, 12 delivered error-free, 12 fails the latency rule.** The node probe during 12/s shows a bind+umount pair going 2.4 → 19 ms and `unshare -m` 1.5 → 18 ms: runsc's gofer and sentry each build a chroot per sandbox under the kernel's global mount-namespace lock, which is the `pause_create` growth (90 ms alone → 600–700 ms at 12/s) that survived the namespace and cgroup fixes. Then cgroup v2 task migration (1 mkdir + 2 `cgroup.procs` writes + 1 rmdir per activation, each a `cgroup_threadgroup_rwsem` writer that stalls all forks; `favordynmods` measured 42 → 2.7 ms per attach pair but needs the kernel command line to stick), and gVisor's own restore (app_restore 100 → 400–570 ms at 12/s inside the sentry). All three sit in gVisor or the kernel; the fixes are fewer mounts or a long-lived gofer chroot in runsc, `CLONE_INTO_CGROUP`, and `cgroup_favordynmods=1`.
+
+**Common to both.** Snapshot transfer and the plugin are no longer limiting below ~20/s. The control plane (api-server, Postgres, router) never was: its tables are a few MB, resume RPC handling is sub-millisecond apart from the restore itself, and the router's only contribution is its 5-s parked-request budget, which converts a latency cliff into 503s.
+""")
+md.append("\n".join(RATE_TABLE))
 for tag, cls in (("metal2", "microVM (agents-tco-euw4, actor 2 vCPU + 256 MiB)"), ("east", "gVisor (agents-tco-east, actor 2 vCPU + 2 GiB)")):
     md.append(f"## {cls}\n")
     for d, title, note in ITER[tag]:

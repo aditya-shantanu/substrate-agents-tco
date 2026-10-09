@@ -26,6 +26,47 @@ Each level runs 2 minutes (4 in the original test); the gates are: resume or sus
 **Caveats.** Every iteration below purged and re-registered the 5,000 actors at its start (the deploy step runs `clean.sh`); the fleet is therefore fresh in every run, and the per-run numbers are comparable but each run's first level is both the gate baseline and a cold start — ramps were started two or more levels below the suspected ceiling. The experimental Substrate changes live uncommitted in two worktrees (`~/repos/substrate-east1` microVM, `~/repos/substrate-east` gVisor); the patches are in the archive. The fsync skip and the reseed/teardown changes are experiment-grade and need proper flags upstream. The harness fixes (1-s ticks, catch-up switch, readiness check, fleet reuse, backlog gate) are committed in `substrate-agents-tco`.
 
 
+## Activations per second with resume and suspend latency — start of the day vs. end
+
+One activation = one actor resumed from its suspended snapshot and answering a request; the test keeps 650 awake by suspending one actor for every one it resumes, so activations/s = swaps/s = suspends/s = resumes/s. Latencies are what the client saw (resume = request round trip through the router including the restore; suspend = SuspendActor call). ms, P50 / P90 / P99. "pass" = within the bounds (P90 ≤ 2.5× the run's first level, errors + refusals < 0.5 %, no backlog growth).
+
+### microVM
+
+| Build | Target activations/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |
+|---|---|---|---|---|---|---|
+| start of the day: main 66f8a888, 10-s burst ticks | 1 | **0.96** | 1,257 / 1,379 / 1,516 | 2,209 / 2,360 / 2,458 | 0 + 0 | pass |
+| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.92** | 2,273 / 2,422 / 2,480 | 3,931 / 4,360 / 9,048 | 0 + 0 | pass |
+| start of the day: main 66f8a888, 10-s burst ticks | 4 | **3.83** | 3,030 / 3,909 / 5,405 | 8,128 / 8,566 / 8,766 | 0 + 0 | wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline |
+| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.97** | 2,304 / 2,547 / 3,195 | 3,992 / 4,638 / 4,819 | 2 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 12 | **11.90** | 908 / 951 / 1,042 | 1,041 / 1,269 / 1,637 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 14 | **13.88** | 1,005 / 1,066 / 1,119 | 1,101 / 1,809 / 13,681 | 0 + 1 | pass |
+| end of the day: patched build, 1-s ticks | 17 | **16.72** | 1,298 / 1,397 / 1,560 | 1,092 / 1,345 / 1,615 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 20 | **19.21** | 4,692 / 8,687 / 11,507 | 2,106 / 2,793 / 3,413 | 0 + 91 | refusals+wake-p90-vs-baseline |
+
+### gVisor
+
+| Build | Target activations/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Verdict |
+|---|---|---|---|---|---|---|
+| start of the day: main 66f8a888, 10-s burst ticks | 1 | **0.96** | 1,243 / 1,431 / 1,630 | 951 / 1,079 / 1,221 | 0 + 0 | pass |
+| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.92** | 2,200 / 2,434 / 2,659 | 1,399 / 1,691 / 1,966 | 0 + 0 | pass |
+| start of the day: main 66f8a888, 10-s burst ticks | 4 | **3.83** | 4,089 / 4,368 / 4,596 | 2,507 / 2,985 / 3,232 | 0 + 0 | wake-p90-vs-baseline+park-p90-vs-baseline |
+| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.97** | 2,276 / 2,557 / 2,780 | 1,713 / 1,942 / 2,167 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 2 | **1.98** | 486 / 618 / 696 | 462 / 541 / 645 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 3 | **2.97** | 509 / 637 / 823 | 440 / 511 / 623 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 4 | **3.97** | 576 / 703 / 837 | 467 / 539 / 688 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 5 | **4.96** | 644 / 777 / 984 | 493 / 563 / 671 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 7 | **6.94** | 802 / 966 / 1,203 | 532 / 646 / 727 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 9 | **8.92** | 959 / 1,194 / 1,449 | 589 / 742 / 932 | 0 + 0 | pass |
+| end of the day: patched build, 1-s ticks | 12 | **11.80** | 1,449 / 1,997 / 2,481 | 893 / 1,114 / 1,473 | 0 + 0 | wake-p90-vs-baseline |
+
+### Where the bottlenecks are now (measured on the nodes, not inferred)
+
+**microVM — 17 activations/s clean, 20 collapses.** At 20/s every per-VM step on the node slows at once while the CPUs are ~35 % busy, nothing is blocked on IO (`procs_blocked` ≈ 0) and the load average goes to ~140: tap device setup 2 → 1,300 ms, VMM launch 12 → 190, VM restore 140 → 1,500, overlay staging 10 → 500, checkpoint teardown 230 → 1,460 (worker `Restore/Checkpoint timing breakdown` medians). That is lock serialisation in the kernel and VMM for sandbox create/teardown (netlink for the tap, mounts for the rootfs overlays and virtiofsd, process spawn and kill for cloud-hypervisor), not a Substrate loop — the snapshot plugin's own download stays at ~1.0 s at that rate and the GCS requests themselves at ~55 ms. Second term: ~2 GB/s of snapshot traffic at 20/s (42 MiB down + 50 MiB up per swap) — uploads start queuing on HTTP/2 flow control there. Levers left: a pool of pre-launched VMMs with their tap devices (takes vmm_launch, tap and most of teardown off the critical path), and fewer bytes per snapshot by dropping the guest page cache before the checkpoint (the 128 MiB memory image is mostly page cache; denser compression bought only 3 %).
+
+**gVisor — 9 activations/s clean, 12 delivered error-free, 12 fails the latency rule.** The node probe during 12/s shows a bind+umount pair going 2.4 → 19 ms and `unshare -m` 1.5 → 18 ms: runsc's gofer and sentry each build a chroot per sandbox under the kernel's global mount-namespace lock, which is the `pause_create` growth (90 ms alone → 600–700 ms at 12/s) that survived the namespace and cgroup fixes. Then cgroup v2 task migration (1 mkdir + 2 `cgroup.procs` writes + 1 rmdir per activation, each a `cgroup_threadgroup_rwsem` writer that stalls all forks; `favordynmods` measured 42 → 2.7 ms per attach pair but needs the kernel command line to stick), and gVisor's own restore (app_restore 100 → 400–570 ms at 12/s inside the sentry). All three sit in gVisor or the kernel; the fixes are fewer mounts or a long-lived gofer chroot in runsc, `CLONE_INTO_CGROUP`, and `cgroup_favordynmods=1`.
+
+**Common to both.** Snapshot transfer and the plugin are no longer limiting below ~20/s. The control plane (api-server, Postgres, router) never was: its tables are a few MB, resume RPC handling is sub-millisecond apart from the restore itself, and the router's only contribution is its 5-s parked-request budget, which converts a latency cliff into 503s.
+
 ## microVM (agents-tco-euw4, actor 2 vCPU + 256 MiB)
 
 ### Original test: 10-s ticks (burst of N), latency gate 2.5×, unmodified main
