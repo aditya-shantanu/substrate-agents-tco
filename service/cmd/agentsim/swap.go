@@ -351,7 +351,11 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 		if s.cfg.failRelP90 > 0 && baseParkP90 > 0 && len(parks) >= 20 && st.parkP90 > s.cfg.failRelP90*baseParkP90 {
 			reasons = append(reasons, "park-p90-vs-baseline")
 		}
-		if st.backlog > 2*n { // more than two ticks' worth still in flight at the end of the level
+		// backlog gate: more than two ticks' worth — or, with short ticks, more than
+		// five seconds' worth — of swaps still in flight at the end of the level
+		// means arrivals are outrunning the service rate
+		backlogTicks := max(2, int(math.Ceil(5/s.cfg.swapEvery.Seconds())))
+		if st.backlog > backlogTicks*n {
 			reasons = append(reasons, "backlog")
 		}
 		if s.cfg.failMemAvailPct > 0 && st.memAvailPct >= 0 && st.memAvailPct < s.cfg.failMemAvailPct {
