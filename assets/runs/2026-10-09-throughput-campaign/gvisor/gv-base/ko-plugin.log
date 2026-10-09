@@ -1,0 +1,19 @@
+2026/10/08 22:30:52 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/snapshot-plugin
+2026/10/08 22:30:52 git is in a dirty state
+Please check in your pipeline what can be changing the following files:
+ M benchmarking/workloads/deploy.sh
+ M benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+ M internal/tarutil/tarutil.go
+ M pkg/objectstorage/gcs.go
+ M pkg/objectstorage/gcscompose.go
+ M pkg/objectstorage/gcsranged.go
+ M pkg/objectstorage/objects.go
+ M pkg/objectstorage/parzstd.go
+ M pkg/objectstorage/sparsezstd.go
+
+2026/10/08 22:30:52 Building github.com/agent-substrate/substrate/cmd/snapshot-plugin for linux/amd64
+2026/10/08 22:30:55 Publishing gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin:latest
+2026/10/08 22:30:56 existing manifest: latest@sha256:8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691
+2026/10/08 22:30:56 existing manifest: sha256-8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691.sbom@sha256:e3441ef6b29c76c14e47624d5f49e7ab057a6b1b46f498450bb91929a792c472
+2026/10/08 22:30:56 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin:sha256-8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691.sbom
+2026/10/08 22:30:56 Published gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin@sha256:8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691

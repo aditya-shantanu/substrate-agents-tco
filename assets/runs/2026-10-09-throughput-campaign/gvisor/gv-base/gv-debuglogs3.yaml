@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-debuglogs3, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: ate, mountPath: /host/var/lib/ate, readOnly: true}]
+    command: ["sh", "-c", "cd /host/var/lib/ate/actors; F=523fd179-4fa6-4f53-acdd-74e8387a23f2/runsc-debug-logs/runsc.log.20261009-085307.012861.create.txt; echo '=== FAILING lines 120-150'; sed -n 120,150p $F | cut -c1-330; H=2f93fa18-c67e-4f55-8f1d-31883f817766/runsc-debug-logs/runsc.log.20261009-085306.271861.create.txt; echo '=== HEALTHY lines 120-150'; sed -n 120,150p $H | cut -c1-330; echo DONE; sleep 600"]
+  volumes: [{name: ate, hostPath: {path: /var/lib/ate}}]

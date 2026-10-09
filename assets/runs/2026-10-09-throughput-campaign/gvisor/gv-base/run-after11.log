@@ -1,0 +1,16 @@
+== job done Fri Oct  9 04:09:58 PDT 2026
+probe: 22581 /tmp/out.txt
+   22581 /tmp/tco-runs/fill/gv-base/timing-iter11-D-ramp125.txt
+     781 /tmp/tco-runs/fill/gv-report.md
+== archived Fri Oct  9 04:10:57 PDT 2026
+| phase | fork+exec µs med/p90 | cgroup mkdir ms | attach pair ms | rmdir ms | bind+umount pair µs | unshare -m µs |
+|---|---|---|---|---|---|---|
+| pre | 550 / 950 | 8 | 21 | 1 | 2488 | 1594 |
+| sweep/fill | 950 / 1099 | 8 | 22 | 1 | 4133 | 3220 |
+| 2 | 599 / 700 | 7 | 20 | 1 | 2389 | 1448 |
+| 3 | 599 / 950 | 7 | 20 | 1 | 2462 | 1469 |
+| 5 | 600 / 1149 | 8 | 21 | 1 | 2724 | 1684 |
+| 12 | 849 / 1950 | 15 | 31 | 1 | 19424 | 17926 |
+| hold | 650 / 1500 | 8 | 21 | 1 | 4624 | 1932 |
+     793 /tmp/tco-runs/fill/gv-report.md
+== after11 done Fri Oct  9 04:11:03 PDT 2026

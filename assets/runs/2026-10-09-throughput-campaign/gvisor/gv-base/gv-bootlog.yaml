@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-bootlog, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: ate, mountPath: /host/var/lib/ate, readOnly: true}]
+    command: ["sh", "-c", "cd /host/var/lib/ate/actors; B=$(ls -t */runsc-debug-logs/*boot.txt 2>/dev/null | head -1); echo boot_log $B; echo '--- args/cpu/memory lines'; grep -n -i -E 'cpu-num|total-memory|total-host-memory|numCPU|CPUs|prewarm|Args:' $B | head -12 | cut -c1-330; echo '--- first 12 lines'; head -12 $B | cut -c1-250; echo '--- timing of boot phases (first/last timestamps and lines with ms)'; grep -n -i -E 'took|elapsed|ms\\b|network|restore' $B | head -15 | cut -c1-200; echo DONE; sleep 600"]
+  volumes: [{name: ate, hostPath: {path: /var/lib/ate}}]

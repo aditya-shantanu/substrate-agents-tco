@@ -1,0 +1,1 @@
+gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin@sha256:8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691

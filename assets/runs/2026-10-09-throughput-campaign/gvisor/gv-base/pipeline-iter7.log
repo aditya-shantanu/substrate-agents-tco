@@ -1,0 +1,27 @@
+01:22:24 [east] == ######## (B) register 5000, 650 awake at think x1, swap N=2 x1.5 per 1s, 2m levels, hold 4m, then cycle all ########
+01:22:25 [east] == fleet reuse: no clean / no workload redeploy (pool 100 ready)
+01:29:29 [east] == early bucket sample: 400 objects
+01:30:42 [east] == run.sh exit=1
+log: Unknown subcommand 'SWAP VERDICT: failure at 18 per 1s (18.00 swaps/s target, 17.08 achieved; refusals+wake-p90-vs-baseline+backlog); last clean level = 15 per 1s (15.00 swaps/s); hold at 15 also failed (refusals+errors+backlog)
+'
+usage:
+    log <command>
+
+global options:
+    -?, --help
+    -q, --quiet
+    -v, --verbose
+
+commands:
+    collect         gather system logs into a log archive
+    config          view/change logging system settings
+    erase           delete system logging data
+    repack          repack a log archive using a predicate
+    show            view/search system logs
+    stream          watch live system logs
+    stats           show system logging statistics
+
+further help:
+    log help <command>
+    log help predicates
+01:30:55 [east] == all done

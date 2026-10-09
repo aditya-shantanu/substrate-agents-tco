@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-nodestate, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: cg, mountPath: /host/sys/fs/cgroup, readOnly: true}]
+    command: ["sh", "-c", "grep cgroup2 /proc/1/mounts; echo cgroups_total $(find /host/sys/fs/cgroup -type d | wc -l); echo cgroups_pause $(find /host/sys/fs/cgroup -type d -name '*-_pause' | wc -l); echo cgroups_glutton $(find /host/sys/fs/cgroup -type d -name '*-glutton' | wc -l); echo cgroups_slot $(find /host/sys/fs/cgroup -type d -name 'ateom-slot-*' | wc -l); echo loadavg $(cat /proc/loadavg); echo threads $(cat /proc/loadavg | cut -d/ -f2 | cut -d' ' -f1); echo procs $(ls -d /proc/[0-9]* | wc -l); echo file-nr $(cat /proc/sys/fs/file-nr); echo cpu_psi $(cat /proc/pressure/cpu | head -1); echo mem_psi $(cat /proc/pressure/memory | head -1); echo io_psi $(cat /proc/pressure/io | head -1); grep -E 'MemFree|MemAvailable|Dirty:|Slab:|SUnreclaim' /proc/meminfo; echo buddy_normal_node0 $(grep 'Node 0.*Normal' /proc/buddyinfo | cut -c1-200); echo nf_conntrack $(cat /proc/sys/net/netfilter/nf_conntrack_count 2>/dev/null); sleep 600"]
+  volumes: [{name: cg, hostPath: {path: /sys/fs/cgroup}}]

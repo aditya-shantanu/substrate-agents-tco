@@ -1,0 +1,40 @@
+2026/10/08 22:36:06 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/ateom-gvisor
+2026/10/08 22:36:07 git is in a dirty state
+Please check in your pipeline what can be changing the following files:
+ M benchmarking/workloads/deploy.sh
+ M benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+ M internal/ateomnet/netns/netns.go
+ M internal/ateomnet/sandbox.go
+ M internal/tarutil/tarutil.go
+ M pkg/objectstorage/gcs.go
+ M pkg/objectstorage/gcscompose.go
+ M pkg/objectstorage/gcsranged.go
+ M pkg/objectstorage/objects.go
+ M pkg/objectstorage/parzstd.go
+ M pkg/objectstorage/sparsezstd.go
+?? internal/ateomnet/netpool.go
+
+2026/10/08 22:36:07 Building github.com/agent-substrate/substrate/cmd/ateom-gvisor for linux/amd64
+2026/10/08 22:36:09 Publishing gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor:latest
+2026/10/08 22:36:10 existing blob: sha256:7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212
+2026/10/08 22:36:10 existing blob: sha256:dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112
+2026/10/08 22:36:10 existing blob: sha256:2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a
+2026/10/08 22:36:10 existing blob: sha256:4a2796d8ea5ef7ae1a64ba20ba56759987f49f2ea2091ddce6bade81c0ad1fa6
+2026/10/08 22:36:10 existing blob: sha256:c172f21841dff4c8cf45cde46589c1c2616cefe7e819965e92e6d3475c428aa0
+2026/10/08 22:36:10 existing blob: sha256:99515e7b4d35e0652d3b0fde571b6ec269222ecacc506f026e1758d6261e9109
+2026/10/08 22:36:10 existing blob: sha256:3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4
+2026/10/08 22:36:10 existing blob: sha256:99ba982a9142213c751a1709dcf088e63d8601f03b3f211bae037be698fef270
+2026/10/08 22:36:10 existing blob: sha256:1eed391ea893e6015bf4ce4ed366909975d2acdbe907670919236a8d18ea6b07
+2026/10/08 22:36:10 existing blob: sha256:b839dfae01f66e15c6a8b63520557ed315bdfe036342fa7a0c537259f10d7a9a
+2026/10/08 22:36:10 existing blob: sha256:d6b1b89eccacc15c2420b2776d72c1dae334a00805ed9af54bf2f71e4d536f28
+2026/10/08 22:36:10 existing blob: sha256:ebddc55facdc6b1f7e0f30816a5fc7cc62f38abdf76c0a8b0a0ce52085754795
+2026/10/08 22:36:10 existing blob: sha256:52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296
+2026/10/08 22:36:10 existing blob: sha256:c4bc6f35ff5e25aa1afe7a148a0b6f10a760f54e298f86a4a4d44b91f1afbfab
+2026/10/08 22:36:11 pushed blob: sha256:411e0033843098b47cfe50de24f5dbbaa137164bade7dbeb8b0cf4cb9fe73a2f
+2026/10/08 22:36:11 pushed blob: sha256:14c0e6b62884901f6ce896b4b07684b43fcf9528914db937a40ab810d40b06b6
+2026/10/08 22:36:11 pushed blob: sha256:91f3ea0ac7b51ea1611a092851c9ee96b49cbe530a8c987cd9f8704d4328b97f
+2026/10/08 22:36:11 gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor:sha256-90094acd54842c79e89ddd51d4d820c54d546b2eb58854b9e8f9b62984f5c38d.sbom: digest: sha256:8eb4f9307d463d331b25234fdaeaae77256fe222b2a692591ec4f0463fc848b6 size: 374
+2026/10/08 22:36:12 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor:sha256-90094acd54842c79e89ddd51d4d820c54d546b2eb58854b9e8f9b62984f5c38d.sbom
+2026/10/08 22:36:16 pushed blob: sha256:8ae69e1207573227d3ea03d182d87e82af89c23007be52f31de5c1073f81ee8d
+2026/10/08 22:36:16 gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor:latest: digest: sha256:90094acd54842c79e89ddd51d4d820c54d546b2eb58854b9e8f9b62984f5c38d size: 2937
+2026/10/08 22:36:16 Published gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor@sha256:90094acd54842c79e89ddd51d4d820c54d546b2eb58854b9e8f9b62984f5c38d

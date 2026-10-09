@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-wchan, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    command: ["sh", "-c", "while true; do echo \"T $(date +%s)\"; for t in /proc/[0-9]*/task/[0-9]*; do c=$(cat $t/comm 2>/dev/null); case \"$c\" in runsc*|exe|ateom*) s=$(cut -d' ' -f3 $t/stat 2>/dev/null); w=$(cat $t/wchan 2>/dev/null); echo \"$c $s $w\";; esac; done; echo END; sleep 1; done"]

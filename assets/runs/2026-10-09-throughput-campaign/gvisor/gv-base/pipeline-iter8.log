@@ -1,0 +1,5 @@
+02:21:43 [east] == ######## (B) register 5000, 650 awake at think x1, swap N=2 x1.5 per 1s, 2m levels, hold 4m, then cycle all ########
+02:21:44 [east] == fleet reuse: no clean / no workload redeploy (pool 100 ready)
+02:28:49 [east] == early bucket sample: 400 objects
+02:43:24 [east] == run.sh exit=1
+02:44:01 [east] == all done

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-debuglogs, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: ate, mountPath: /host/var/lib/ate, readOnly: true}]
+    command: ["sh", "-c", "cd /host/var/lib/ate/actors 2>/dev/null || { echo no actors dir; ls /host/var/lib/ate; sleep 600; }; echo dirs_with_debug $(ls -d */runsc-debug-logs 2>/dev/null | wc -l); for d in $(ls -dt */runsc-debug-logs 2>/dev/null | head -40); do ls $d | grep -q gofer || continue; echo \"=== $d\"; ls -la $d | tail -8; for f in $(ls -t $d/*gofer* 2>/dev/null | head -2); do echo \"--- $f (errors/last lines)\"; grep -i -E 'error|fatal|panic|fail|denied|exit' $f | tail -6; tail -4 $f; done; n=$((n+1)); [ $n -ge 3 ] && break; done; echo DONE; sleep 900"]
+  volumes: [{name: ate, hostPath: {path: /var/lib/ate}}]

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-workerstate, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    command: ["sh", "-c", "P=$(for p in /proc/[0-9]*; do [ \"$(cat $p/comm 2>/dev/null)\" = ateom-gvisor ] && echo ${p#/proc/}; done | head -1); echo worker_pid $P; CG=$(cat /proc/$P/cgroup | sed 's/^0:://'); echo worker_cgroup $CG; SCOPE=$(dirname $CG); echo scope $SCOPE; echo '--- mounts under /var/lib/ate in worker mount ns:'; grep -c ' /var/lib/ate/actors/' /proc/$P/mountinfo; grep ' /var/lib/ate/actors/' /proc/$P/mountinfo | awk '{print $5, $9}' | head -8; echo '--- shared root in worker ns:'; ls -la /proc/$P/root/run/ateom-runsc-shared/ 2>&1 | head; grep 'ateom-runsc-shared' /proc/$P/mountinfo | awk '{print $5, $9, $10}'; echo '--- processes in the worker scope:'; for p in /proc/[0-9]*; do c=$(cat $p/cgroup 2>/dev/null | sed 's/^0:://'); case \"$c\" in $SCOPE*) echo \"$(cat $p/comm) pid=${p#/proc/} cg=${c#$SCOPE} state=$(cut -d' ' -f3 $p/stat) ppid=$(cut -d' ' -f4 $p/stat)\";; esac; done | sort | head -40; echo '--- slot cgroups in scope:'; for d in /sys/fs/cgroup$SCOPE/ateom-slot-*; do echo \"$d procs=$(cat $d/cgroup.procs | tr '\\n' ' ') events=$(cat $d/cgroup.events | tr '\\n' ' ')\"; done; echo DONE; sleep 600"]

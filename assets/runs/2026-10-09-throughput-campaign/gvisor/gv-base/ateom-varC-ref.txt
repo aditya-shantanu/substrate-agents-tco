@@ -1,0 +1,1 @@
+gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor@sha256:d3c1989a625cc7797f32636a17b3f23c8b4d58d58ec8782e4bb63a3933fba902

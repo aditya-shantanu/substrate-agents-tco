@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-slab, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    command: ["sh", "-c", "awk 'NR>2 {printf \"%12d %s\\n\", $3*$4/1048576, $1}' /proc/slabinfo | sort -rn | head -15; echo; grep -E 'Slab|SUnreclaim|SReclaimable|KernelStack|PageTables|Percpu|VmallocUsed' /proc/meminfo; echo netns_count $(ls /proc/*/ns/net 2>/dev/null | xargs -n1 readlink 2>/dev/null | sort -u | wc -l); echo DONE; sleep 300"]

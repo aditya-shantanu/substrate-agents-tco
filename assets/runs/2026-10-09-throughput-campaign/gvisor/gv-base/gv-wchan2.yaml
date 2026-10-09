@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-wchan2, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    command: ["sh", "-c", "while true; do echo \"T $(date +%s.%N)\"; for p in /proc/[0-9]*; do c=$(cat $p/comm 2>/dev/null); case \"$c\" in runsc|runsc-gofer|runsc-sandbox) for t in $p/task/*; do s=$(cut -d' ' -f3 $t/stat 2>/dev/null); w=$(cat $t/wchan 2>/dev/null); echo \"$c $s $w\"; if [ \"$s\" = D ]; then echo \"STACK $c $(tr '\\n' ';' < $t/stack 2>/dev/null | cut -c1-400)\"; fi; done;; esac; done; echo END; done"]

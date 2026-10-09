@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-cgclean, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: cg, mountPath: /host/sys/fs/cgroup}]
+    command: ["sh", "-c", "n=0; s=0; b=0; for d in $(find /host/sys/fs/cgroup -type d \\( -name '*-_pause' -o -name '*-glutton' \\) -mmin +2); do if grep -q 'populated 0' $d/cgroup.events 2>/dev/null; then if rmdir $d 2>/dev/null; then n=$((n+1)); else b=$((b+1)); fi; else s=$((s+1)); fi; done; echo \"removed $n skipped_populated $s busy $b\"; echo remaining_pause $(find /host/sys/fs/cgroup -type d -name '*-_pause' | wc -l); grep -E 'Slab:|SUnreclaim' /proc/meminfo; echo DONE"]
+  volumes: [{name: cg, hostPath: {path: /sys/fs/cgroup}}]

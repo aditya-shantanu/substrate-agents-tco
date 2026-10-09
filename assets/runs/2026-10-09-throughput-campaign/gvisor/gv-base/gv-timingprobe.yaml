@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-timingprobe, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: host, mountPath: /host}]
+    env: [{name: CUTOFF, value: "__CUTOFF__"}]
+    command: ["sh", "-c", "cd /host/var/log/pods && find ate-system_atelet-* benchmark-workloads_benchmark-ateom-* -type f \\( -name '*.log' -o -name '*.gz' \\) 2>/dev/null | while read f; do case $f in *.gz) zcat $f;; *) cat $f;; esac; done | grep -E 'timing breakdown|Reused pooled sandbox network|could not be adopted' | sed -E 's/^[0-9T:.Z+-]+ (stdout|stderr) F //' | awk -v c=\"$CUTOFF\" 'substr($0,10,20) >= c' > /tmp/out.txt; wc -l /tmp/out.txt; sleep 3600"]
+  volumes: [{name: host, hostPath: {path: /}}]

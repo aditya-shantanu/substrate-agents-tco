@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-mountprobe, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: ubuntu:24.04
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    command: ["bash", "-c", "mkdir -p /mp/src /mp/dst; while true; do t0=$(date +%s%N); for i in $(seq 20); do mount --bind /mp/src /mp/dst; umount /mp/dst; done; t1=$(date +%s%N); t2=$(date +%s%N); for i in $(seq 20); do unshare -m true; done; t3=$(date +%s%N); echo \"T $(date +%s) bind_umount_pair_us $(( (t1-t0)/20000 )) unshare_m_us $(( (t3-t2)/20000 ))\"; sleep 2; done"]

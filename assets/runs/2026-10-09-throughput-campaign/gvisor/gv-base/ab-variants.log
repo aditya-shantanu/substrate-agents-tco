@@ -1,0 +1,21 @@
+#### variant A gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor@sha256:406eeaa0c6f302d1c67f8e694936bf2cba3b6bd3bdd70edd29f97940c8ee09b1 02:02:28
+== park pass Fri Oct  9 02:02:28 PDT 2026
+== patch pool Fri Oct  9 02:02:30 PDT 2026
+== wait for WorkerPool status Fri Oct  9 02:03:18 PDT 2026
+workerpool readyReplicas=100
+== crashed cleanup Fri Oct  9 02:03:38 PDT 2026
+== done Fri Oct  9 02:03:48 PDT 2026
+== wave 2 suspend 02:05:00
+== worker log scan (last 120s)
+runsc creates=58 gofer_failures=0
+#### variant B gcr.io/gke-ai-eco-dev/ate-images/ateom-gvisor@sha256:2f63ef140068ff031dcca6febc98f8a85e498ed614039cf28f771723d1ee6bc4 02:09:00
+== park pass Fri Oct  9 02:09:00 PDT 2026
+== patch pool Fri Oct  9 02:09:02 PDT 2026
+== wait for WorkerPool status Fri Oct  9 02:09:50 PDT 2026
+workerpool readyReplicas=100
+== crashed cleanup Fri Oct  9 02:10:12 PDT 2026
+== done Fri Oct  9 02:10:15 PDT 2026
+   1 suspend failed: turn-1791517949-gvisor-0086
+== worker log scan (last 118s)
+runsc creates=44 gofer_failures=26
+#### done 02:15:22

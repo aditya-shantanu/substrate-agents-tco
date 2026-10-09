@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-dmesg, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    command: ["sh", "-c", "dmesg -T 2>/dev/null | tail -400 | grep -i -E 'runsc|gofer|killed|segfault|oom|cgroup|netns|overlay|traps' | tail -60; echo DONE; sleep 300"]

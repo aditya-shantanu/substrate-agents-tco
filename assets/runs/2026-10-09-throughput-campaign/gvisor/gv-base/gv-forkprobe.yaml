@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-forkprobe, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    command: ["sh", "-c", "while true; do t0=$(cut -d' ' -f1 /proc/uptime); i=0; while [ $i -lt 200 ]; do /bin/true; i=$((i+1)); done; t1=$(cut -d' ' -f1 /proc/uptime); echo \"T $(date +%s) fork_exec_us_per $(awk -v a=$t0 -v b=$t1 'BEGIN{printf \"%d\", (b-a)*1000000/200}')\"; sleep 2; done"]

@@ -1,0 +1,7 @@
+suspended available:      111
+== wave 1 resume 02:16:46
+== wave 1 suspend 02:17:09
+== wave 2 resume 02:17:32
+== wave 2 suspend 02:17:54
+== worker log scan (last 115s)
+runsc creates=61 gofer_failures=0

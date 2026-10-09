@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: gv-slotstate, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: cg, mountPath: /host/sys/fs/cgroup, readOnly: true}]
+    command: ["sh", "-c", "for d in $(find /host/sys/fs/cgroup -type d -name 'ateom-slot-*' | head -12); do echo \"== $d\"; for f in cgroup.freeze cgroup.events cgroup.type cgroup.subtree_control pids.max memory.max memory.high memory.current cpu.max; do printf '%s=%s ' $f \"$(cat $d/$f 2>/dev/null | tr '\\n' ' ')\"; done; echo; done; echo; echo frozen_total $(for d in $(find /host/sys/fs/cgroup -type d -name 'ateom-slot-*'); do cat $d/cgroup.freeze; done | grep -c 1); echo slots_total $(find /host/sys/fs/cgroup -type d -name 'ateom-slot-*' | wc -l); echo DONE; sleep 300"]
+  volumes: [{name: cg, hostPath: {path: /sys/fs/cgroup}}]

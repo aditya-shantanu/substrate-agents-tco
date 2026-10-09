@@ -1,0 +1,1275 @@
+diff --git a/benchmarking/workloads/deploy.sh b/benchmarking/workloads/deploy.sh
+index 675eb588..4174c3fb 100755
+--- a/benchmarking/workloads/deploy.sh
++++ b/benchmarking/workloads/deploy.sh
+@@ -49,6 +49,7 @@ SANDBOX_CLASS="gvisor"
+ # so benchmark actors do not inherit the 2 GiB kata default and drag its page
+ # cache into every memory snapshot. Raise it for RAM-consuming suites.
+ ACTOR_MEMORY="256Mi"
++ACTOR_CPU=""
+ # Worker pod memory (WorkerPool spec.template.resources), set as both request
+ # and limit. Empty leaves the pod unsized. The limit is also the memory the
+ # worker reports as its actor capacity.
+@@ -143,6 +144,7 @@ substitute() {
+       -e "s|\${SANDBOX_CONFIG_NAME}|${sandbox_config_name}|g" \
+       -e "s|\${OTLP_ENDPOINT}|${OTLP_ENDPOINT}|g" \
+       -e "s|\${ACTOR_MEMORY}|${ACTOR_MEMORY}|g" \
++      -e "$(if [[ -n "${ACTOR_CPU:-}" ]]; then echo "s|\${ACTOR_CPU}|${ACTOR_CPU}|g"; else echo '/- name: cpu/,/ACTOR_CPU/d'; fi)" \
+       -e "s|\${WORKER_RESOURCES}|${worker_resources}|g" \
+       -e "s|\${SWEPERF_IMAGE}|${SWEPERF_IMAGE:-}|g" \
+       "${manifest}"
+@@ -282,6 +284,13 @@ while [[ "$#" -gt 0 ]]; do
+     --actor-memory=*)
+       ACTOR_MEMORY="${1#*=}"
+       ;;
++    --actor-cpu)
++      shift
++      ACTOR_CPU="$1"
++      ;;
++    --actor-cpu=*)
++      ACTOR_CPU="${1#*=}"
++      ;;
+     --worker-memory)
+       shift
+       WORKER_MEMORY="$1"
+diff --git a/benchmarking/workloads/manifests/glutton-template.yaml.tmpl b/benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+index e57c1dd8..fe1e9dcb 100644
+--- a/benchmarking/workloads/manifests/glutton-template.yaml.tmpl
++++ b/benchmarking/workloads/manifests/glutton-template.yaml.tmpl
+@@ -60,6 +60,8 @@ resources:
+   limits:
+   - name: memory
+     quantity: ${ACTOR_MEMORY}
++  - name: cpu
++    quantity: "${ACTOR_CPU}"
+ snapshotConfig:
+   onCommit: SNAPSHOT_CONTENT_SCOPE_FULL
+   storageLocation: gs://${BUCKET_NAME}/benchmark-workloads/glutton/
+diff --git a/cmd/ateom-gvisor/main.go b/cmd/ateom-gvisor/main.go
+index a74f3cc0..f36cc373 100644
+--- a/cmd/ateom-gvisor/main.go
++++ b/cmd/ateom-gvisor/main.go
+@@ -325,6 +325,8 @@ type AteomService struct {
+ 	// own cgroup scope, which ateomcgroup.Delegate prepares. A field rather
+ 	// than a constant so tests can point GetWorkloadStats at a fixture tree.
+ 	cgroupRoot string
++	// slots are the reusable sandbox cgroups (cgroupslots.go).
++	slots *cgroupSlots
+ 
+ 	// readSandboxCgroup overrides cgroupstats.Read when set. Only tests set it:
+ 	// it is the seam that lets them interleave a lifecycle transition with the
+@@ -345,6 +347,7 @@ func NewService(tunnel *ateomtunnel.Tunnel, actorLogger *actorlog.ActorLogger, m
+ 		tunnel:      tunnel,
+ 		actorLogger: actorLogger,
+ 		cgroupRoot:  defaultCgroupRoot,
++		slots:       newCgroupSlots(defaultCgroupRoot),
+ 	}
+ }
+ 
+@@ -588,18 +591,25 @@ func (s *AteomService) RunWorkload(ctx context.Context, req *ateompb.RunWorkload
+ 	if err != nil {
+ 		return nil, err
+ 	}
++	cgroupLeaf, err := s.slots.acquire(req.GetActorUid())
++	if err != nil {
++		return nil, err
++	}
+ 	rcmd := &runsc{
+ 		path:           req.GetRunscPath(),
+ 		actorUID:       req.GetActorUid(),
+ 		actorDirs:      req.GetActorDirs(),
+ 		size:           sizing.FromLimits(req.GetCpuMilli(), req.GetMemoryBytes()),
+ 		durableVolumes: durableVolumeNames(req.GetSpec()),
++		cgroupLeaf:     cgroupLeaf,
++		netNSPath:      hostedNetNSPath(hosted),
+ 	}
+ 	var containersToDelete []string
+ 	defer func() {
+ 		if retErr != nil {
+ 			cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+ 			defer cancel()
++			defer s.slots.release(cleanupCtx, req.GetActorUid())
+ 			if err := s.tunnel.Deactivate(cleanupCtx, ateomstats.ActorAttributionFromRequest(req)); err != nil {
+ 				slog.WarnContext(cleanupCtx, "Failed to deactivate actor networking after Run failure", slog.Any("err", err))
+ 			}
+@@ -785,7 +795,15 @@ func (s *AteomService) CheckpointWorkload(ctx context.Context, req *ateompb.Chec
+ 	// Cleanup the containers after checkpointing. This also unhosts the actor,
+ 	// before the snapshot listing below can fail.
+ 	// This is best-effort cleanup for actor containers that may have been left behind after checkpointing.
+-	if err := s.terminateWorkload(ctx, attribution.Ref, attribution.UID, req.GetRunscPath(), req.GetActorDirs(), req.GetSpec().GetContainers()); err != nil {
++	// EXPERIMENT (agents-tco east, 2026-10-09): a FULL `runsc checkpoint` stops
++	// the sandbox, so the kill/wait/state round trips in terminateWorkload are
++	// four runsc process spawns that only ever fail ("connecting to control
++	// server: connection refused"); go straight to the deletes.
++	terminate := s.terminateWorkload
++	if scope == ateompb.SnapshotScope_SNAPSHOT_SCOPE_FULL && leanTeardown() {
++		terminate = s.terminateCheckpointedWorkload
++	}
++	if err := terminate(ctx, attribution.Ref, attribution.UID, req.GetRunscPath(), req.GetActorDirs(), req.GetSpec().GetContainers()); err != nil {
+ 		slog.WarnContext(ctx, "failed to terminate workload after checkpoint",
+ 			slog.String("actor", attribution.Ref.String()),
+ 			slog.String("actorUID", attribution.UID),
+@@ -945,18 +963,25 @@ func (s *AteomService) RestoreWorkload(ctx context.Context, req *ateompb.Restore
+ 	if err != nil {
+ 		return nil, err
+ 	}
++	cgroupLeaf, err := s.slots.acquire(req.GetActorUid())
++	if err != nil {
++		return nil, err
++	}
+ 	rcmd := &runsc{
+ 		path:           req.GetRunscPath(),
+ 		actorUID:       req.GetActorUid(),
+ 		actorDirs:      req.GetActorDirs(),
+ 		size:           sizing.FromLimits(req.GetCpuMilli(), req.GetMemoryBytes()),
+ 		durableVolumes: durableVolumeNames(req.GetSpec()),
++		cgroupLeaf:     cgroupLeaf,
++		netNSPath:      hostedNetNSPath(hosted),
+ 	}
+ 	var containersToDelete []string
+ 	defer func() {
+ 		if retErr != nil {
+ 			cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
+ 			defer cancel()
++			defer s.slots.release(cleanupCtx, req.GetActorUid())
+ 			if err := s.tunnel.Deactivate(cleanupCtx, attribution); err != nil {
+ 				slog.WarnContext(cleanupCtx, "Failed to deactivate actor networking after Restore failure", slog.Any("err", err))
+ 			}
+@@ -1150,10 +1175,67 @@ func (s *AteomService) terminateWorkload(ctx context.Context, actorRef resources
+ 	if err := s.unhostActor(ctx, actorUID); err != nil {
+ 		errs = append(errs, fmt.Errorf("while cleaning up actor network: %w", err))
+ 	}
++	s.slots.release(cleanupCtx, actorUID)
+ 
+ 	return errors.Join(errs...)
+ }
+ 
++// leanTeardown reports whether the post-checkpoint teardown skips the
++// kill/wait/state round trips (default on; ATE_LEAN_TEARDOWN=0 restores the
++// full sequence).
++func leanTeardown() bool {
++	if v := os.Getenv("ATE_LEAN_TEARDOWN"); v != "" {
++		return v != "0"
++	}
++	return leanTeardownDefault
++}
++
++// terminateCheckpointedWorkload is terminateWorkload for a sandbox that a FULL
++// checkpoint has already stopped: application containers are deleted first and
++// the pause (root) container last, each with `runsc delete -force`, with no
++// kill, wait or state calls in between. A delete that fails because the
++// sandbox is already gone is logged, not returned: the state and pid-file
++// directories are reset right after, and atelet wipes the bundles.
++func (s *AteomService) terminateCheckpointedWorkload(ctx context.Context, actorRef resources.ActorRef, actorUID, runscPath string, actorDirs *ateompb.ActorDirs, containers []*ateompb.Container) error {
++	var errs []error
++	if err := s.tunnel.Deactivate(ctx, resources.ActorAttribution{Ref: actorRef, UID: actorUID}); err != nil {
++		errs = append(errs, fmt.Errorf("while deactivating actor networking: %w", err))
++	}
++	rcmd := &runsc{path: runscPath, actorUID: actorUID, actorDirs: actorDirs}
++	cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 30*time.Second)
++	defer cancel()
++	names := make([]string, 0, len(containers)+1)
++	for _, ctr := range containers {
++		names = append(names, ctr.GetName())
++	}
++	names = append(names, ocispec.PauseContainer)
++	for _, name := range names {
++		if err := rcmd.cmdDelete(cleanupCtx, name); err != nil {
++			slog.InfoContext(ctx, "runsc delete after checkpoint reported an error (sandbox already stopped)", slog.String("container", name), slog.Any("err", err))
++		}
++	}
++	if err := resetRunscStateAndPidFileDirs(actorDirs); err != nil {
++		errs = append(errs, fmt.Errorf("while resetting runsc state and pid file dirs: %w", err))
++	}
++	if err := imagecache.UnmountAllUnder(actorDirs.GetOciBundleDir()); err != nil {
++		errs = append(errs, fmt.Errorf("while unmounting bundle rootfs overlays: %w", err))
++	}
++	if err := s.unhostActor(ctx, actorUID); err != nil {
++		errs = append(errs, fmt.Errorf("while cleaning up actor network: %w", err))
++	}
++	s.slots.release(cleanupCtx, actorUID)
++	return errors.Join(errs...)
++}
++
++// hostedNetNSPath is the descriptor path of a pooled sandbox namespace, or ""
++// when the actor's namespace carries its /run/netns name.
++func hostedNetNSPath(h *hostedActor) string {
++	if h == nil || h.network == nil || h.network.Network == nil {
++		return ""
++	}
++	return h.network.Network.NSPath
++}
++
+ func deleteContainers(ctx context.Context, rcmd *runsc, containers []string, operation string) {
+ 	for _, container := range slices.Backward(containers) {
+ 		if err := rcmd.cmdDelete(ctx, container); err != nil {
+diff --git a/cmd/ateom-gvisor/runsc.go b/cmd/ateom-gvisor/runsc.go
+index 6c557064..32e807f6 100644
+--- a/cmd/ateom-gvisor/runsc.go
++++ b/cmd/ateom-gvisor/runsc.go
+@@ -21,10 +21,12 @@ import (
+ 	"context"
+ 	"errors"
+ 	"fmt"
++	specs "github.com/opencontainers/runtime-spec/specs-go"
+ 	"io"
+ 	"log/slog"
+ 	"os"
+ 	"os/exec"
++	"path/filepath"
+ 	"slices"
+ 	"strings"
+ 	"syscall"
+@@ -43,6 +45,13 @@ type runsc struct {
+ 	size sizing.SandboxSize
+ 	// durableVolumes are the durable-dir volume names declared to the sandbox.
+ 	durableVolumes []string
++	// netNSPath, when set, replaces the network namespace path atelet wrote
++	// into the OCI spec (a pooled namespace handed out by descriptor).
++	netNSPath string
++	// cgroupLeaf, when set, is the reusable cgroup slot (relative to the
++	// worker's cgroup scope) both of the actor's containers run in; see
++	// cgroupslots.go. Empty keeps ocispec's per-container leaves.
++	cgroupLeaf string
+ }
+ 
+ // durableVolumeNames returns the sorted, deduplicated durable-dir volume names
+@@ -65,6 +74,19 @@ func (r *runsc) shapeSpec(containerName string) error {
+ 	if err != nil {
+ 		return err
+ 	}
++	if r.cgroupLeaf != "" {
++		if spec.Linux == nil {
++			spec.Linux = &specs.Linux{}
++		}
++		spec.Linux.CgroupsPath = "/" + r.cgroupLeaf
++	}
++	if r.netNSPath != "" && spec.Linux != nil {
++		for i := range spec.Linux.Namespaces {
++			if spec.Linux.Namespaces[i].Type == "network" {
++				spec.Linux.Namespaces[i].Path = r.netNSPath
++			}
++		}
++	}
+ 	ocispec.ShapeGVisor(spec, ocispec.GVisorOptions{
+ 		ActorUID:       r.actorUID,
+ 		ContainerName:  containerName,
+@@ -72,11 +94,108 @@ func (r *runsc) shapeSpec(containerName string) error {
+ 		Size:           r.size,
+ 		ResolvConf:     resolvConfPath(r.actorDirs),
+ 	})
++	// EXPERIMENT (agents-tco east, 2026-10-09): application containers get no
++	// cgroup of their own. Their processes run inside the sentry, which the
++	// pause container's cgroup already bounds; runsc would only put the
++	// sub-container's gofer in the extra cgroup, at the price of a cgroup
++	// create, two cgroup.procs attaches and a remove per activation, each a
++	// node-global lock (10-60 ms apiece under load, see cgroupslots.go).
++	// ATE_SUBCONTAINER_CGROUP=1 restores the per-container cgroup.
++	subCgroup := subcontainerCgroupDefault
++	if v := os.Getenv("ATE_SUBCONTAINER_CGROUP"); v != "" {
++		subCgroup = v == "1"
++	}
++	if containerName != ocispec.PauseContainer && !subCgroup {
++		spec.Linux.CgroupsPath = ""
++	}
+ 	return ocispec.Save(bundle, spec)
+ }
+ 
++// runscSharedRoot is the --shared-root handed to every runsc invocation.
++//
++// EXPERIMENT (agents-tco east worktree, 2026-10-08): --root is per actor
++// (runscStateDir), and runsc keeps the gofers' empty "null" network namespace
++// pinned under --shared-root, which defaults to --root. So every sandbox
++// create unshared and pinned a fresh network namespace and every delete tore
++// one down (runsc logs "Pinned null network namespace at .../runsc-state/null-netns"
++// and warns "gVisor startup is slower if --root (or --shared-root) is not
++// reused across multiple sandboxes"). Namespace create/teardown serialises
++// node-wide in the kernel (rtnl_lock, cleanup_net), which is what made
++// pause_create grow from 90 ms alone to 300-650 ms at 8-12 swaps/s on a
++// 100-worker node. One directory per worker pod lets all its sandboxes share
++// the one pinned namespace. ATE_RUNSC_SHARED_ROOT overrides the path; "off"
++// restores the per-actor default.
++func runscSharedRoot() string {
++	switch v := os.Getenv("ATE_RUNSC_SHARED_ROOT"); v {
++	case "":
++		if !runscSharedRootOnDef {
++			return "off"
++		}
++		return "/run/ateom-runsc-shared"
++	default:
++		return v
++	}
++}
++
++// runscSharedRootFor is the --shared-root for a sandbox whose --root is
++// stateDir: the shared directory, or stateDir itself when disabled ("off"),
++// which is runsc's own default.
++func runscSharedRootFor(stateDir string) string {
++	if dir := runscSharedRoot(); dir != "off" {
++		return dir
++	}
++	return stateDir
++}
++
++// runscIgnoreCgroups is the value of runsc's --ignore-cgroups.
++//
++// DIAGNOSTIC BUILD (agents-tco east, 2026-10-09), not a fix: with the sandbox
++// network namespaces pooled and the gofer namespace shared, `runsc create` of
++// the pause container still grew from ~90 ms alone to ~530 ms at 8 swaps/s,
++// almost all of it between runsc's startup banner and "Gofer started", which
++// is where runsc creates and joins the per-container cgroup (cgroup_mutex and
++// the global cgroup_threadgroup_rwsem writer on every create, rmdir on every
++// delete; Substrate gives every container its own cgroup, ocispec.GVisorCgroupLeaf).
++// Setting this to true skips all cgroup work so the hypothesis can be measured;
++// it also drops the host-side per-actor memory limit (the sentry's vCPU count
++// still comes from the spec's cpu quota via --cpu-num-from-quota).
++// Measured 2026-10-09 (iteration 5): without a cgroup runsc sizes the sentry from
++// the host (192 vCPUs), which made every stage slower, so this now defaults to
++// false; ATE_RUNSC_IGNORE_CGROUPS=1 re-enables the diagnostic.
++func runscIgnoreCgroups() string {
++	if os.Getenv("ATE_RUNSC_IGNORE_CGROUPS") == "1" {
++		return "true"
++	}
++	return "false"
++}
++
++// runscDebug / runscDebugLog: DIAGNOSTIC runsc debug logging into the actor's
++// root dir (<root>/runsc-debug-logs/<cmd>-...). ATE_RUNSC_DEBUG=1 enables it;
++// off by default because it costs noticeable time per command.
++func runscDebug() string {
++	if os.Getenv("ATE_RUNSC_DEBUG") == "1" || runscDebugDefault {
++		return "true"
++	}
++	return "false"
++}
++
++func runscDebugLog(actorDirs *ateompb.ActorDirs) string {
++	if runscDebug() != "true" {
++		return ""
++	}
++	return filepath.Join(actorDirs.GetRootDir(), "runsc-debug-logs") + "/"
++}
++
++// ensureSharedRoot creates the shared directory; runsc expects it to exist.
++func ensureSharedRoot() {
++	if dir := runscSharedRoot(); dir != "off" {
++		_ = os.MkdirAll(dir, 0o700)
++	}
++}
++
+ func (r *runsc) cmdCreate(ctx context.Context, out io.Writer, containerName string, additionalArgs []string) error {
+ 	slog.InfoContext(ctx, "About to run runsc create", slog.String("container", containerName))
++	ensureSharedRoot()
+ 
+ 	if err := r.shapeSpec(containerName); err != nil {
+ 		return fmt.Errorf("while shaping the OCI spec for %q: %w", containerName, err)
+@@ -91,6 +210,10 @@ func (r *runsc) cmdCreate(ctx context.Context, out io.Writer, containerName stri
+ 		// "-log-packets",
+ 		// "-strace",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 		// Provision the sentry's vCPU count from the cgroup CPU quota written by
+ 		// sizing.ApplyToOCISpec, so the sandbox is sized to the pod's limit (runsc
+ 		// otherwise sizes to all host CPUs). Global flag: before the subcommand.
+@@ -133,6 +256,10 @@ func (r *runsc) cmdStart(ctx context.Context, out io.Writer, containerName strin
+ 		// "-strace",
+ 		"-allow-connected-on-save",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 	}
+ 	startArgs = append(startArgs, "start", containerName)
+ 	cmd := exec.CommandContext(ctx, r.path, startArgs...)
+@@ -161,6 +288,8 @@ func (r *runsc) cmdCheckpoint(ctx context.Context, containerName, checkpointPath
+ 		// "-log-packets",
+ 		// "-strace",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups="+runscIgnoreCgroups(),
+ 		"checkpoint",
+ 		"-image-path", checkpointPath,
+ 		containerName, // Name of the container
+@@ -187,6 +316,10 @@ func (r *runsc) cmdFsCheckpoint(ctx context.Context, containerName, checkpointPa
+ 		// "-log-packets",
+ 		// "-strace",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 		"fscheckpoint",
+ 		"-image-path", checkpointPath,
+ 	}
+@@ -218,6 +351,10 @@ func (r *runsc) pauseArgs(containerName string) []string {
+ 		"-log-format", "json",
+ 		"--alsologtostderr",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 		"pause",
+ 		containerName,
+ 	}
+@@ -243,6 +380,10 @@ func (r *runsc) resumeArgs(containerName string) []string {
+ 		"-log-format", "json",
+ 		"--alsologtostderr",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 		"resume",
+ 		containerName,
+ 	}
+@@ -273,6 +414,10 @@ func (r *runsc) restoreArgs(containerName, checkpointPath string) []string {
+ 		// "-log-packets",
+ 		// "-strace",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 		// Match cmdCreate: size the restored sentry from the cgroup CPU quota.
+ 		"--cpu-num-from-quota",
+ 		"restore",
+@@ -311,6 +456,8 @@ func (r *runsc) cmdDelete(ctx context.Context, containerName string) error {
+ 		"--alsologtostderr",
+ 		// "-debug",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups="+runscIgnoreCgroups(),
+ 		"delete",
+ 		"-force",
+ 		containerName,
+@@ -331,6 +478,8 @@ func (r *runsc) cmdState(ctx context.Context, containerName string) error {
+ 		"-log-format", "json",
+ 		"--alsologtostderr",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups="+runscIgnoreCgroups(),
+ 		"state",
+ 		containerName,
+ 	)
+@@ -350,6 +499,8 @@ func (r *runsc) cmdList(ctx context.Context) ([]string, error) {
+ 		"-log-format", "json",
+ 		"--alsologtostderr",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups="+runscIgnoreCgroups(),
+ 		"list",
+ 		"-quiet",
+ 	)
+@@ -369,6 +520,10 @@ func (r *runsc) killArgs(containerName, signal string) []string {
+ 		"-log-format", "json",
+ 		"--alsologtostderr",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 		"kill",
+ 		containerName,
+ 		signal,
+@@ -396,6 +551,10 @@ func (r *runsc) waitArgs(containerName string) []string {
+ 		"-log-format", "json",
+ 		"--alsologtostderr",
+ 		"-root", runscStateDir(r.actorDirs),
++		"-shared-root", runscSharedRootFor(runscStateDir(r.actorDirs)),
++		"-ignore-cgroups=" + runscIgnoreCgroups(),
++		"-debug=" + runscDebug(),
++		"-debug-log", runscDebugLog(r.actorDirs),
+ 		"wait",
+ 		containerName,
+ 	}
+diff --git a/cmd/ateom-gvisor/stats.go b/cmd/ateom-gvisor/stats.go
+index b8c80285..62b81070 100644
+--- a/cmd/ateom-gvisor/stats.go
++++ b/cmd/ateom-gvisor/stats.go
+@@ -259,7 +259,11 @@ func (s *AteomService) sampleSandbox(active *resources.ActorAttribution) (*ateom
+ 		read = cgroupstats.Read
+ 	}
+ 	observedAt := time.Now()
+-	sample, err := read(filepath.Join(s.cgroupRoot, ocispec.GVisorCgroupLeaf(active.UID, sandboxCgroupContainer)))
++	leaf := ocispec.GVisorCgroupLeaf(active.UID, sandboxCgroupContainer)
++	if slot, ok := s.slots.leafOf(active.UID); ok {
++		leaf = slot
++	}
++	sample, err := read(filepath.Join(s.cgroupRoot, leaf))
+ 	if err != nil {
+ 		return nil, err
+ 	}
+diff --git a/internal/ateomnet/netns/netns.go b/internal/ateomnet/netns/netns.go
+index 41ba1adc..163ee054 100644
+--- a/internal/ateomnet/netns/netns.go
++++ b/internal/ateomnet/netns/netns.go
+@@ -82,6 +82,33 @@ func CreateNamed(name string) (Handle, error) {
+ 	return interiorNetNS, nil
+ }
+ 
++// BindNamed gives an existing namespace a name under /run/netns, the way
++// CreateNamed names a new one: the calling thread enters ns and bind-mounts its
++// own /proc/self/task/<tid>/ns/net onto the name. A leftover name is removed
++// first, as in CreateNamed.
++func BindNamed(ns Handle, name string) error {
++	if err := RemoveNamed(name); err != nil {
++		return fmt.Errorf("while removing the leftover netns %s: %w", name, err)
++	}
++	if err := os.MkdirAll("/run/netns", 0o755); err != nil {
++		return err
++	}
++	path := filepath.Join("/run/netns", name)
++	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL, 0o444)
++	if err != nil {
++		return fmt.Errorf("while creating the netns name %s: %w", name, err)
++	}
++	f.Close()
++	if err := Do(context.Background(), ns, func(context.Context) error {
++		src := fmt.Sprintf("/proc/%d/task/%d/ns/net", os.Getpid(), unix.Gettid())
++		return unix.Mount(src, path, "bind", unix.MS_BIND, "")
++	}); err != nil {
++		_ = os.Remove(path)
++		return fmt.Errorf("while bind-mounting netns %s: %w", name, err)
++	}
++	return nil
++}
++
+ // RemoveNamed unmounts and unlinks a name under /run/netns, without following
+ // it if it is a symlink. A name that is already gone is not an error, and the
+ // namespace itself survives for as long as something holds it open.
+diff --git a/internal/ateomnet/sandbox.go b/internal/ateomnet/sandbox.go
+index e3b6f23d..2a9a6780 100644
+--- a/internal/ateomnet/sandbox.go
++++ b/internal/ateomnet/sandbox.go
+@@ -53,6 +53,13 @@ type SandboxNetwork struct {
+ 	// once runsc can be given one interface rather than claiming every
+ 	// interface in the namespace it runs in.
+ 	GatewayNetNS netns.Handle
++	// egressPort is what the gateway's nftables redirect points at; pooled
++	// networks are only reused for the same port.
++	egressPort uint16
++	// NSPath, when set, is the path the runtime should open to join
++	// RuntimeNetNS instead of the named /run/netns entry (pooled networks
++	// are handed out by descriptor, see netpool.go).
++	NSPath string
+ }
+ 
+ func (n *SandboxNetwork) holdsNetNS() bool { return n.RuntimeNetNS > 0 }
+@@ -82,6 +89,10 @@ func SetupSandboxNetwork(ctx context.Context, cfg SandboxNetworkConfig) (_ *Sand
+ 		return nil, fmt.Errorf("actornet: actor UID is required")
+ 	}
+ 
++	if n := takePooledNetwork(ctx, cfg); n != nil {
++		return n, nil
++	}
++
+ 	actorNSName := nodepath.ActorNetNSName(actorUID)
+ 	actorNS, err := netns.CreateNamed(actorNSName)
+ 	if err != nil {
+@@ -117,6 +128,7 @@ func SetupSandboxNetwork(ctx context.Context, cfg SandboxNetworkConfig) (_ *Sand
+ 		ActorUID:     actorUID,
+ 		RuntimeNetNS: actorNS,
+ 		GatewayNetNS: atunnelNS,
++		egressPort:   cfg.EgressPort,
+ 	}, nil
+ }
+ 
+@@ -274,13 +286,23 @@ func SandboxGatewayNetNSName(actorUID string) string {
+ }
+ 
+ // CleanupSandboxNetwork closes namespace handles and removes their names.
++// Veth-shaped networks are parked for reuse instead when the pool has room
++// (see netpool.go); their names are removed either way.
+ func CleanupSandboxNetwork(network *SandboxNetwork) error {
+ 	if network == nil {
+ 		return nil
+ 	}
+-	var errs error
+ 	// Compare before Close sets the handle to -1; microVMs share one descriptor.
+ 	separateNS := network.GatewayNetNS != network.RuntimeNetNS
++	if separateNS && network.holdsNetNS() && network.GatewayNetNS > 0 && netPool.enabled() {
++		pooled, err := network.release()
++		if pooled {
++			return err
++		}
++		network.destroy()
++		return err
++	}
++	var errs error
+ 	if network.holdsNetNS() {
+ 		if err := network.RuntimeNetNS.Close(); err != nil {
+ 			errs = errors.Join(errs, fmt.Errorf("while closing the sandbox netns: %w", err))
+diff --git a/internal/tarutil/tarutil.go b/internal/tarutil/tarutil.go
+index 0dee7b7a..1bd34fdd 100644
+--- a/internal/tarutil/tarutil.go
++++ b/internal/tarutil/tarutil.go
+@@ -148,8 +148,15 @@ func create(ctx context.Context, tarPath, srcDir string, skip SkipFunc, includeR
+ 	}
+ 	// Durable-dir tars are handed to atelet for upload as soon as we return, so
+ 	// flush to disk rather than trusting the page cache to outlive us.
+-	if err := f.Sync(); err != nil {
+-		return fmt.Errorf("syncing tar %q: %w", tarPath, err)
++	// EXPERIMENT (agents-tco worktree, approved by Aditya 2026-10-09): skipped unless
++	// ATE_TAR_FSYNC=1 — the tar is read back by atelet from the same node
++	// within seconds and uploaded, and N concurrent checkpoints' fsyncs convoy on
++	// the node filesystem's journal (measured: rootfs_upper 0.5 s alone → 2.4 s at
++	// 40 concurrent on an otherwise idle disk).
++	if os.Getenv("ATE_TAR_FSYNC") == "1" {
++		if err := f.Sync(); err != nil {
++			return fmt.Errorf("syncing tar %q: %w", tarPath, err)
++		}
+ 	}
+ 	return nil
+ }
+diff --git a/pkg/objectstorage/gcs.go b/pkg/objectstorage/gcs.go
+index e0328708..d53eb140 100644
+--- a/pkg/objectstorage/gcs.go
++++ b/pkg/objectstorage/gcs.go
+@@ -20,7 +20,10 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"io"
++	"os"
++	"strconv"
+ 	"sync"
++	"sync/atomic"
+ 	"time"
+ 
+ 	"cloud.google.com/go/storage"
+@@ -38,6 +41,26 @@ type gcsClient struct {
+ 	// built on first use by uploadClient.
+ 	poolOnce sync.Once
+ 	pool     []*storage.Client
++	// rr spreads whole-object requests (GetObject's first/only range, putSingle)
++	// over the pool too: every storage.Client holds ONE HTTP/2 connection, so
++	// without this all concurrent snapshot transfers on a node share a single
++	// TCP flow and finish together at N x (bytes / one-flow bandwidth).
++	rr atomic.Uint64
++}
++
++// clientPoolSize is how many storage.Clients (= connections) the pool holds.
++// ATE_GCS_CLIENT_POOL overrides the default of 8.
++func clientPoolSize() int {
++	if v, err := strconv.Atoi(os.Getenv("ATE_GCS_CLIENT_POOL")); err == nil && v > 0 {
++		return v
++	}
++	return 8
++}
++
++// nextClient returns the next pooled client round-robin (the base client when the
++// pool could not be built).
++func (g *gcsClient) nextClient(ctx context.Context) *storage.Client {
++	return g.uploadClient(ctx, int(g.rr.Add(1)))
+ }
+ 
+ // NewGCSClient returns a GCS-backed ObjectStorage. It builds its own
+@@ -105,7 +128,7 @@ func (g *gcsClient) PutObject(ctx context.Context, bucket, object string, reader
+ 
+ // putSingle writes the whole body in one resumable request.
+ func (g *gcsClient) putSingle(ctx context.Context, bucket, object string, reader io.Reader) error {
+-	wc := g.client.Bucket(bucket).Object(object).NewWriter(ctx)
++	wc := g.nextClient(ctx).Bucket(bucket).Object(object).NewWriter(ctx)
+ 	wc.ChunkSize = uploadChunkSize
+ 	// io.Copy reports local read errors; wc.Close() reports the actual
+ 	// GCS upload (auth, permissions, transient). Join both so the caller
+diff --git a/pkg/objectstorage/gcscompose.go b/pkg/objectstorage/gcscompose.go
+index c093de76..ed29e040 100644
+--- a/pkg/objectstorage/gcscompose.go
++++ b/pkg/objectstorage/gcscompose.go
+@@ -32,13 +32,15 @@ import (
+ // every part onto it, so parts that should be independent share one TCP stream:
+ // measured on a GKE worker node at 8 streams, 334 MB/s shared against 518 MB/s with a
+ // connection each.
+-const uploadPoolSize = 8
++const uploadPoolSize = 8 // default; see clientPoolSize
+ 
+ // uploadClient returns the client part i should use, or the default client if the pool
+ // could not be built (a pool failure costs throughput, not correctness).
+ func (g *gcsClient) uploadClient(ctx context.Context, i int) *storage.Client {
+ 	g.poolOnce.Do(func() {
+-		for range uploadPoolSize {
++		n := clientPoolSize()
++		slog.InfoContext(ctx, "Building GCS client pool", slog.Int("size", n))
++		for range n {
+ 			// The clients outlive this call, so they must not hold its cancellation.
+ 			c, err := storage.NewClient(context.WithoutCancel(ctx), g.opts...)
+ 			if err != nil {
+diff --git a/pkg/objectstorage/gcsranged.go b/pkg/objectstorage/gcsranged.go
+index f23d2157..a72d90ec 100644
+--- a/pkg/objectstorage/gcsranged.go
++++ b/pkg/objectstorage/gcsranged.go
+@@ -29,7 +29,7 @@ func (g *gcsClient) GetObject(ctx context.Context, bucket, object string) (io.Re
+ 	ctx, cancel := context.WithCancel(ctx)
+ 	// The first chunk doubles as the size probe: a range read reports the whole
+ 	// object's size in its attrs, so nothing pays an extra round trip for it.
+-	head, err := g.client.Bucket(bucket).Object(object).NewRangeReader(ctx, 0, downloadChunkSize)
++	head, err := g.nextClient(ctx).Bucket(bucket).Object(object).NewRangeReader(ctx, 0, downloadChunkSize)
+ 	if err != nil {
+ 		cancel()
+ 		if errors.Is(err, storage.ErrObjectNotExist) || errors.Is(err, storage.ErrBucketNotExist) {
+diff --git a/pkg/objectstorage/objects.go b/pkg/objectstorage/objects.go
+index 8dd6a6b7..b3cfca54 100644
+--- a/pkg/objectstorage/objects.go
++++ b/pkg/objectstorage/objects.go
+@@ -424,11 +424,11 @@ func decodeContent(out io.Writer, src io.Reader) (decodeContentResult, error) {
+ 
+ 	// Plain zstd stream: put back the peeked bytes, then decompress.
+ 	r := io.MultiReader(bytes.NewReader(magic[:n]), src)
+-	zrc, err := zstd.NewReader(r, zstd.WithDecoderConcurrency(1))
++	zrc, err := getDecoder(r)
+ 	if err != nil {
+ 		return decodeContentResult{}, fmt.Errorf("in zstd.NewReader: %w", err)
+ 	}
+-	defer zrc.Close()
++	defer putDecoder(zrc)
+ 	if f, ok := out.(*os.File); ok {
+ 		size, written, derr := copyZstdSparse(f, zrc)
+ 		if derr != nil {
+diff --git a/pkg/objectstorage/parzstd.go b/pkg/objectstorage/parzstd.go
+index 5b8a91f4..a7b7545f 100644
+--- a/pkg/objectstorage/parzstd.go
++++ b/pkg/objectstorage/parzstd.go
+@@ -17,6 +17,7 @@ package objectstorage
+ import (
+ 	"io"
+ 	"runtime"
++	"sync"
+ 
+ 	"github.com/klauspost/compress/zstd"
+ )
+@@ -60,11 +61,38 @@ type parZstdJob struct {
+ 	out chan []byte
+ }
+ 
+-// newParZstd starts the worker pool, capped at GOMAXPROCS (workers <= 0 asks for it).
++// Buffers and encoders are pooled across parZstd instances: a 128 MiB snapshot
++// otherwise allocates ~500 MiB of fresh memory per upload (chunk buffers, output
++// buffers, one encoder per worker), and at tens of concurrent checkpoints that is
++// gigabytes per second of page faults inside this one process (measured: 20-26
++// cores and ~1M minor faults/s in the snapshot plugin), which is what bounded the
++// node's suspend throughput — not the network and not the disk.
++var (
++	parZstdChunkPool = sync.Pool{New: func() any { b := make([]byte, 0, parZstdChunk); return &b }}
++	parZstdOutPool   = sync.Pool{New: func() any { b := make([]byte, 0, parZstdChunk+parZstdChunk/16); return &b }}
++	parZstdEncPool   = sync.Pool{New: func() any {
++		enc, err := zstd.NewWriter(nil,
++			zstd.WithEncoderLevel(zstd.SpeedFastest),
++			zstd.WithEncoderConcurrency(1))
++		if err != nil {
++			// NewWriter only fails on bad options, which are compile-time constants here.
++			panic(err)
++		}
++		return enc
++	}}
++)
++
++// parZstdMaxWorkers caps the per-file fan-out: 8 workers compress ~1.5 GB/s, far
++// above what one upload absorbs, and bounds the buffers a single file holds.
++const parZstdMaxWorkers = 8
++
++// newParZstd starts the worker pool, capped at GOMAXPROCS and parZstdMaxWorkers
++// (workers <= 0 asks for the cap).
+ func newParZstd(dst io.Writer, workers int) *parZstd {
+ 	if workers <= 0 || workers > runtime.GOMAXPROCS(0) {
+ 		workers = runtime.GOMAXPROCS(0)
+ 	}
++	workers = min(workers, parZstdMaxWorkers)
+ 	p := &parZstd{
+ 		dst:     dst,
+ 		workers: workers,
+@@ -74,7 +102,7 @@ func newParZstd(dst io.Writer, workers int) *parZstd {
+ 		done:    make(chan struct{}),
+ 	}
+ 	for range workers * parZstdQueue {
+-		p.free <- make([]byte, 0, parZstdChunk)
++		p.free <- (*parZstdChunkPool.Get().(*[]byte))[:0]
+ 	}
+ 	for range workers {
+ 		go p.worker()
+@@ -84,19 +112,14 @@ func newParZstd(dst io.Writer, workers int) *parZstd {
+ 	return p
+ }
+ 
+-// worker compresses whole chunks. Each holds its own encoder: the encoders are
+-// single-shot EncodeAll users, so one per worker keeps their state private.
++// worker compresses whole chunks with a pooled encoder (single-shot EncodeAll, so
++// the encoder's state stays private to this worker while it holds it).
+ func (p *parZstd) worker() {
+-	enc, err := zstd.NewWriter(nil,
+-		zstd.WithEncoderLevel(zstd.SpeedFastest),
+-		zstd.WithEncoderConcurrency(1))
+-	if err != nil {
+-		// NewWriter only fails on bad options, which are compile-time constants here.
+-		panic(err)
+-	}
+-	defer enc.Close()
++	enc := parZstdEncPool.Get().(*zstd.Encoder)
++	defer parZstdEncPool.Put(enc)
+ 	for j := range p.jobs {
+-		j.out <- enc.EncodeAll(j.buf, make([]byte, 0, len(j.buf)+len(j.buf)/16))
++		out := parZstdOutPool.Get().(*[]byte)
++		j.out <- enc.EncodeAll(j.buf, (*out)[:0])
+ 		p.free <- j.buf[:0]
+ 	}
+ }
+@@ -110,6 +133,10 @@ func (p *parZstd) writer() {
+ 		if p.err == nil {
+ 			_, p.err = p.dst.Write(frame)
+ 		}
++		if cap(frame) >= parZstdChunk+parZstdChunk/16 { // our pooled output buffer; EncodeAll may have grown it
++			f := frame[:0]
++			parZstdOutPool.Put(&f)
++		}
+ 	}
+ }
+ 
+@@ -142,7 +169,19 @@ func (p *parZstd) Close() error {
+ 	close(p.jobs)
+ 	close(p.ordered)
+ 	<-p.done
+-	return p.err
++	// Return the chunk buffers (the one in hand plus every idle one) to the pool.
++	b := p.buf[:0]
++	parZstdChunkPool.Put(&b)
++	p.buf = nil
++	for {
++		select {
++		case fb := <-p.free:
++			fb = fb[:0]
++			parZstdChunkPool.Put(&fb)
++		default:
++			return p.err
++		}
++	}
+ }
+ 
+ // newSerialZstd is a plain streaming encoder, for callers that are already running one
+diff --git a/pkg/objectstorage/sparsezstd.go b/pkg/objectstorage/sparsezstd.go
+index dc78ddd6..77d18e99 100644
+--- a/pkg/objectstorage/sparsezstd.go
++++ b/pkg/objectstorage/sparsezstd.go
+@@ -20,6 +20,7 @@ import (
+ 	"fmt"
+ 	"io"
+ 	"os"
++	"sync"
+ 
+ 	"github.com/klauspost/compress/zstd"
+ 	"golang.org/x/sys/unix"
+@@ -142,11 +143,11 @@ func readSparseZstd(dst *os.File, src io.Reader) (logical int64, err error) {
+ 		return 0, fmt.Errorf("unsupported sparse snapshot format version %d (this build supports %d)", ver, sparseVersion)
+ 	}
+ 
+-	zr, err := zstd.NewReader(src, zstd.WithDecoderConcurrency(1))
++	zr, err := getDecoder(src)
+ 	if err != nil {
+ 		return 0, err
+ 	}
+-	defer zr.Close()
++	defer putDecoder(zr)
+ 
+ 	var size int64
+ 	if err := binary.Read(zr, binary.LittleEndian, &size); err != nil {
+@@ -189,3 +190,30 @@ func readSparseZstd(dst *os.File, src io.Reader) (logical int64, err error) {
+ 	}
+ 	return size, nil
+ }
++
++// Decoders are pooled too: each zstd.NewReader allocates its window and history
++// buffers afresh, and concurrent restores paid for that in page faults the same
++// way the uploads did.
++var zstdDecPool = sync.Pool{New: func() any {
++	d, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(1))
++	if err != nil {
++		panic(err) // options are compile-time constants
++	}
++	return d
++}}
++
++// getDecoder returns a pooled decoder reading src.
++func getDecoder(src io.Reader) (*zstd.Decoder, error) {
++	d := zstdDecPool.Get().(*zstd.Decoder)
++	if err := d.Reset(src); err != nil {
++		zstdDecPool.Put(d)
++		return nil, err
++	}
++	return d, nil
++}
++
++// putDecoder detaches the decoder from its reader and returns it to the pool.
++func putDecoder(d *zstd.Decoder) {
++	_ = d.Reset(nil)
++	zstdDecPool.Put(d)
++}
+=== NEW FILE cmd/ateom-gvisor/cgroupslots.go
+//go:build linux
+
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io/fs"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"strconv"
+	"sync"
+
+	"github.com/agent-substrate/substrate/internal/ateomcgroup"
+)
+
+// EXPERIMENT (agents-tco east worktree, 2026-10-09): reusable sandbox cgroups.
+//
+// runsc creates a cgroup v2 leaf per container at create and removes it at
+// delete. On a 100-worker node the mkdir/rmdir (cgroup_mutex) and the
+// cgroup.procs attaches runsc performs on the way are a measurable part of
+// the pause-sandbox create convoy (host probe under 5-8 swaps/s: mkdir 7-24 ms,
+// attach pair 20-60 ms, rmdir up to 150 ms). runsc only removes a cgroup it
+// created itself, so the worker keeps a pool of leaves ("ateom-slot-N") under
+// its delegated scope and points both of an actor's containers at one of them
+// through the OCI spec's cgroupsPath: runsc finds the directory, writes the
+// actor's limits into it (so --cpu-num-from-quota and the memory limit still
+// work) and leaves it in place at delete. After the teardown the worker
+// kills whatever is left in the slot and hands it to the next activation.
+// ATE_CGROUP_SLOTS=0 disables this and restores the per-container leaves.
+
+const cgroupSlotPrefix = "ateom-slot-"
+
+// cgroupSlots is the per-worker pool of reusable sandbox cgroups.
+type cgroupSlots struct {
+	root    string
+	enabled bool
+
+	mu      sync.Mutex
+	free    []string
+	next    int
+	byActor map[string]string
+}
+
+func newCgroupSlots(root string) *cgroupSlots {
+	enabled := cgroupSlotsDefault
+	if v := os.Getenv("ATE_CGROUP_SLOTS"); v != "" {
+		enabled = v != "0"
+	}
+	return &cgroupSlots{root: root, enabled: enabled, byActor: map[string]string{}}
+}
+
+// acquire returns the leaf name (relative to root) the actor's containers
+// should use, creating a new slot when none is free. "" means slots are
+// disabled and the caller keeps runsc's own per-container cgroups.
+func (c *cgroupSlots) acquire(actorUID string) (string, error) {
+	if c == nil || !c.enabled {
+		return "", nil
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if leaf, ok := c.byActor[actorUID]; ok {
+		return leaf, nil
+	}
+	var leaf string
+	if n := len(c.free); n > 0 {
+		leaf = c.free[n-1]
+		c.free = c.free[:n-1]
+	} else {
+		leaf = cgroupSlotPrefix + strconv.Itoa(c.next)
+		c.next++
+	}
+	// MkdirAll rather than Mkdir: a slot runsc happened to remove (it should
+	// not, it does not own it) is simply re-created.
+	if err := os.MkdirAll(filepath.Join(c.root, leaf), 0o755); err != nil {
+		return "", fmt.Errorf("while creating sandbox cgroup slot %s: %w", leaf, err)
+	}
+	c.byActor[actorUID] = leaf
+	return leaf, nil
+}
+
+// leafOf is the slot the actor currently holds, if any.
+func (c *cgroupSlots) leafOf(actorUID string) (string, bool) {
+	if c == nil || !c.enabled {
+		return "", false
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	leaf, ok := c.byActor[actorUID]
+	return leaf, ok
+}
+
+// release returns the actor's slot to the pool once nothing runs in it. Any
+// process still there (runsc's delete is best-effort) is killed through
+// cgroup.kill first; a slot that cannot be emptied is dropped, not reused.
+func (c *cgroupSlots) release(ctx context.Context, actorUID string) {
+	if c == nil || !c.enabled {
+		return
+	}
+	c.mu.Lock()
+	leaf, ok := c.byActor[actorUID]
+	delete(c.byActor, actorUID)
+	c.mu.Unlock()
+	if !ok {
+		return
+	}
+	if err := ateomcgroup.KillLeafUnder(ctx, c.root, leaf); err != nil {
+		slog.WarnContext(ctx, "Sandbox cgroup slot not emptied; dropping it", slog.String("slot", leaf), slog.Any("err", err))
+		return
+	}
+	if _, err := os.Stat(filepath.Join(c.root, leaf)); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		slog.WarnContext(ctx, "Sandbox cgroup slot unreadable; dropping it", slog.String("slot", leaf), slog.Any("err", err))
+		return
+	}
+	c.mu.Lock()
+	c.free = append(c.free, leaf)
+	c.mu.Unlock()
+}
+=== NEW FILE cmd/ateom-gvisor/experiment_defaults.go
+//go:build linux
+
+package main
+
+// Build-time defaults for the agents-tco experiment knobs; the ATE_*
+// environment variables in runsc.go / cgroupslots.go / main.go override them
+// where one exists. Current setting = build C: netns pool, shared gofer
+// netns, runsc-owned cgroups (no slots), lean post-checkpoint teardown, no
+// cgroup for the application container, no runsc debug logging.
+const (
+	runscDebugDefault         = false
+	cgroupSlotsDefault        = false
+	runscSharedRootOnDef      = true
+	leanTeardownDefault       = true
+	subcontainerCgroupDefault = false
+)
+=== NEW FILE internal/ateomnet/netpool.go
+//go:build linux
+
+// Copyright 2026 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package ateomnet
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"os"
+	"strconv"
+	"sync"
+
+	"github.com/agent-substrate/substrate/internal/ateomnet/netns"
+	"github.com/agent-substrate/substrate/internal/nodepath"
+
+	"github.com/vishvananda/netlink"
+)
+
+// EXPERIMENT (agents-tco east worktree, 2026-10-08): reuse sandbox networks
+// across actors on one worker instead of creating and destroying two network
+// namespaces, a veth pair and an nftables table per activation.
+//
+// Why: on a c3-standard-192-metal node with 100 worker pods, every gVisor wake
+// paid 11 ms for namespace setup when alone but 300-800 ms at 10-40 concurrent
+// wakes, and pause-sandbox create grew the same way (75 -> 265-847 ms): the
+// unshare/veth/nftables syscalls and, above all, the kernel's single
+// cleanup_net worker (which holds rtnl_lock while it unregisters the dying
+// namespaces' veths) serialise node-wide. The host looked idle the whole time.
+//
+// A torn-down network goes back to a per-process free list with its names
+// removed; the next activation on this worker bind-mounts the pooled
+// namespaces under the new actor's names and re-applies the actor-side
+// address and default route (runsc deletes them from the veth when it claims
+// the interface, and does not put them back). The gateway side, the nftables
+// redirect and the per-namespace sysctl survive untouched. Networks are only
+// interchangeable within one egress port, which is a per-worker constant.
+//
+// ATE_NETNS_POOL sets how many idle networks a worker keeps (default 16;
+// 0 restores the create/destroy-per-activation behaviour).
+
+// sandboxNetworkPool keeps idle sandbox networks for reuse.
+type sandboxNetworkPool struct {
+	mu   sync.Mutex
+	free []*SandboxNetwork
+	max  int
+
+	// counters, for the log line on every take.
+	hits, misses, returned, dropped uint64
+}
+
+var netPool = func() *sandboxNetworkPool {
+	n := 16
+	if v, err := strconv.Atoi(os.Getenv("ATE_NETNS_POOL")); err == nil && v >= 0 {
+		n = v
+	}
+	return &sandboxNetworkPool{max: n}
+}()
+
+// enabled reports whether networks are pooled at all.
+func (p *sandboxNetworkPool) enabled() bool { return p.max > 0 }
+
+// take returns an idle network for egressPort, or nil.
+func (p *sandboxNetworkPool) take(egressPort uint16) *SandboxNetwork {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for i, n := range p.free {
+		if n.egressPort == egressPort {
+			p.free = append(p.free[:i], p.free[i+1:]...)
+			p.hits++
+			return n
+		}
+	}
+	p.misses++
+	return nil
+}
+
+// put keeps n for reuse; false when the pool is full (the caller destroys it).
+func (p *sandboxNetworkPool) put(n *SandboxNetwork) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if len(p.free) >= p.max {
+		p.dropped++
+		return false
+	}
+	p.free = append(p.free, n)
+	p.returned++
+	return true
+}
+
+func (p *sandboxNetworkPool) stats() []slog.Attr {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return []slog.Attr{
+		slog.Int("idle", len(p.free)), slog.Int("max", p.max),
+		slog.Uint64("hits", p.hits), slog.Uint64("misses", p.misses),
+		slog.Uint64("returned", p.returned), slog.Uint64("dropped", p.dropped),
+	}
+}
+
+// takePooledNetwork adopts an idle network for cfg's actor. It returns nil when
+// none is idle or adoption fails (the failed network is destroyed), and the
+// caller builds a fresh one.
+func takePooledNetwork(ctx context.Context, cfg SandboxNetworkConfig) *SandboxNetwork {
+	if !netPool.enabled() || !cfg.Veth {
+		return nil
+	}
+	n := netPool.take(cfg.EgressPort)
+	if n == nil {
+		return nil
+	}
+	if err := n.adopt(ctx, cfg.ActorUID); err != nil {
+		slog.WarnContext(ctx, "Pooled sandbox network could not be adopted; building a fresh one", slog.Any("err", err))
+		n.destroy()
+		return nil
+	}
+	slog.LogAttrs(ctx, slog.LevelInfo, "Reused pooled sandbox network", append(netPool.stats(), slog.String("actorUID", cfg.ActorUID))...)
+	return n
+}
+
+// adopt prepares n for actorUID: it restores the actor-side address and
+// default route, which runsc removes when it takes the interface over, and
+// records the handle path runsc should open. The namespaces are not given
+// names: the runtime reaches the actor namespace through the worker's own
+// descriptor (/proc/<pid>/fd/<n>, see NSPath), which spares two bind mounts
+// and two unmounts of the mount-namespace lock per activation. The name-based
+// path is kept when ATE_NETNS_BIND_NAMES=1.
+func (n *SandboxNetwork) adopt(ctx context.Context, actorUID string) error {
+	if bindNames() {
+		actorNSName := nodepath.ActorNetNSName(actorUID)
+		if err := netns.BindNamed(n.RuntimeNetNS, actorNSName); err != nil {
+			return fmt.Errorf("while naming the pooled actor netns %s: %w", actorNSName, err)
+		}
+		gatewayNSName := SandboxGatewayNetNSName(actorUID)
+		if err := netns.BindNamed(n.GatewayNetNS, gatewayNSName); err != nil {
+			_ = netns.RemoveNamed(actorNSName)
+			return fmt.Errorf("while naming the pooled gateway netns %s: %w", gatewayNSName, err)
+		}
+	}
+	if err := netns.Do(ctx, n.RuntimeNetNS, func(context.Context) error {
+		if err := linkUp("lo"); err != nil {
+			return err
+		}
+		eth0, err := netlink.LinkByName(ActorVethName)
+		if err != nil {
+			return err
+		}
+		if err := netlink.AddrReplace(eth0, ActorVethAddr); err != nil {
+			return fmt.Errorf("while re-assigning the actor address: %w", err)
+		}
+		if err := netlink.LinkSetUp(eth0); err != nil {
+			return err
+		}
+		return netlink.RouteReplace(&netlink.Route{
+			LinkIndex: eth0.Attrs().Index,
+			Gw:        ActorVethGwIP,
+		})
+	}); err != nil {
+		if bindNames() {
+			_ = netns.RemoveNamed(nodepath.ActorNetNSName(actorUID))
+			_ = netns.RemoveNamed(SandboxGatewayNetNSName(actorUID))
+		}
+		return err
+	}
+	n.ActorUID = actorUID
+	if !bindNames() {
+		n.NSPath = fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), int(n.RuntimeNetNS))
+	}
+	return nil
+}
+
+// bindNames reports whether pooled namespaces are also bind-mounted under the
+// actor's names (the pre-pool layout); default off.
+func bindNames() bool { return os.Getenv("ATE_NETNS_BIND_NAMES") == "1" }
+
+// release removes n's names and parks it in the pool. It reports false when the
+// network was not pooled (full pool, or not a pooled shape) and the caller must
+// destroy it; the names are removed either way.
+func (n *SandboxNetwork) release() (pooled bool, err error) {
+	for _, name := range []string{nodepath.ActorNetNSName(n.ActorUID), SandboxGatewayNetNSName(n.ActorUID)} {
+		if rerr := netns.RemoveNamed(name); rerr != nil {
+			err = fmt.Errorf("while deleting netns %s: %w", name, rerr)
+		}
+	}
+	if err != nil || !netPool.enabled() || n.RuntimeNetNS <= 0 || n.GatewayNetNS <= 0 || n.GatewayNetNS == n.RuntimeNetNS {
+		return false, err
+	}
+	n.ActorUID = ""
+	return netPool.put(n), nil
+}
+
+// destroy closes the handles; with the names already gone the namespaces die
+// with the last reference.
+func (n *SandboxNetwork) destroy() {
+	if n.GatewayNetNS > 0 && n.GatewayNetNS != n.RuntimeNetNS {
+		_ = n.GatewayNetNS.Close()
+	}
+	if n.RuntimeNetNS > 0 {
+		_ = n.RuntimeNetNS.Close()
+	}
+}
