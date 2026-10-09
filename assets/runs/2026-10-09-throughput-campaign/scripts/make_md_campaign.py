@@ -85,8 +85,10 @@ for cls, before, bt, after, at in (("microVM", "nanoturn-metal2", 10, "nanoturn3
     for label, d, tick in (("start of the day: main 66f8a888, 10-s burst ticks", before, bt), ("end of the day: patched build, 1-s ticks", after, at)):
         pth = os.path.join("/tmp/tco-runs/fill", d, "turn.txt")
         if not os.path.exists(pth): continue
+        seen=set()
         for r in _rows(pth):
-            if r["tag"] == "hold": continue
+            if r["tag"] == "hold" or r["n_per_tick"] in seen: continue  # the hold repeats the last clean level
+            seen.add(r["n_per_tick"])
             rate, ach, wk, pk, er, v = _fmt(r, tick)
             RATE_TABLE.append(f"| {label} | {rate} | **{ach}** | {wk} | {pk} | {er} | {v} |")
     RATE_TABLE.append("")

@@ -37,7 +37,6 @@ One activation = one actor resumed from its suspended snapshot and answering a r
 | start of the day: main 66f8a888, 10-s burst ticks | 1 | **0.96** | 1,257 / 1,379 / 1,516 | 2,209 / 2,360 / 2,458 | 0 + 0 | pass |
 | start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.92** | 2,273 / 2,422 / 2,480 | 3,931 / 4,360 / 9,048 | 0 + 0 | pass |
 | start of the day: main 66f8a888, 10-s burst ticks | 4 | **3.83** | 3,030 / 3,909 / 5,405 | 8,128 / 8,566 / 8,766 | 0 + 0 | wake-p99+wake-p90-vs-baseline+park-p90-vs-baseline |
-| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.97** | 2,304 / 2,547 / 3,195 | 3,992 / 4,638 / 4,819 | 2 + 0 | pass |
 | end of the day: patched build, 1-s ticks | 12 | **11.90** | 908 / 951 / 1,042 | 1,041 / 1,269 / 1,637 | 0 + 0 | pass |
 | end of the day: patched build, 1-s ticks | 14 | **13.88** | 1,005 / 1,066 / 1,119 | 1,101 / 1,809 / 13,681 | 0 + 1 | pass |
 | end of the day: patched build, 1-s ticks | 17 | **16.72** | 1,298 / 1,397 / 1,560 | 1,092 / 1,345 / 1,615 | 0 + 0 | pass |
@@ -50,7 +49,6 @@ One activation = one actor resumed from its suspended snapshot and answering a r
 | start of the day: main 66f8a888, 10-s burst ticks | 1 | **0.96** | 1,243 / 1,431 / 1,630 | 951 / 1,079 / 1,221 | 0 + 0 | pass |
 | start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.92** | 2,200 / 2,434 / 2,659 | 1,399 / 1,691 / 1,966 | 0 + 0 | pass |
 | start of the day: main 66f8a888, 10-s burst ticks | 4 | **3.83** | 4,089 / 4,368 / 4,596 | 2,507 / 2,985 / 3,232 | 0 + 0 | wake-p90-vs-baseline+park-p90-vs-baseline |
-| start of the day: main 66f8a888, 10-s burst ticks | 2 | **1.97** | 2,276 / 2,557 / 2,780 | 1,713 / 1,942 / 2,167 | 0 + 0 | pass |
 | end of the day: patched build, 1-s ticks | 2 | **1.98** | 486 / 618 / 696 | 462 / 541 / 645 | 0 + 0 | pass |
 | end of the day: patched build, 1-s ticks | 3 | **2.97** | 509 / 637 / 823 | 440 / 511 / 623 | 0 + 0 | pass |
 | end of the day: patched build, 1-s ticks | 4 | **3.97** | 576 / 703 / 837 | 467 / 539 / 688 | 0 + 0 | pass |
