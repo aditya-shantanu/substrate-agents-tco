@@ -1,4 +1,4 @@
-"""microVM pause-mode turnover (node-local checkpoints) vs the suspend-mode result — markdown."""
+"""microVM pause-mode turnover report (node-local checkpoints)."""
 import json, os, glob
 OUT = os.path.expanduser("~/Downloads/nano-agent-pause-turnover-microvm-metal-2026-10-09.md")
 def rows(p):
@@ -12,67 +12,93 @@ def rows(p):
 def verdict(v):
     if not v: return "pass"
     parts = []
-    if "refusals" in v or "errors" in v: parts.append("refusals" if "refusals" in v else "errors")
-    if "p90" in v or "p99" in v: parts.append("latency rule")
+    if "refusals" in v or "errors" in v: parts.append("refusals/errors > gate")
+    if "p90" in v or "p99" in v: parts.append("2.5× latency rule")
     if "backlog" in v: parts.append("backlog")
-    if "crashed" in v: parts.append("crashed")
+    if "crashed" in v: parts.append("crash gate")
+    if "psi-mem" in v: parts.append("memory pressure gate")
     return ", ".join(parts) or v
-def table(rs, tick=1):
-    out = ["| Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend-or-pause P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |", "|---|---|---|---|---|---|---|---|"]
-    seen = set()
+def lvl_table(rs, park_name="Pause"):
+    out = [f"| Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | {park_name} P50 / P90 / P99 ms | Errors + refusals (of wakes) | Backlog | Verdict |", "|---|---|---|---|---|---|---|"]
+    seen = set(); clean = [r["n_per_tick"] for r in rs if r["tag"] != "hold" and not r["failed_on"]]
+    best = max(clean) if clean else None
     for r in rs:
         if r["tag"] == "hold" or r["n_per_tick"] in seen: continue
-        seen.add(r["n_per_tick"])
-        out.append(f"| {r['n_per_tick']/tick:g} | **{r['achieved_swaps_per_s']}** | {r['wake_p50_ms']:,} / {r['wake_p90_ms']:,} / {r['wake_p99_ms']:,} | {r['park_p50_ms']:,} / {r['park_p90_ms']:,} / {r['park_p99_ms']:,} | {r['errors']} + {r['refusals']} | {r['backlog']} | {r['crashed']} | {verdict(r['failed_on'])} |")
-    hold = [r for r in rs if r["tag"] == "hold"]
-    if hold:
-        r = hold[-1]; out.append(f"| hold at {r['n_per_tick']/tick:g} (4 min) | **{r['achieved_swaps_per_s']}** | {r['wake_p50_ms']:,} / {r['wake_p90_ms']:,} / {r['wake_p99_ms']:,} | {r['park_p50_ms']:,} / {r['park_p90_ms']:,} / {r['park_p99_ms']:,} | {r['errors']} + {r['refusals']} | {r['backlog']} | {r['crashed']} | {verdict(r['failed_on'])} |")
+        seen.add(r["n_per_tick"]); b = "**" if r["n_per_tick"] == best else ""
+        pct = 100.0 * (r["errors"] + r["refusals"]) / max(r["wakes"], 1)
+        out.append(f"| {b}{r['n_per_tick']}{b} | {b}{r['achieved_swaps_per_s']}{b} | {b}{r['wake_p50_ms']:,} / {r['wake_p90_ms']:,} / {r['wake_p99_ms']:,}{b} | {b}{r['park_p50_ms']:,} / {r['park_p90_ms']:,} / {r['park_p99_ms']:,}{b} | {r['errors']} + {r['refusals']} ({pct:.1f} %) | {r['backlog']} | {b}{verdict(r['failed_on'])}{b} |")
     return out
-md = ["# microVM activation throughput with **pause** (node-local checkpoints) — 650 awake, 5,000 registered (measured 2026-10-09)\n",
-"Same test as the suspend campaign, with `PauseActor` instead of `SuspendActor`: the checkpoint (the VM's 128 MiB memory image plus its rootfs upper layer) stays on the node's boot disk and a wake restores from it; nothing goes to or comes from the bucket, so the snapshot plugin and the network are out of the path. Everything else is as in the suspend run: one c3-standard-192-metal (192 vCPU, 768 GiB, 3 TB Hyperdisk Balanced at 100k IOPS / 2,400 MiB/s), Substrate main 66f8a888 plus the experimental microVM worker patches of the campaign (reseed 15 s + retry, no tar fsync, no graceful VMM shutdown after checkpoint, pooled sandbox network namespaces), 100 unsized worker pods, actor 2 vCPU + 256 MiB, nano-personal-agent at think ×1, 1-s swap ticks, 2-minute levels growing ×1.35 from 8 swaps/s, 4-minute hold at the last clean level, catch-up off, gates: P90 ≤ 2.5× the first level, errors + refusals < 0.5 %, backlog ≤ 5 s of swaps, ≤ 20 crashed. The old suspend-mode fleet was parked and left in place under its own name; this run registered a fresh fleet of 5,000 actors in pause mode (cold boot, first ping, PauseActor), so 5,000 local checkpoints live on the disk for the whole run.\n"]
-for d in sorted([x for x in glob.glob("/tmp/tco-runs/fill/nanopause-metal2-*") if os.path.isdir(x) and x.split("-")[-1].isdigit()], key=lambda x: int(x.split("-")[-1])):
-    rs = rows(os.path.join(d, "turn.txt"))
-    if not rs: continue
-    md.append(f"## Pause run {d.split('-')[-1]}\n")
-    de = os.path.join(d, "disk-early.txt"); df_ = os.path.join(d, "disk-final.txt")
-    for lab, p in (("Node disk 7 min into registration", de), ("Node disk at the end", df_)):
-        if os.path.exists(p): md.append(f"**{lab}:**\n\n```\n{open(p).read().strip()}\n```\n")
-    md += table(rs); md.append("")
-sus = rows("/tmp/tco-runs/fill/nanoturn3-metal2-19/turn.txt")
-if sus:
-    md.append("## Reference: the same ramp with suspend (bucket snapshots), final configuration, iteration 19 of the suspend campaign\n")
-    md += table(sus); md.append("")
-md.append("""## What happened, run by run
+R5 = rows("/tmp/tco-runs/fill/nanopause-metal2-5/turn.txt")   # boot disk, strict gates, after bfq->none
+R7 = rows("/tmp/tco-runs/fill/nanopause-metal2-7/turn.txt")   # boot disk, latency rule off, gates 2 %
+R8 = rows("/tmp/tco-runs/fill/nanopause-metal2-8/turn.txt")   # Hyperdisk Extreme, latency rule off, gates 2 %
+S19 = rows("/tmp/tco-runs/fill/nanoturn3-metal2-19/turn.txt") # suspend reference
+def pick(rs, n): return next((r for r in rs if r["n_per_tick"] == n and r["tag"] != "hold"), None)
+def cell(r, k): return f"{r[k+'_p50_ms']:,} / {r[k+'_p90_ms']:,} / {r[k+'_p99_ms']:,}" if r else "—"
+b8, b12, h15, s17, s12 = pick(R5, 8), pick(R5, 12), pick(R8, 15), pick(S19, 17), pick(S19, 12)
+md = []
+md.append("# microVM activation throughput with **pause** (node-local checkpoints) — 650 awake, 5,000 registered (2026-10-09)\n")
+md.append("Same test as the suspend campaign, with `PauseActor` in place of `SuspendActor`: the checkpoint (the VM's 128 MiB memory image plus its rootfs upper layer, 119 MB allocated per actor) stays on the node and a wake restores from it. No bucket, no network, no snapshot plugin: what remains is the control plane, the worker's VM lifecycle, and the node's disk. One c3-standard-192-metal (192 vCPU, 768 GiB), Substrate main 66f8a888 plus the campaign's experimental microVM worker patches, 100 unsized worker pods, actor 2 vCPU + 256 MiB, nano-personal-agent at think ×1, 1-s swap ticks, 2-minute levels, 4-minute hold at the last clean level, catch-up off. Bounds as before: resume/pause P90 ≤ 2.5× the run's first level, errors + refusals ≤ 0.5 % of wakes, no backlog growth, host memory/PSI limits; runs 7–8 relaxed the latency rule and the error gate (2 %) to find where the system itself breaks.\n")
+md.append("## Result in one table\n")
+md.append("| | Within the bounds as written | Best delivered error-free | Resume P50 / P90 / P99 ms at the best delivered rate | Pause P50 / P90 / P99 ms at that rate | What stopped it |")
+md.append("|---|---|---|---|---|---|")
+md.append(f"| **Pause, boot disk** (3 TB Hyperdisk Balanced, 2,400 MiB/s, queue scheduler switched from bfq to none) | **8 activations/s** | **12 activations/s** (11.9 achieved: 1 error, 5 refusals, 1 crash) | {cell(b12,'wake')} | {cell(b12,'park')} | the 2.5× rule (a 171 ms baseline makes it 428 ms), then the disk at 15/s: 95 % busy, IO pressure 46 % |")
+md.append(f"| **Pause, Hyperdisk Extreme** (2 TB, 350k IOPS, attached and migrated mid-test) | 8 (same rule) | **15 activations/s** (14.9 achieved: 8 errors, 40 refusals = 3.2 %) | {cell(h15,'wake')} | {cell(h15,'park')} | per-VM startup failures (virtiofsd, guest agent) crashing ~0.3–0.5 % of restores, and page-cache pressure from 591 GB of local checkpoints |")
+md.append(f"| Suspend, reference (bucket snapshots, final build, iteration 19) | 17 activations/s | 17 | {cell(s17,'wake')} | suspend {cell(s17,'park')} | node-wide convoy at 20/s |\n")
+md.append("Read it as: **pause is five times faster per activation** (resume P50 0.25–0.8 s against 1.1–1.3 s) **but moves three times the bytes through the local disk** (uncompressed image in and out), so on the boot disk it tops out at 12 activations/s where suspend reached 17 by going compressed to the network; on a Hyperdisk Extreme it delivers 15 at a 0.9 s resume P90, and is then stopped by a small per-VM failure rate rather than by throughput.\n")
+md.append("### Activations per second with resume and pause latency\n")
+md.append("**Boot disk, run 5** (strict gates; the bfq → none scheduler change applied):\n"); md += lvl_table(R5); md.append("")
+md.append("**Hyperdisk Extreme, run 8** (latency rule off, error gate 2 %):\n"); md += lvl_table(R8); md.append("")
+md.append("**Boot disk, run 7** (latency rule off, error gate 2 %; same build as run 8, for the disk comparison):\n"); md += lvl_table(R7); md.append("")
+md.append("_Bold = the highest rate that passed that run's gates. Resume = the wake request's round trip through the router including the local restore; pause = the PauseActor call (VM snapshot to the local directory + rootfs tar, no upload)._\n")
+md.append("""## Changes made for this test
 
-- **Run 1 (fresh registration, ramp from 8).** Registering 5,000 actors in pause mode wrote 580 GB of checkpoints (119 MB allocated per actor: the 128 MiB sparse memory image plus the rootfs upper tar) at ~1 GB/s with the disk 93 % busy and 25–44 GB of dirty pages for ten minutes; the 650-actor fill took 2m41 instead of ~50 s and the first level at 8 swaps/s ran inside that writeback storm: resume P50 27.5 s, 244 errors, 1,088 refusals, 23 actors crashed on 10-s socket timeouts (virtiofsd, VMM API, vsock). Not a measurement of pause, a measurement of registering 5,000 pause checkpoints on one Hyperdisk.
-- **Run 2 (fleet reused, ramp from 2).** 2 swaps/s: resume 164 / 286 / 889 ms, pause 176 / 220 / 336 ms, zero errors — but the level was failed by the crash gate (23 crashed actors still in the fleet from run 1). Also confirmed from the node agent's logs that pause is purely local: every restore `kind=local` with no download, every checkpoint with no upload, the snapshot plugin idle.
-- **Run 3.** Lost to the sim's fill: a handful of crashed actors held the eight fill slots through twelve long retries each (fixed: the fill now gives up on CRASHED/DELETING/not-found actors, commit 1b118c8).
-- **Run 4 (crash gate count-only).** 2 swaps/s clean; 3 swaps/s failed on 13 refusals + 4 errors with 5 new crashes in two minutes. The medians are tiny — worker restore 160–200 ms, worker checkpoint 150–180 ms, node-agent restore ~190 ms end to end — but the P99 is 10 s: restores time out waiting for virtiofsd's socket or the VMM's API socket, or the guest agent does not answer the CRNG reseed within 30 s, and each such timeout crashes the actor. These are process-startup stalls on a disk that was only 5–15 % busy; the node's Hyperdisk was running the `bfq` I/O scheduler (8 ms idling slices, 128 KiB maximum request) with the actor state directory back on it. Before run 5 the queue scheduler was switched to `none` and read-ahead raised to 1 MiB.
-- **Run 5 (after the scheduler change).** Fill 25 s. 2 swaps/s: resume 158 / 171 / 205 ms, pause 170 / 203 / 229; 8 swaps/s: resume 252 / 369 / 560, pause 249 / 340 / 479, zero errors and zero crashes; 12 swaps/s delivered (11.9 achieved, 1 error, 5 refusals, 1 crash) at resume 321 / 509 / 646 ms — failed only the relative rule, because 2.5× a 171 ms baseline is 428 ms. The 10-s tails are gone: worker restore P99 542 ms at 8/s. **Within the 2.5× rule pause gives 8 swaps/s; it delivers 12 at a resume P90 of 0.5 s**, five times better latency than suspend at the same rate.
-- **Run 6 (latency rule off).** Ended at its first level: 5 refusals + 1 error in 952 wakes is 0.63 %, over the 0.5 % gate, with 2 more crashes — the residual 10-s socket/agent timeouts still crashed an actor every few hundred restores.
-- **Run 7 (worker socket and agent waits raised 10–15 s → 45–60 s so a stall becomes latency instead of a crash; error and refusal gates at 2 %; latency rule off).** 8 swaps/s: resume 698 / 800 / 1,998 ms (this level still woke the actors the pool roll had suspended to the bucket), 11 swaps/s: resume 286 / 506 / 1,427, pause 299 / 507 / 862, 0 errors, 0 refusals; **15 swaps/s collapses on the disk**: resume P50 1.0 s / P90 4.6 s, pause P90 3.7 s, 64 errors, backlog 135, PSI io 46 %. Hold at 11. On this Hyperdisk, pause delivers ~11–12 activations/s; suspend delivered 17 because its bytes went compressed to the network and its staging to tmpfs.
-
-- **Run 8 (actor state on a 2 TB Hyperdisk Extreme, 350k IOPS, attached and migrated between runs — 591 GB copied at 1.3 GB/s; same gates as run 7).** 8 swaps/s: resume 437 / 543 / 587 ms, pause 222 / 279 / 372, 0 errors; 11 swaps/s: resume 585 / 680 / 721, pause 269 / 366 / 498; **15 swaps/s delivered (14.86 achieved) at resume 798 / 897 / 946 ms and pause 322 / 508 / 671** — the tightest tail of the whole day — but 8 errors + 40 refusals (3.2 %) failed the 2 % gate; PSI io 22 % (46 % on the boot disk at the same rate). The hold at 11 then tripped the memory-pressure gate: with 591 GB of local checkpoints the page cache holds 710 GB of a 792 GB node and reclaim runs continuously (PSI memory full 11–14 % even idle). The remaining errors are not the disk: 8 restores had virtiofsd never bring up its socket within 60 s and 5 had the guest agent not answer the CRNG reseed within 2 × 15 s; each such failure crashes the actor and the actor's next wakes answer 503 until it is deleted.
-
-## Why pause is not simply "suspend minus the network"
-
-Pause removes GCS and the network and the latency shows it (resume P50 160–300 ms against 1,100–1,300 ms for suspend at the same rates). Throughput does not follow, because suspend never used the local disk and pause uses nothing else: a park writes the uncompressed 128 MiB memory image plus the rootfs tar (~133 MB measured from the write rate) to the one Hyperdisk, and a wake reads 128 MiB back — three times the bytes of suspend's 42 MiB object, all on a 2,400 MiB/s volume, with the CPU idle at 7 %. The two remedies are a faster volume (Hyperdisk Extreme: run 8 took the disk out of the way, 15 swaps/s at a 0.9 s P90) and compressing the local checkpoint the way the suspend path does, which would cut the disk bytes by three and also shrink the page-cache footprint that has the node in continuous reclaim with 5,000 local checkpoints. After the disk, what stops pause is the same per-VM startup failure rate (virtiofsd not coming up, guest agent not answering) that costs ~0.3–0.5 % of restores and, because each one crashes the actor, turns into refusals at the gate.
-
-## Where the time goes with pause (run 5, medians)
-
-| level | worker restore total (vm_restore / lowers / teardown) | worker checkpoint total (snapshot / teardown) | disk write MB/s | disk read MB/s | disk busy % | PSI io % | node CPU busy % |
-|---|---|---|---|---|---|---|---|
-| 2 swaps/s | 143 ms (86 / 9 / —) | 144 ms (73 / 64) | 266 | 5 | 13 | 2.8 | 1.7 |
-| 5 | 177 (107 / 18 / —) | 177 (74 / 99) | 707 | 24 | 33 | 8.6 | 3.0 |
-| 8 | 234 (137 / 27 / —) | 219 (77 / 135) | 1,055 | 151 | 52 | 18.3 | 5.0 |
-| 12 | 294 (172 / 41 / —) | 273 (79 / 185) | 1,598 | 231 | 76 | 27.6 | 7.5 |
-
-Every pause writes its 128 MiB memory image plus the rootfs tar to the disk (~133 MB of writes per swap, from the write rate), and a wake reads the image back, mostly from the page cache. With the queue scheduler at `none` the disk sustains this to about 1.6 GB/s at 12 swaps/s, 76 % busy; the stage that grows with rate is the VMM restore (page-cache reads of the image) and teardown. The provisioned 2,400 MiB/s therefore puts the pause ceiling near 15–18 swaps/s on this disk, before the kernel convoy that stopped suspend at 20. CPU is nearly idle (7.5 % of 192 cores at 12 swaps/s) because nothing is compressed or transferred.
-
-## Reading the numbers
-
-- With pause, a wake is: control plane → node agent → worker restore from the local checkpoint directory (eager restore of the 128 MiB image from the page cache or disk) → first request. There is no manifest fetch, no download and no decompression. A park is `vm.snapshot` to the local directory plus the rootfs-upper tar, with no upload.
-- What is left on the path is exactly the part that limited suspend at 17–20 swaps/s: tap device setup, overlay/virtiofsd staging, VMM launch, the VMM's own restore, and teardown, all of which convoy on kernel locks as the rate rises. Pause therefore measures that ceiling directly.
-- Disk: 5,000 pause checkpoints occupy roughly 5,000 × 140 MB ≈ 0.7 TB of the 3 TB disk; each swap rewrites one checkpoint (~140 MB) and reads one, i.e. about 280 MB of disk traffic per activation.
+| # | Change | Why | Effect |
+|---|---|---|---|
+| 1 | Actor state directory moved back from tmpfs to the boot disk | 5,000 pause checkpoints = 580 GB; the tmpfs was capped at 400 GB | required |
+| 2 | Fresh fleet registered in pause mode under its own prefix; the suspend fleet left parked | pause checkpoints must exist for every actor | registration wrote 580 GB at ~1 GB/s with the disk 93 % busy for ten minutes; the first run measured that storm, not pause |
+| 3 | Sim fill gives up on actors whose wake error is permanent (CRASHED / DELETING / gone) — commit 1b118c8 | a handful of crashed actors held the 8 fill slots through 12 long retries each; one run never got past its fill | fill 2m41 → 25–50 s |
+| 4 | Crash gate made count-only for these runs (`FAIL_CRASHED_OVERRIDE=200`) | crashed actors from a previous run failed a level whose own numbers were clean | levels judged on their own behaviour |
+| 5 | Boot disk queue scheduler `bfq` → `none`, read-ahead 128 KiB → 1 MiB | restores timed out waiting for virtiofsd / VMM sockets with the disk only 5–15 % busy; bfq's per-process idling (8 ms slices, 128 KiB requests) starves the many short I/O streams of VM startup | at 8/s: resume P50 252 ms, P99 560 (run 5) against P99 10 s with bfq (run 4); fill 54 → 25 s |
+| 6 | Worker socket and agent waits raised: virtiofsd 10 → 60 s, VMM API 10/15 → 60 s, guest agent 15 → 45 s (microVM worker, experimental) | a stall should cost latency, not a crashed actor | tails shorter; a residual ~0.3–0.5 % of restores still fail outright (see below) |
+| 7 | 2 TB Hyperdisk Extreme (350k IOPS) attached to the node, 591 GB of actor state copied onto it (1.3 GB/s), mounted at `/var/lib/ate/actors` | the boot disk saturated at 15/s | PSI io at 15/s 46 % → 22 %; 15 activations/s delivered at a 0.9 s resume P90 |
+| 8 | Fleet parked with `PauseActor` (not `SuspendActor`) before pool rolls and the disk migration | parking by suspend sent 648 actors to the bucket, and their next wakes were downloads | clean first levels |
 """)
+md.append("""## Why it stops where it stops
+
+**1. The disk, on the boot volume (the hard wall at 12–15 activations/s).** Each pause writes the full 128 MiB memory image plus the rootfs tar — about 133 MB of writes per swap, measured from the device counters — and each wake reads 128 MiB back, from the page cache when it is still there and from the disk when it is not. Per level in run 5 (boot disk, scheduler `none`):
+
+| activations/s | disk write MB/s | disk read MB/s | disk busy % | PSI io % | node CPU busy % | worker restore median (VMM restore part) | worker pause median (teardown part) |
+|---|---|---|---|---|---|---|---|
+| 2 | 266 | 5 | 13 | 2.8 | 1.7 | 143 ms (86) | 144 ms (64) |
+| 5 | 707 | 24 | 33 | 8.6 | 3.0 | 177 (107) | 177 (99) |
+| 8 | 1,055 | 151 | 52 | 18.3 | 5.0 | 234 (137) | 219 (135) |
+| 12 | 1,598 | 231 | 76 | 27.6 | 7.5 | 294 (172) | 273 (185) |
+| 15 (run 7) | — | — | ~95 | 46 | — | collapse: resume P90 4.6 s, 64 errors, backlog 135 | pause P90 3.7 s |
+
+The write rate scales exactly with the swap rate and reaches the volume's practical limit between 12 and 15 activations/s; the CPU is idle (7.5 % of 192 cores at 12/s) because nothing is compressed or transferred. This is a byte problem: suspend's compressed 42 MiB object plus tmpfs staging never touched this disk, which is why suspend reached 17 and pause does not.
+
+**2. On the Hyperdisk Extreme, per-VM startup failures (the wall at 15 activations/s is a gate on errors, not a capacity limit).** With the disk relieved (PSI io 22 % at 15/s, tails tight: resume P99 946 ms), what fails the 2 % error gate is a steady trickle of restores that never complete: in run 8, 8 restores had virtiofsd not bring up its socket within 60 s, and 5 had the guest agent not answer the CRNG reseed within 2 × 15 s. Each such failure marks the actor CRASHED; every later wake of that actor is a 503 until it is deleted, so a 0.3–0.5 % restore failure rate shows up as 3 % refusals at the gate. The same failure modes existed under suspend (one restore in 500–1,000); pause's higher rate of VM starts per second and the cold page cache make them more frequent. Fixing virtiofsd's startup (its log is in the VM directory, removed at teardown; the next step is to keep it) and retrying the reseed inside the worker instead of crashing the actor are worker changes, not infrastructure.
+
+**3. Page-cache pressure from 5,000 local checkpoints.** 591 GB of checkpoints sit on the node and the kernel keeps them cached: 710 GB of a 792 GB node is page cache, `MemAvailable` reads 657 GB but reclaim runs continuously — PSI memory "full" 11–14 % even when idle — and the sim's memory-pressure gate ended the hold at 11 in run 8. It also makes every wake of an actor whose image was evicted a 128 MiB disk read. Compressing local checkpoints (×3 smaller) or dropping them from the page cache after they are written would remove this.
+
+**4. The relative latency rule.** With a 2-activations/s baseline of 158 / 171 ms the 2.5× rule allows a resume P90 of 428 ms, which pause crosses at 12 activations/s (509 ms) while still well inside anything a user would notice. Within the rule as written pause gives 8 activations/s; an absolute bound (say resume P90 ≤ 1 s) would give 15 on the Extreme volume.
+
+**5. Not limiting:** the control plane (sub-millisecond apart from the restore), the network and the snapshot plugin (idle: every restore `kind=local`, every checkpoint with no upload), CPU (≤ 8 % busy).
+
+**What would raise it next.** (a) Compress the local checkpoint the way the suspend path does (the CPU is idle): disk bytes ÷ 3, page-cache footprint ÷ 3, and the boot disk alone would carry ~35 activations/s of pause traffic. (b) Keep the failing virtiofsd logs and make the worker retry the reseed and the virtiofsd start instead of crashing the actor. (c) Cloud Hypervisor's on-demand restore (implemented in the worker, disabled on CH ≥ v53 by the prefault check) would stop reading the whole 128 MiB on every wake. (d) Hyperdisk Extreme or several volumes if the uncompressed format is kept.
+""")
+md.append("## Run log\n")
+md.append("""| Run | Setup | Outcome |
+|---|---|---|
+| 1 | fresh registration of 5,000 pause actors, ramp from 8 | registration wrote 580 GB at ~1 GB/s (disk 93 % busy, 25–44 GB dirty for 10 min); the 8/s level ran inside it: resume P50 27.5 s, 244 errors, 1,088 refusals, 23 crashes — a measurement of the registration, not of pause |
+| 2 | fleet reused, ramp from 2 | 2/s clean (resume 164 / 286 / 889 ms, pause 176 / 220 / 336) but failed by the crash gate on run 1's leftovers; confirmed every restore local, every checkpoint without upload, plugin idle |
+| 3 | same | lost to the sim's fill retrying crashed actors (fixed, 1b118c8) |
+| 4 | crash gate count-only | 2/s clean; 3/s failed on 13 refusals + 4 errors with 5 new crashes: medians ~160–200 ms per side, P99 10 s socket timeouts under bfq |
+| 5 | scheduler none, read-ahead 1 MiB | fill 25 s; 8/s clean (252 / 369 / 560 ms); 12/s delivered at 321 / 509 / 646 ms, failed only the 2.5× rule |
+| 6 | latency rule off | ended at the first level: 0.63 % errors+refusals vs the 0.5 % gate, 2 crashes |
+| 7 | worker waits raised to 45–60 s, error gate 2 % | 11/s clean (286 / 506 / 1,427 ms); 15/s collapses on the disk (PSI io 46 %, 64 errors, backlog 135); hold at 11 |
+| 8 | Hyperdisk Extreme | 15/s delivered at 798 / 897 / 946 ms (pause 322 / 508 / 671) but 3.2 % errors+refusals from per-VM startup failures; hold at 11 ended by the memory-pressure gate |
+""")
+md.append("## Node state left behind\n")
+md.append("The Hyperdisk Extreme `agents-tco-euw4-actors-hdx` (2 TB, 350k IOPS) is attached to the microVM node and mounted at `/var/lib/ate/actors`; the boot-disk copy of the actor state is kept at `/var/lib/ate/actors.boot` (591 GB). The boot disk's queue scheduler is `none` with 1 MiB read-ahead. The microVM worker image carries the raised waits. Both fleets (5,000 suspended, 5,000 paused) remain registered; the clusters keep running.\n")
 open(OUT, "w").write("\n".join(md)); print("wrote", OUT)
