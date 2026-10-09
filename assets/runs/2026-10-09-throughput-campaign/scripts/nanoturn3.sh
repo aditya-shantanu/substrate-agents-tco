@@ -17,7 +17,7 @@ OUT=$F/nanoturn3-${TAG}-${ITER:?}; mkdir -p $OUT
 capture() { # bg: keep the sim's key lines (cold starts, swap levels, cycle) even if the kubelet rotates the log
   : > $OUT/$1.raw; while [ ! -f $OUT/stop-$1 ]; do perl -e 'alarm 50; exec @ARGV' -- kubectl --request-timeout=40s -n agent-sim logs job/agentsim --tail=3000 2>/dev/null | grep -E '"msg":"(setup complete|swap fill|swap fill done|swap level|swap level result|swap hold|swap cycle|swap cycle progress|swap cycle done|snapshot point)"|=== |^tag,|^,|^hold,|^cycle,|SWAP VERDICT|ready ms|^unix_ms,agent,create_ms|^[0-9]{13},[0-9]+,' >> $OUT/$1.raw; sort -u $OUT/$1.raw > $OUT/$1.txt; sleep 45; done; }
 # ---------- (B) register 5000, fill 650, ramp, hold, cycle
-export COLD_START_ONLY=false AGENTS=5000 SETUP_CONCURRENCY=32 WORKER_COUNT=100 ACTOR_PREFIX="${FLEET_PREFIX:?}" DURATION=${DURATION_OVERRIDE:-60m} SETUP_PARK_EXISTING=true
+export SKIP_CLEAN=${SKIP_CLEAN_OVERRIDE:-true} COLD_START_ONLY=false AGENTS=5000 SETUP_CONCURRENCY=32 WORKER_COUNT=100 ACTOR_PREFIX="${FLEET_PREFIX:?}" DURATION=${DURATION_OVERRIDE:-60m} SETUP_PARK_EXISTING=true
 export THINK_SCALE=1 SCRIPT_LOOP=true SCRIPT_SUSPEND=idle RAMP_SECONDS=0 SETUP_SUSPEND=true
 export SCRIPT_CATCHUP=${SCRIPT_CATCHUP_OVERRIDE:-false} SWAP_FILL=650 SWAP_START=${SWAP_START_OVERRIDE:-2} SWAP_MULT=${SWAP_MULT_OVERRIDE:-1.5} SWAP_EVERY=${SWAP_EVERY_OVERRIDE:-1s} WAVE_INTERVAL=${WAVE_OVERRIDE:-2m} HOLD_AFTER_FAIL=${HOLD_OVERRIDE:-4m} SWAP_CYCLE_ALL=false
 export FAIL_REL_P90=${FAIL_REL_P90_OVERRIDE:-2.5} FAIL_WAKE_P99_MS=0 FAIL_REFUSAL_PCT=0.5 FAIL_ERROR_PCT=0.5 FAIL_MEM_AVAIL_PCT=10 FAIL_PSI_MEM_FULL=10 FAIL_PSI_CPU_SOME=50 FAIL_CRASHED=${FAIL_CRASHED_OVERRIDE:-20}

@@ -4,6 +4,28 @@ Goal: raise steady-state suspend+resume throughput (swaps/s) with 650 nano-perso
 
 Each level runs 2 minutes (4 in the original test); the gates are: resume or suspend P90 > 2.5× the first level, errors or refusals > 0.5 % of wakes, more than 5 s' worth of swaps still in flight at the level's end (backlog), host memory/PSI limits, crashed actors (5, later 20). A level marked `pass` with a higher achieved rate than the last clean one but a `wake-p90-vs-baseline` verdict means the system delivered the rate with zero errors and only the relative-latency rule stopped the ramp.
 
+## Result in one table
+
+| | microVM (c3-standard-192-metal, 650 awake, 5,000 registered) | gVisor (same) |
+|---|---|---|
+| **Start of the day** (10-s burst ticks, main 66f8a888) | 2 swaps/s within the 2.5× latency rule; 4 fails | 2 swaps/s; 4 fails |
+| Same build, 1-s ticks | 5 swaps/s | 5 swaps/s (8 fails the latency rule by a little) |
+| **End of the day, within the bounds** (P90 ≤ 2.5× first level, < 0.5 % errors/refusals, no backlog growth) | **17 swaps/s** (iteration 19: 16.7 achieved, resume P50 1.30 s / P90 1.40 s / P99 1.56 s, suspend P50 1.09 s / P90 1.35 s, 0 errors, 0 refusals); 15 swaps/s held cleanly in six consecutive iterations with resume P50 ≈ 1.1 s | **9 swaps/s** — resume P50 0.96 s / P90 1.19 s, suspend P50 0.59 s, 0 errors |
+| Delivered error-free beyond the latency rule | 17 (20 swaps/s collapses: resume P90 8.7 s, refusals) | 12 swaps/s (11.8 achieved, 0 errors, 0 refusals) |
+| Where it breaks now | 18–21 swaps/s: every per-VM step on the node convoys at once (tap device setup 2 → 1,300 ms, VMM restore 140 → 1,500, teardown 230 → 1,460, load average 140) with the CPUs only ~35 % busy and nothing blocked on IO — kernel/VMM-level serialisation of sandbox create/teardown, plus ~2 GB/s of snapshot transfer | 12 swaps/s: the kernel's mount-namespace lock during runsc's per-sandbox chroot setup, cgroup v2 task-migration writes, gVisor's own restore (measured on the node) |
+
+**What moved the numbers, in order of effect**
+
+1. **Measuring correctly** (harness): issuing swaps steadily (1-s ticks) instead of bursts of N every 10 s. Every earlier latency figure was burst queueing. 2 → 5 swaps/s on both runtimes with no Substrate change.
+2. **Harness again**: the sim replayed every skipped step's ops on an agent's first wake (its random day-offset "catch-up"), ~46 requests per first wake — a request storm proportional to the swap rate, present in every run until iteration 12. Off since (`SCRIPT_CATCHUP=false`).
+3. **Snapshot plugin** (`pkg/objectstorage`, both nodes): one GCS connection per node → a pool used by every transfer; fresh 64 MiB upload buffers, 128 MiB download range buffers, encoders and decoders per transfer → bounded free lists and pooled codecs (page faults 150k/s → 300/s); 4 MiB download ranges, 12 in flight per object (per-stream GCS throughput here is ~45 MB/s). Rejected after measurement: composite uploads in 8 MiB parts (suspend P99 7.8 s), denser zstd level (guest memory compresses 41 → 40 MiB only, 3× the CPU), GC tuning (GOGC/GOMEMLIMIT: no effect on the ceiling).
+4. **microVM worker** (`cmd/ateom-microvm`): guest CRNG reseed after restore given 15 s and a retry instead of 5 s and a crash (~1 restore in 500–1,000 was crashing the actor, and a crashed actor's deletion then hangs when its worker is gone); per-checkpoint tar fsync skipped (approved for the experiment); graceful VMM shutdown skipped after a checkpoint (no measurable gain); the gVisor campaign's sandbox network-namespace pool ported (no gain on microVM: its per-activation cost is the tap device, VMM launch/restore and teardown).
+5. **Node**: `/var/lib/ate/actors` on tmpfs (restore/checkpoint staging off the boot disk) — removes IO pressure, no change to the ceiling; 37k orphaned actor directories (576 GB) reclaimed.
+6. **gVisor worker** (`cmd/ateom-gvisor`, `internal/ateomnet`, by the background agent): pooled sandbox network namespaces (net_setup 170–330 → 1 ms), one shared gofer namespace per worker (`runsc --shared-root`), a lean post-checkpoint teardown that also fixed a ~30 % cgroup leak per suspend (8,157 cgroups for 650 actors before), no cgroup for the app container. Rejected: `--ignore-cgroups` (sentry sized from the host), reusable worker-owned cgroup slots (gofers die in a reused cgroup).
+
+**Caveats.** Every iteration below purged and re-registered the 5,000 actors at its start (the deploy step runs `clean.sh`); the fleet is therefore fresh in every run, and the per-run numbers are comparable but each run's first level is both the gate baseline and a cold start — ramps were started two or more levels below the suspected ceiling. The experimental Substrate changes live uncommitted in two worktrees (`~/repos/substrate-east1` microVM, `~/repos/substrate-east` gVisor); the patches are in the archive. The fsync skip and the reseed/teardown changes are experiment-grade and need proper flags upstream. The harness fixes (1-s ticks, catch-up switch, readiness check, fleet reuse, backlog gate) are committed in `substrate-agents-tco`.
+
+
 ## microVM (agents-tco-euw4, actor 2 vCPU + 256 MiB)
 
 ### Original test: 10-s ticks (burst of N), latency gate 2.5×, unmodified main
@@ -158,6 +180,39 @@ _15 swaps/s clean (resume 1,113 / 1,508 ms, suspend 1,119 / 1,352); 21 collapses
 | 11 per tick | 11.00 | **10.91** | 922 / 1,295 / 3,091 | 1,040 / 1,262 / 1,528 | 0 + 0 | 11 | 0 | pass |
 | 15 per tick | 15.00 | **14.75** | 1,113 / 1,508 / 3,111 | 1,119 / 1,352 / 1,770 | 0 + 0 | 15 | 0 | pass |
 | 21 per tick | 21.00 | **19.62** | 6,749 / 9,883 / 12,320 | 2,504 / 3,368 / 4,062 | 0 + 213 | 231 | 0 | refusals+wake-p90-vs-baseline+park-p90-vs-baseline+backlog |
+
+### Iteration 17: microVM worker with the sandbox network-namespace pool ported from the gVisor campaign (internal/ateomnet/netpool.go; the two workers share the package)
+
+_no change: the microVM worker's per-activation cost is the tap device, VMM launch/restore and teardown, not namespace creation; 15 passes (resume 1,097 / 1,223), 21 collapses identically_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.93** | 714 / 776 / 1,019 | 979 / 1,154 / 1,352 | 0 + 1 | 8 | 0 | pass |
+| 11 per tick | 11.00 | **10.91** | 869 / 927 / 1,069 | 1,043 / 1,286 / 1,704 | 0 + 0 | 11 | 0 | pass |
+| 15 per tick | 15.00 | **14.75** | 1,097 / 1,223 / 1,389 | 1,119 / 1,393 / 2,794 | 0 + 2 | 15 | 0 | pass |
+| 21 per tick | 21.00 | **19.67** | 6,504 / 9,525 / 12,440 | 2,394 / 3,221 / 3,974 | 0 + 159 | 189 | 0 | refusals+wake-p90-vs-baseline+park-p90-vs-baseline+backlog |
+
+### Iteration 18: + denser zstd level for snapshot uploads (ATE_ZSTD_LEVEL=default)
+
+_the guest memory image barely compresses better (39-42 MiB vs 41-42) and the extra CPU makes 21 swaps/s collapse harder; reverted_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.93** | 756 / 855 / 1,074 | 980 / 1,175 / 1,509 | 0 + 0 | 8 | 0 | pass |
+| 11 per tick | 11.00 | **10.83** | 896 / 1,022 / 1,299 | 1,039 / 1,260 / 1,904 | 0 + 0 | 11 | 0 | pass |
+| 15 per tick | 15.00 | **14.75** | 1,391 / 1,706 / 2,801 | 1,060 / 1,308 / 1,677 | 0 + 0 | 15 | 0 | pass |
+| 21 per tick | 21.00 | **17.46** | 8,404 / 21,567 / 27,093 | 2,946 / 4,927 / 6,254 | 0 + 1270 | 567 | 0 | refusals+wake-p90-vs-baseline+park-p90-vs-baseline+backlog |
+
+### Iteration 19: final configuration (plugin v9b, pooled namespaces, tmpfs, catch-up off, zstd fastest), fine ramp 12, 14, 17, 20
+
+_17 swaps/s clean; 20 fails (resume P90 8.7 s, 91 refusals)_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 12 per tick | 12.00 | **11.90** | 908 / 951 / 1,042 | 1,041 / 1,269 / 1,637 | 0 + 0 | 12 | 0 | pass |
+| 14 per tick | 14.00 | **13.88** | 1,005 / 1,066 / 1,119 | 1,101 / 1,809 / 13,681 | 0 + 1 | 28 | 0 | pass |
+| 17 per tick | 17.00 | **16.72** | 1,298 / 1,397 / 1,560 | 1,092 / 1,345 / 1,615 | 0 + 0 | 17 | 0 | pass |
+| 20 per tick | 20.00 | **19.21** | 4,692 / 8,687 / 11,507 | 2,106 / 2,793 / 3,413 | 0 + 91 | 100 | 0 | refusals+wake-p90-vs-baseline |
 
 ### Iteration 12: tmpfs + sim first-wake catch-up OFF (SCRIPT_CATCHUP=false)
 
