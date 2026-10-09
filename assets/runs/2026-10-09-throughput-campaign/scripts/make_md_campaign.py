@@ -180,6 +180,40 @@ Every proposal names the measured cost it attacks (from the stage tables above a
 **If only three things get done:** (1) on-demand restore + page-cache drop before snapshot (A1 + B8: fewer bytes and no eager copy), (2) a tap-carrying namespace pool and the removal of the two per-activation node scans (A2 + A5), (3) same-node resume from the retained local copy (C12). Together they remove most of the per-activation kernel work and most of the bytes; the expected ceiling is then set by VMM restore and transfer again, well above 20 swaps/s on this node.
 """
 
+IMPACT = """## Improvements and what each one changed
+
+Measured effects only; "ceiling" = highest activations/s within the bounds. Each row compares the iteration that introduced the change with the one before it on the same node, unless stated.
+
+| # | Change | Where | Ceiling | Resume latency | Suspend latency | Node / plugin cost | Errors, crashes | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 1-s ticks instead of 10-s bursts | harness (`SWAP_EVERY`) | microVM 2 → 5, gVisor 2 → 5 | at 2/s: microVM P50 2,304 → 662 ms, gVisor 2,276 → 536 | microVM 3,992 → 1,001; gVisor 1,713 → 593 | none | none | kept; every earlier figure was burst queueing |
+| 2 | Pooled GCS clients for every transfer (`ATE_GCS_CLIENT_POOL=64`) | snapshot plugin | microVM 5 (first 1-s run) | quiet probe, 20 concurrent restores: download 1,645 → 1,233 ms | — | — | — | kept (same fix as upstream e2a9e2e plus the small-object download path) |
+| 3 | Pooled zstd buffers/encoders/decoders, fan-out cap 8 | snapshot plugin | — | — | at 2/s P50 1,001 → 889, P90 1,246 → 1,040 | page faults 157k → 56k/s at 2/s; CPU per swap −20 % | — | kept |
+| 4 | Tar fsync skipped after checkpoint | microVM worker (`internal/tarutil`) | 5 → 8 together with #5 | — | rootfs-upper stage no longer grows with concurrency (was 0.5 → 2.4 s at 40 concurrent) | PSI io lower | — | kept for the experiment; needs a flag upstream |
+| 5 | Guest CRNG reseed 15 s + retry (was 5 s, no retry) | microVM worker (`restore.go`) | 8 reachable (holds stopped failing on the crash gate) | — | — | — | restore crashes ~1 per 500–1,000 → 0 in later runs; no more DELETING-stuck actors | kept; needs upstream fix |
+| 6 | Crash gate 5 → 20, fleet excludes DELETING/CRASHED actors | harness | made results readable | — | — | — | spurious level failures gone | kept |
+| 7 | Bounded free lists for 64 MiB upload / 16 MiB range / 1 MiB copy buffers, writer chunk = object size | snapshot plugin | 15 unchanged | — | — | page faults 150k/s → 300/s at 10/s; RSS stable | — | kept; a cost, not the limit |
+| 8 | GOGC 400 + GOMEMLIMIT 96 GiB; then GOGC 200 | snapshot plugin env | 15 / 14 unchanged | — | — | heap grew to 91 GB under the limit; no effect | — | reverted to GOGC 200 |
+| 9 | Graceful VMM shutdown skipped after checkpoint | microVM worker | unchanged | — | teardown 258 → 258–322 ms (no gain) | — | — | kept, harmless |
+| 10 | Orphan actor directories reclaimed (37k dirs, 576 GB) | node | — | the run right after it failed at 14/s from the disk's background work | — | disk 614 → 21 GB used | — | do it well before measuring |
+| 11 | `/var/lib/ate/actors` on tmpfs | node | unchanged (15) | resume P90 at 15/s 2,354 → 1,468 together with #12 | — | PSI io 13 → 0; `procs_blocked` 0 | — | kept; removes the disk, not the ceiling |
+| 12 | Sim first-wake catch-up off (`SCRIPT_CATCHUP=false`) | harness | 15 held with margin | at 15/s: P50 1,651 → 1,305, P90 2,354 → 1,468; at 8/s P90 1,139 → 864 | at 15/s P90 1,813 → 1,360 | ~46 extra requests per first wake and one ResumeActor each removed | — | kept; affected every run before iteration 12 on both nodes |
+| 13 | Instrumented GCS transport (`ATE_GCS_HTTP_STATS`) | snapshot plugin | diagnostic | showed no throttling: all 2xx, request p50 55 ms | — | — | — | off |
+| 14 | 4 MiB download ranges, 12 in flight per object | snapshot plugin | 15 unchanged, 17 later | at 15/s P90 1,508 → 1,256 ms | — | — | — | kept |
+| 15 | Composite uploads in 8 MiB parts | snapshot plugin | unchanged | — | at 15/s P50 1,119 → 1,603, P99 1,770 → 7,817 | 300 upload goroutines in HTTP/2 flow control at 21/s | — | reverted |
+| 16 | Sandbox network-namespace pool ported to the microVM worker | `internal/ateomnet` | unchanged (15 → 17 came from the fine ramp, not this) | at 15/s P90 1,508 → 1,223 ms | — | tap stage unchanged (the microVM cost is the tap, not the namespace) | — | kept, no measurable gain on microVM |
+| 17 | Denser zstd level (`ATE_ZSTD_LEVEL=default`) | snapshot plugin | 21/s collapsed harder | at 15/s P50 1,097 → 1,391 | — | image 41–42 → 39–42 MiB (−3 %); ~3× compression CPU | — | reverted |
+| 18 | Fine ramp from 12 (final configuration) | harness | **microVM 17** (16.7 achieved) | 1,298 / 1,397 / 1,560 ms | 1,092 / 1,345 / 1,615 ms | plugin ~25 cores | 0 errors, 0 refusals, 0 crashes | final |
+| g1 | Plugin/atelet patch (#2, #3) on gVisor | snapshot plugin | 5 → 8 | at 8/s P50 1,305 → 1,150 | 989 → 1,246 (noise) | — | — | kept |
+| g2 | Sandbox network-namespace pool (`ATE_NETNS_POOL`) | `internal/ateomnet` (gVisor) | 8 | net_setup 170–330 → 1 ms; at 12/s P50 2,563 → 1,618 | 12/s park 1,246 → 1,104 | ~95 % pool hit rate | 0 adoption failures | kept |
+| g3 | `runsc --shared-root` (one gofer namespace per worker) | gVisor worker | 8 | at 8/s P90 1,315 → 1,254 | teardown −80 ms at 8/s | — | — | kept |
+| g4 | `--ignore-cgroups` | gVisor worker | 8 → 5 | at 8/s P50 1,076 → 2,328 | — | sentry sized from the host (192 vCPUs) | — | rejected |
+| g5 | Reusable worker-owned cgroup slots | gVisor worker | run failed | — | — | — | 4,806 actors crashed (gofers die in a reused cgroup) | rejected |
+| g6 | Lean post-checkpoint teardown + no app-container cgroup | gVisor worker | 8 | at 8/s P50 1,076 → 912, at 12/s 1,584 → 1,337 | — | cgroup leak fixed: 8,157 → 650 cgroups; every cgroup op faster | — | kept |
+| g7 | Catch-up off + ×1.25 ramp | harness | **gVisor 9** | 959 / 1,194 / 1,449 ms | 589 / 742 / 932 ms | — | 0 errors, 0 refusals | final |
+
+"""
+
 RATE_TABLE = ["### Activations per second with resume and suspend latency, start of the day vs. end\n",
 "One activation = one actor resumed from its suspended snapshot and answering a request; the test keeps 650 awake by suspending one actor for every one it resumes, so activations/s = swaps/s = suspends/s = resumes/s. Latencies are what the client saw (resume = request round trip through the router including the restore; suspend = SuspendActor call). ms, P50 / P90 / P99. \"pass\" = within the bounds (P90 ≤ 2.5× the run's first level, errors + refusals < 0.5 %, no backlog growth).\n"]
 VERDICT = {"": "pass"}
@@ -221,6 +255,7 @@ BOTTLENECK = ("""## Where the bottleneck moved, and what is happening now (for w
 md.append("\n".join(RATE_TABLE))
 md.append(SUMMARY_TAIL)
 md.append(BOTTLENECK)
+md.append(IMPACT)
 md.append(IDEAS)
 for tag, cls in (("metal2", "microVM (agents-tco-euw4, actor 2 vCPU + 256 MiB)"), ("east", "gVisor (agents-tco-east, actor 2 vCPU + 2 GiB)")):
     md.append(f"## {cls}\n")
