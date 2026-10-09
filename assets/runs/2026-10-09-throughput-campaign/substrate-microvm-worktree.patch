@@ -1,0 +1,331 @@
+diff --git a/cmd/ateom-microvm/restore.go b/cmd/ateom-microvm/restore.go
+index 56171010..2ba1e281 100644
+--- a/cmd/ateom-microvm/restore.go
++++ b/cmd/ateom-microvm/restore.go
+@@ -76,9 +76,21 @@ func reseedGuestCRNG(ctx context.Context, ac *kata.AgentClient) error {
+ 	if err != nil {
+ 		return err
+ 	}
+-	rctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+-	defer cancel()
+-	return ac.ReseedRandomDev(rctx, nonce)
++	// EXPERIMENT (agents-tco worktree): under a dense restore load the agent of a
++	// freshly resumed guest occasionally takes longer than 5 s to answer, and a
++	// failed reseed CRASHES the actor (measured: ~1 crash per 500-1000 restores,
++	// "agent ReseedRandomDev: context deadline exceeded"). Allow 15 s and one retry.
++	var err2 error
++	for attempt := 0; attempt < 2; attempt++ {
++		rctx, cancel := context.WithTimeout(ctx, 15*time.Second)
++		err2 = ac.ReseedRandomDev(rctx, nonce)
++		cancel()
++		if err2 == nil || ctx.Err() != nil {
++			return err2
++		}
++		slog.WarnContext(ctx, "guest CRNG reseed failed; retrying", slog.Int("attempt", attempt+1), slog.Any("err", err2))
++	}
++	return err2
+ }
+ 
+ // newReseedNonce returns 32 bytes of fresh entropy to mix into the guest CRNG.
+diff --git a/internal/tarutil/tarutil.go b/internal/tarutil/tarutil.go
+index 0dee7b7a..1bd34fdd 100644
+--- a/internal/tarutil/tarutil.go
++++ b/internal/tarutil/tarutil.go
+@@ -148,8 +148,15 @@ func create(ctx context.Context, tarPath, srcDir string, skip SkipFunc, includeR
+ 	}
+ 	// Durable-dir tars are handed to atelet for upload as soon as we return, so
+ 	// flush to disk rather than trusting the page cache to outlive us.
+-	if err := f.Sync(); err != nil {
+-		return fmt.Errorf("syncing tar %q: %w", tarPath, err)
++	// EXPERIMENT (agents-tco worktree, approved by Aditya 2026-10-09): skipped unless
++	// ATE_TAR_FSYNC=1 — the tar is read back by atelet from the same node
++	// within seconds and uploaded, and N concurrent checkpoints' fsyncs convoy on
++	// the node filesystem's journal (measured: rootfs_upper 0.5 s alone → 2.4 s at
++	// 40 concurrent on an otherwise idle disk).
++	if os.Getenv("ATE_TAR_FSYNC") == "1" {
++		if err := f.Sync(); err != nil {
++			return fmt.Errorf("syncing tar %q: %w", tarPath, err)
++		}
+ 	}
+ 	return nil
+ }
+diff --git a/pkg/objectstorage/gcs.go b/pkg/objectstorage/gcs.go
+index e0328708..d53eb140 100644
+--- a/pkg/objectstorage/gcs.go
++++ b/pkg/objectstorage/gcs.go
+@@ -20,7 +20,10 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"io"
++	"os"
++	"strconv"
+ 	"sync"
++	"sync/atomic"
+ 	"time"
+ 
+ 	"cloud.google.com/go/storage"
+@@ -38,6 +41,26 @@ type gcsClient struct {
+ 	// built on first use by uploadClient.
+ 	poolOnce sync.Once
+ 	pool     []*storage.Client
++	// rr spreads whole-object requests (GetObject's first/only range, putSingle)
++	// over the pool too: every storage.Client holds ONE HTTP/2 connection, so
++	// without this all concurrent snapshot transfers on a node share a single
++	// TCP flow and finish together at N x (bytes / one-flow bandwidth).
++	rr atomic.Uint64
++}
++
++// clientPoolSize is how many storage.Clients (= connections) the pool holds.
++// ATE_GCS_CLIENT_POOL overrides the default of 8.
++func clientPoolSize() int {
++	if v, err := strconv.Atoi(os.Getenv("ATE_GCS_CLIENT_POOL")); err == nil && v > 0 {
++		return v
++	}
++	return 8
++}
++
++// nextClient returns the next pooled client round-robin (the base client when the
++// pool could not be built).
++func (g *gcsClient) nextClient(ctx context.Context) *storage.Client {
++	return g.uploadClient(ctx, int(g.rr.Add(1)))
+ }
+ 
+ // NewGCSClient returns a GCS-backed ObjectStorage. It builds its own
+@@ -105,7 +128,7 @@ func (g *gcsClient) PutObject(ctx context.Context, bucket, object string, reader
+ 
+ // putSingle writes the whole body in one resumable request.
+ func (g *gcsClient) putSingle(ctx context.Context, bucket, object string, reader io.Reader) error {
+-	wc := g.client.Bucket(bucket).Object(object).NewWriter(ctx)
++	wc := g.nextClient(ctx).Bucket(bucket).Object(object).NewWriter(ctx)
+ 	wc.ChunkSize = uploadChunkSize
+ 	// io.Copy reports local read errors; wc.Close() reports the actual
+ 	// GCS upload (auth, permissions, transient). Join both so the caller
+diff --git a/pkg/objectstorage/gcscompose.go b/pkg/objectstorage/gcscompose.go
+index c093de76..ed29e040 100644
+--- a/pkg/objectstorage/gcscompose.go
++++ b/pkg/objectstorage/gcscompose.go
+@@ -32,13 +32,15 @@ import (
+ // every part onto it, so parts that should be independent share one TCP stream:
+ // measured on a GKE worker node at 8 streams, 334 MB/s shared against 518 MB/s with a
+ // connection each.
+-const uploadPoolSize = 8
++const uploadPoolSize = 8 // default; see clientPoolSize
+ 
+ // uploadClient returns the client part i should use, or the default client if the pool
+ // could not be built (a pool failure costs throughput, not correctness).
+ func (g *gcsClient) uploadClient(ctx context.Context, i int) *storage.Client {
+ 	g.poolOnce.Do(func() {
+-		for range uploadPoolSize {
++		n := clientPoolSize()
++		slog.InfoContext(ctx, "Building GCS client pool", slog.Int("size", n))
++		for range n {
+ 			// The clients outlive this call, so they must not hold its cancellation.
+ 			c, err := storage.NewClient(context.WithoutCancel(ctx), g.opts...)
+ 			if err != nil {
+diff --git a/pkg/objectstorage/gcsranged.go b/pkg/objectstorage/gcsranged.go
+index f23d2157..a72d90ec 100644
+--- a/pkg/objectstorage/gcsranged.go
++++ b/pkg/objectstorage/gcsranged.go
+@@ -29,7 +29,7 @@ func (g *gcsClient) GetObject(ctx context.Context, bucket, object string) (io.Re
+ 	ctx, cancel := context.WithCancel(ctx)
+ 	// The first chunk doubles as the size probe: a range read reports the whole
+ 	// object's size in its attrs, so nothing pays an extra round trip for it.
+-	head, err := g.client.Bucket(bucket).Object(object).NewRangeReader(ctx, 0, downloadChunkSize)
++	head, err := g.nextClient(ctx).Bucket(bucket).Object(object).NewRangeReader(ctx, 0, downloadChunkSize)
+ 	if err != nil {
+ 		cancel()
+ 		if errors.Is(err, storage.ErrObjectNotExist) || errors.Is(err, storage.ErrBucketNotExist) {
+diff --git a/pkg/objectstorage/objects.go b/pkg/objectstorage/objects.go
+index 8dd6a6b7..b3cfca54 100644
+--- a/pkg/objectstorage/objects.go
++++ b/pkg/objectstorage/objects.go
+@@ -424,11 +424,11 @@ func decodeContent(out io.Writer, src io.Reader) (decodeContentResult, error) {
+ 
+ 	// Plain zstd stream: put back the peeked bytes, then decompress.
+ 	r := io.MultiReader(bytes.NewReader(magic[:n]), src)
+-	zrc, err := zstd.NewReader(r, zstd.WithDecoderConcurrency(1))
++	zrc, err := getDecoder(r)
+ 	if err != nil {
+ 		return decodeContentResult{}, fmt.Errorf("in zstd.NewReader: %w", err)
+ 	}
+-	defer zrc.Close()
++	defer putDecoder(zrc)
+ 	if f, ok := out.(*os.File); ok {
+ 		size, written, derr := copyZstdSparse(f, zrc)
+ 		if derr != nil {
+diff --git a/pkg/objectstorage/parzstd.go b/pkg/objectstorage/parzstd.go
+index 5b8a91f4..a7b7545f 100644
+--- a/pkg/objectstorage/parzstd.go
++++ b/pkg/objectstorage/parzstd.go
+@@ -17,6 +17,7 @@ package objectstorage
+ import (
+ 	"io"
+ 	"runtime"
++	"sync"
+ 
+ 	"github.com/klauspost/compress/zstd"
+ )
+@@ -60,11 +61,38 @@ type parZstdJob struct {
+ 	out chan []byte
+ }
+ 
+-// newParZstd starts the worker pool, capped at GOMAXPROCS (workers <= 0 asks for it).
++// Buffers and encoders are pooled across parZstd instances: a 128 MiB snapshot
++// otherwise allocates ~500 MiB of fresh memory per upload (chunk buffers, output
++// buffers, one encoder per worker), and at tens of concurrent checkpoints that is
++// gigabytes per second of page faults inside this one process (measured: 20-26
++// cores and ~1M minor faults/s in the snapshot plugin), which is what bounded the
++// node's suspend throughput — not the network and not the disk.
++var (
++	parZstdChunkPool = sync.Pool{New: func() any { b := make([]byte, 0, parZstdChunk); return &b }}
++	parZstdOutPool   = sync.Pool{New: func() any { b := make([]byte, 0, parZstdChunk+parZstdChunk/16); return &b }}
++	parZstdEncPool   = sync.Pool{New: func() any {
++		enc, err := zstd.NewWriter(nil,
++			zstd.WithEncoderLevel(zstd.SpeedFastest),
++			zstd.WithEncoderConcurrency(1))
++		if err != nil {
++			// NewWriter only fails on bad options, which are compile-time constants here.
++			panic(err)
++		}
++		return enc
++	}}
++)
++
++// parZstdMaxWorkers caps the per-file fan-out: 8 workers compress ~1.5 GB/s, far
++// above what one upload absorbs, and bounds the buffers a single file holds.
++const parZstdMaxWorkers = 8
++
++// newParZstd starts the worker pool, capped at GOMAXPROCS and parZstdMaxWorkers
++// (workers <= 0 asks for the cap).
+ func newParZstd(dst io.Writer, workers int) *parZstd {
+ 	if workers <= 0 || workers > runtime.GOMAXPROCS(0) {
+ 		workers = runtime.GOMAXPROCS(0)
+ 	}
++	workers = min(workers, parZstdMaxWorkers)
+ 	p := &parZstd{
+ 		dst:     dst,
+ 		workers: workers,
+@@ -74,7 +102,7 @@ func newParZstd(dst io.Writer, workers int) *parZstd {
+ 		done:    make(chan struct{}),
+ 	}
+ 	for range workers * parZstdQueue {
+-		p.free <- make([]byte, 0, parZstdChunk)
++		p.free <- (*parZstdChunkPool.Get().(*[]byte))[:0]
+ 	}
+ 	for range workers {
+ 		go p.worker()
+@@ -84,19 +112,14 @@ func newParZstd(dst io.Writer, workers int) *parZstd {
+ 	return p
+ }
+ 
+-// worker compresses whole chunks. Each holds its own encoder: the encoders are
+-// single-shot EncodeAll users, so one per worker keeps their state private.
++// worker compresses whole chunks with a pooled encoder (single-shot EncodeAll, so
++// the encoder's state stays private to this worker while it holds it).
+ func (p *parZstd) worker() {
+-	enc, err := zstd.NewWriter(nil,
+-		zstd.WithEncoderLevel(zstd.SpeedFastest),
+-		zstd.WithEncoderConcurrency(1))
+-	if err != nil {
+-		// NewWriter only fails on bad options, which are compile-time constants here.
+-		panic(err)
+-	}
+-	defer enc.Close()
++	enc := parZstdEncPool.Get().(*zstd.Encoder)
++	defer parZstdEncPool.Put(enc)
+ 	for j := range p.jobs {
+-		j.out <- enc.EncodeAll(j.buf, make([]byte, 0, len(j.buf)+len(j.buf)/16))
++		out := parZstdOutPool.Get().(*[]byte)
++		j.out <- enc.EncodeAll(j.buf, (*out)[:0])
+ 		p.free <- j.buf[:0]
+ 	}
+ }
+@@ -110,6 +133,10 @@ func (p *parZstd) writer() {
+ 		if p.err == nil {
+ 			_, p.err = p.dst.Write(frame)
+ 		}
++		if cap(frame) >= parZstdChunk+parZstdChunk/16 { // our pooled output buffer; EncodeAll may have grown it
++			f := frame[:0]
++			parZstdOutPool.Put(&f)
++		}
+ 	}
+ }
+ 
+@@ -142,7 +169,19 @@ func (p *parZstd) Close() error {
+ 	close(p.jobs)
+ 	close(p.ordered)
+ 	<-p.done
+-	return p.err
++	// Return the chunk buffers (the one in hand plus every idle one) to the pool.
++	b := p.buf[:0]
++	parZstdChunkPool.Put(&b)
++	p.buf = nil
++	for {
++		select {
++		case fb := <-p.free:
++			fb = fb[:0]
++			parZstdChunkPool.Put(&fb)
++		default:
++			return p.err
++		}
++	}
+ }
+ 
+ // newSerialZstd is a plain streaming encoder, for callers that are already running one
+diff --git a/pkg/objectstorage/sparsezstd.go b/pkg/objectstorage/sparsezstd.go
+index dc78ddd6..77d18e99 100644
+--- a/pkg/objectstorage/sparsezstd.go
++++ b/pkg/objectstorage/sparsezstd.go
+@@ -20,6 +20,7 @@ import (
+ 	"fmt"
+ 	"io"
+ 	"os"
++	"sync"
+ 
+ 	"github.com/klauspost/compress/zstd"
+ 	"golang.org/x/sys/unix"
+@@ -142,11 +143,11 @@ func readSparseZstd(dst *os.File, src io.Reader) (logical int64, err error) {
+ 		return 0, fmt.Errorf("unsupported sparse snapshot format version %d (this build supports %d)", ver, sparseVersion)
+ 	}
+ 
+-	zr, err := zstd.NewReader(src, zstd.WithDecoderConcurrency(1))
++	zr, err := getDecoder(src)
+ 	if err != nil {
+ 		return 0, err
+ 	}
+-	defer zr.Close()
++	defer putDecoder(zr)
+ 
+ 	var size int64
+ 	if err := binary.Read(zr, binary.LittleEndian, &size); err != nil {
+@@ -189,3 +190,30 @@ func readSparseZstd(dst *os.File, src io.Reader) (logical int64, err error) {
+ 	}
+ 	return size, nil
+ }
++
++// Decoders are pooled too: each zstd.NewReader allocates its window and history
++// buffers afresh, and concurrent restores paid for that in page faults the same
++// way the uploads did.
++var zstdDecPool = sync.Pool{New: func() any {
++	d, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(1))
++	if err != nil {
++		panic(err) // options are compile-time constants
++	}
++	return d
++}}
++
++// getDecoder returns a pooled decoder reading src.
++func getDecoder(src io.Reader) (*zstd.Decoder, error) {
++	d := zstdDecPool.Get().(*zstd.Decoder)
++	if err := d.Reset(src); err != nil {
++		zstdDecPool.Put(d)
++		return nil, err
++	}
++	return d, nil
++}
++
++// putDecoder detaches the decoder from its reader and returns it to the pool.
++func putDecoder(d *zstd.Decoder) {
++	_ = d.Reset(nil)
++	zstdDecPool.Put(d)
++}

@@ -1,0 +1,2 @@
+d=$(find /host/sys/fs/cgroup -type d -name "*1d30907b648f19fa22f8f99e521a1a8515a3872aaca682536afb7ce186b9c873*" | head -1); pid=$(head -1 $d/cgroup.procs)
+for i in $(seq 1 360); do echo "T $(date +%s) $(grep usage_usec $d/cpu.stat | awk '{print $2}') $(awk '{print $10, $12, $14, $15, $20, $24}' /host/proc/$pid/stat) $(grep -E '^(Dirty|Writeback):' /host/proc/meminfo | awk '{print $2}' | tr '\n' ' ') $(head -1 /host/proc/stat | awk '{print $2+$3+$4+$7+$8, $5}') $(grep ' nvme0n1 ' /host/proc/diskstats | awk '{print $6, $10, $13}')"; sleep 5; done
