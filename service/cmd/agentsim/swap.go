@@ -214,6 +214,10 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 	var mu sync.Mutex // guards resident/parked queues and the park samples
 	var parkSamples []tsample
 	var inFlight int
+	ever := map[int]bool{} // actors that have been resident at least once since the fill
+	for _, id := range resident {
+		ever[id] = true
+	}
 
 	// one tick: park N oldest residents, wake N oldest parked; runs
 	// asynchronously so a slow tick does not delay the next one
@@ -260,6 +264,7 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 				mu.Lock()
 				if err == nil {
 					resident = append(resident, id)
+					ever[id] = true
 				} else {
 					parked = append(parked, id) // still parked: back to the pool
 				}
@@ -442,6 +447,9 @@ func (s *sim) runSwap(ctx context.Context, deadline time.Time) {
 				verdict += fmt.Sprintf("; hold at %d clean for %s", lastGood, s.cfg.holdAfterFail)
 			}
 		}
+		if s.cfg.swapCycleAll && lastGood > 0 {
+			verdict += "; " + s.swapCycle(ctx, deadline, lastGood, &ever, &mu, tick, score, &levels)
+		}
 		printTable(verdict)
 		return
 	}
@@ -496,4 +504,50 @@ func (s *sim) swapPark(ctx context.Context, id int) (float64, error) {
 	}
 	slog.Warn("swap park failed", "actor", actorName(id), "err", err)
 	return 0, err
+}
+
+// swapCycle keeps swapping at n per tick until every actor in the pool has
+// been resident at least once (or the deadline), then reports the cycle:
+// wall time, swaps, and wake/park quantiles over the whole cycle.
+func (s *sim) swapCycle(ctx context.Context, deadline time.Time, n int, ever *map[int]bool, mu *sync.Mutex,
+	tick func(int), score func(int64, int, time.Duration) swapStat, levels *[]swapStat) string {
+	total := len(s.ready)
+	mu.Lock()
+	done := len(*ever)
+	mu.Unlock()
+	slog.Info("swap cycle", "n_per_tick", n, "already_resident_once", done, "pool", total)
+	start := time.Now()
+	tk := time.NewTicker(s.cfg.swapEvery)
+	defer tk.Stop()
+	var wg sync.WaitGroup
+	lastLog := time.Now()
+	for {
+		mu.Lock()
+		done = len(*ever)
+		mu.Unlock()
+		if done >= total || time.Now().After(deadline) || ctx.Err() != nil {
+			break
+		}
+		select {
+		case <-ctx.Done():
+		case <-tk.C:
+			wg.Add(1)
+			go func() { defer wg.Done(); tick(n) }()
+		}
+		if time.Since(lastLog) > time.Minute {
+			slog.Info("swap cycle progress", "resident_once", done, "pool", total, "elapsed", time.Since(start).Round(time.Second).String())
+			lastLog = time.Now()
+		}
+	}
+	wg.Wait()
+	st := score(start.UnixMilli(), n, time.Since(start))
+	st.tag = "cycle"
+	*levels = append(*levels, st)
+	mu.Lock()
+	done = len(*ever)
+	mu.Unlock()
+	msg := fmt.Sprintf("cycle at %d per %s: %d of %d actors resident at least once in %s (%d wakes, %d parks; wake p50/p90/p99 %.0f/%.0f/%.0f ms, park p50/p90/p99 %.0f/%.0f/%.0f ms, errors %d, refusals %d)",
+		n, s.cfg.swapEvery, done, total, time.Since(start).Round(time.Second), st.wakes, st.parks, st.wakeP50, st.wakeP90, st.wakeP99, st.parkP50, st.parkP90, st.parkP99, st.errors, st.refusals)
+	slog.Info("swap cycle done", "msg", msg)
+	return msg
 }

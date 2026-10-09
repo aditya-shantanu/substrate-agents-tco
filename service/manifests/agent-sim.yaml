@@ -141,6 +141,7 @@ spec:
         - --swap-start=${SWAP_START}
         - --swap-mult=${SWAP_MULT}
         - --swap-every=${SWAP_EVERY}
+        - --swap-cycle-all=${SWAP_CYCLE_ALL}
         volumeMounts:
         - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
         - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }

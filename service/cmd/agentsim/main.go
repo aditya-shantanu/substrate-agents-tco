@@ -76,6 +76,7 @@ type cfg struct {
 	swapFill, swapStart int
 	swapMult            float64
 	swapEvery           time.Duration
+	swapCycleAll        bool // after the ramp: keep swapping at the last clean N until every actor has been resident at least once
 	probeBytes          int
 	setupSuspend        bool
 
@@ -189,6 +190,7 @@ func main() {
 	flag.IntVar(&c.swapFill, "swap-fill", 0, "swap mode: hold this many actors resident and idle, then park N and wake N every --swap-every (0 = off)")
 	flag.IntVar(&c.swapStart, "swap-start", 5, "swap mode: N per tick at the first level")
 	flag.Float64Var(&c.swapMult, "swap-mult", 2, "swap mode: multiply N by this per level (one level per --wave-interval)")
+	flag.BoolVar(&c.swapCycleAll, "swap-cycle-all", false, "swap mode: after the ramp (and hold), keep swapping at the last clean N until every actor in the pool has been resident at least once; logs the cycle's wall time and latencies")
 	flag.DurationVar(&c.swapEvery, "swap-every", 10*time.Second, "swap mode: tick length — N parks + N wakes are started every tick")
 	flag.Float64Var(&c.failTurnP99Ms, "fail-turn-p99-ms", 2000, "load-test: a wave fails if in-session turn p99 exceeds this (0 disables)")
 	flag.IntVar(&c.probeBytes, "probe-bytes", 8<<20, "fixed-work CPU probe: sha256 over this many bytes once per activation; drift = CPU throttling (0 disables)")
