@@ -80,6 +80,28 @@ _15 swaps/s passes (14.75 achieved, 0 errors); 18 swaps/s fails (latency + 12 re
 | 15 per tick | 15.00 | **14.75** | 1,651 / 2,354 / 3,255 | 1,408 / 1,813 / 2,319 | 0 + 1 | 30 | 0 | pass |
 | 18 per tick | 18.00 | **17.42** | 3,479 / 5,216 / 13,106 | 1,885 / 2,468 / 3,400 | 2 + 12 | 54 | 0 | refusals+wake-p90-vs-baseline |
 
+### Iteration 7: plugin v5 (bounded free lists for 64 MiB upload head / 16 MiB range / 1 MiB copy buffers, writer chunk = object size, decoder concurrency 4) + GOGC=400 GOMEMLIMIT=96GiB; ramp from 10 ×1.2
+
+_page faults gone (300/s vs 150k/s) but the ceiling did not move: 15 passes, 18 fails (resume P50 7.6 s, 410 refusals); plugin heap grew to 91 GB under the memory limit_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 10 per tick | 10.00 | **9.83** | 968 / 1,232 / 1,514 | 1,059 / 1,291 / 1,576 | 0 + 1 | 10 | 0 | pass |
+| 12 per tick | 12.00 | **11.82** | 1,077 / 1,477 / 2,285 | 1,111 / 1,427 / 1,747 | 0 + 1 | 12 | 0 | pass |
+| 15 per tick | 15.00 | **14.73** | 1,726 / 2,562 / 3,070 | 1,400 / 1,779 / 2,395 | 0 + 0 | 30 | 0 | pass |
+| 18 per tick | 18.00 | **17.08** | 7,603 / 11,944 / 16,169 | 1,832 / 2,793 / 3,650 | 0 + 410 | 126 | 0 | refusals+wake-p90-vs-baseline+backlog |
+| 15 per tick | 15.00 | **13.29** | 1,612 / 2,530 / 16,656 | 1,388 / 1,893 / 6,674 | 56 + 96 | 510 | 2 | refusals+errors+backlog |
+
+### Iteration 8: same build, GOGC=200 and no GOMEMLIMIT; ramp from 12 ×1.15
+
+_14 passes, 17 fails: the plugin's download stage goes from 1.1 s to 7.2 s median between 14 and 17 swaps/s while uploads stay at 0.7 s — the restore download pipeline saturates at ~15-16 swaps/s_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 12 per tick | 12.00 | **11.80** | 1,381 / 1,813 / 2,329 | 1,198 / 1,490 / 1,845 | 0 + 0 | 12 | 0 | pass |
+| 14 per tick | 14.00 | **13.77** | 1,660 / 2,449 / 2,842 | 1,296 / 1,665 / 2,036 | 0 + 0 | 14 | 0 | pass |
+| 17 per tick | 17.00 | **16.03** | 8,294 / 9,373 / 10,170 | 1,482 / 1,921 / 2,332 | 0 + 33 | 136 | 0 | refusals+wake-p90-vs-baseline+backlog |
+
 ### Iteration 5: same build, ramp from 8 in ×1.2 steps
 
 _baseline for the relative gate is the 8 swaps/s level here; the 12 swaps/s resume P90 (1,839 ms) is also within 2.5× of the 2 swaps/s baseline of iteration 4 (751 ms × 2.5 = 1,878)_
@@ -173,3 +195,15 @@ _see the agent's report for the change set_
 | 3 per tick | 3.00 | **2.97** | 761 / 862 / 971 | 677 / 842 / 956 | 0 + 0 | 0 | 0 | pass |
 | 5 per tick | 5.00 | **4.92** | 991 / 1,174 / 1,355 | 850 / 1,069 / 1,274 | 0 + 0 | 5 | 0 | pass |
 | 8 per tick | 8.00 | **7.77** | 2,328 / 2,786 / 3,166 | 1,860 / 2,265 / 2,520 | 0 + 0 | 24 | 0 | wake-p90-vs-baseline+park-p90-vs-baseline |
+
+### gVisor agent iteration 6
+
+_see the agent's report for the change set_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 2 per tick | 2.00 | **1.98** | 652 / 791 / 935 | 648 / 777 / 908 | 0 + 0 | 0 | 0 | pass |
+| 3 per tick | 3.00 | **2.97** | 731 / 842 / 1,022 | 669 / 792 / 918 | 0 + 0 | 0 | 0 | pass |
+| 5 per tick | 5.00 | **4.92** | 885 / 1,025 / 1,190 | 750 / 893 / 1,046 | 0 + 0 | 5 | 0 | pass |
+| 8 per tick | 8.00 | **7.87** | 1,165 / 1,420 / 1,640 | 943 / 1,129 / 1,312 | 0 + 0 | 8 | 0 | pass |
+| 12 per tick | 12.00 | **11.80** | 1,824 / 2,565 / 3,151 | 1,293 / 1,654 / 2,063 | 0 + 0 | 12 | 0 | wake-p90-vs-baseline |

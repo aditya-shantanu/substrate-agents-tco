@@ -1,3 +1,38 @@
+diff --git a/cmd/ateom-microvm/checkpoint.go b/cmd/ateom-microvm/checkpoint.go
+index fe873c30..6067e099 100644
+--- a/cmd/ateom-microvm/checkpoint.go
++++ b/cmd/ateom-microvm/checkpoint.go
+@@ -222,6 +222,10 @@ func (s *AteomService) CheckpointWorkload(ctx context.Context, req *ateompb.Chec
+ 	// Tear down: the actor returns to "available". Best-effort; the snapshot is
+ 	// already on disk for atelet to ship.
+ 	tTeardown := time.Now()
++	// EXPERIMENT (agents-tco worktree): the guest is paused and its snapshot is on
++	// disk, so the graceful CH API shutdown in teardown buys nothing here and cost
++	// p50 178 / p90 370 / p99 810 ms per suspend at 15 swaps/s (measured). Skip it.
++	ctx = context.WithValue(ctx, afterCheckpointKey{}, true)
+ 	if err := s.terminateWorkload(ctx, attribution, actorDirs); err != nil {
+ 		slog.WarnContext(ctx, "failed to terminate workload after checkpoint",
+ 			slog.String("actor", attribution.Ref.String()),
+@@ -323,6 +327,10 @@ func listFiles(dir string) ([]string, error) {
+ 
+ // teardownActor stops the ateom-owned CH VMM for an actor. ra may be
+ // nil (e.g. ateom restarted and lost in-memory state).
++// afterCheckpointKey marks a teardown that follows a completed checkpoint (the VM is
++// already paused and snapshotted), where the graceful VMM shutdown is skipped.
++type afterCheckpointKey struct{}
++
+ func (s *AteomService) teardownActor(ctx context.Context, id string, actorDirs *ateompb.ActorDirs, ra *runningActor, client *ch.Client) error {
+ 	// Stop offering the guest to GetWorkloadStats first, before anything below
+ 	// makes it stop answering. Clearing it here rather than alongside the
+@@ -332,7 +340,7 @@ func (s *AteomService) teardownActor(ctx context.Context, id string, actorDirs *
+ 	s.setGuestStats(id, nil)
+ 
+ 	var errs []error
+-	if client != nil {
++	if client != nil && ctx.Value(afterCheckpointKey{}) == nil {
+ 		tShutdown := time.Now()
+ 		shutCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+ 		if err := client.Shutdown(shutCtx); err != nil {
 diff --git a/cmd/ateom-microvm/restore.go b/cmd/ateom-microvm/restore.go
 index 56171010..2ba1e281 100644
 --- a/cmd/ateom-microvm/restore.go
@@ -27,6 +62,31 @@ index 56171010..2ba1e281 100644
  }
  
  // newReseedNonce returns 32 bytes of fresh entropy to mix into the guest CRNG.
+diff --git a/cmd/snapshot-plugin/main.go b/cmd/snapshot-plugin/main.go
+index 4f8d8c82..0ecb24c8 100644
+--- a/cmd/snapshot-plugin/main.go
++++ b/cmd/snapshot-plugin/main.go
+@@ -21,6 +21,8 @@
+ package main
+ 
+ import (
++	"net/http"
++	_ "net/http/pprof"
+ 	"context"
+ 	"fmt"
+ 	"log/slog"
+@@ -65,6 +67,11 @@ func main() {
+ 
+ 	// healthcheck is what the sidecar's startup probe runs: the image has no
+ 	// shell or grpc_health_probe, so the binary checks itself.
++	// EXPERIMENT (agents-tco worktree): ATE_PPROF_ADDR=":6060" serves net/http/pprof so
++	// the plugin can be profiled under load.
++	if addr := os.Getenv("ATE_PPROF_ADDR"); addr != "" {
++		go func() { _ = http.ListenAndServe(addr, nil) }()
++	}
+ 	if mode == "healthcheck" {
+ 		if err := healthcheck(ctx, *socket, *timeout); err != nil {
+ 			serverboot.Fatal(ctx, "Snapshot plugin is not serving", err)
 diff --git a/internal/tarutil/tarutil.go b/internal/tarutil/tarutil.go
 index 0dee7b7a..1bd34fdd 100644
 --- a/internal/tarutil/tarutil.go
@@ -50,7 +110,7 @@ index 0dee7b7a..1bd34fdd 100644
  	return nil
  }
 diff --git a/pkg/objectstorage/gcs.go b/pkg/objectstorage/gcs.go
-index e0328708..d53eb140 100644
+index e0328708..8bd8d509 100644
 --- a/pkg/objectstorage/gcs.go
 +++ b/pkg/objectstorage/gcs.go
 @@ -20,7 +20,10 @@ import (
@@ -91,15 +151,62 @@ index e0328708..d53eb140 100644
  }
  
  // NewGCSClient returns a GCS-backed ObjectStorage. It builds its own
-@@ -105,7 +128,7 @@ func (g *gcsClient) PutObject(ctx context.Context, bucket, object string, reader
+@@ -90,13 +113,36 @@ const uploadChunkSize = 64 << 20
+ // PutObject writes reader to the object, in a single request below
+ // uploadCompositeMin and as parallel parts above it. The size is not known up front,
+ // so this reads that many bytes to find out which case it is, then hands them on.
++// headBufs is a bounded free list of PutObject head buffers (uploadCompositeMin each).
++// A sync.Pool would do, but it is emptied at every GC and these are 64 MiB apiece:
++// measured at 12 uploads/s the fresh head + media buffers were 39 % of all bytes the
++// plugin allocated and most of its page faults.
++var headBufs = make(chan []byte, 64)
++
++func getHeadBuf() []byte {
++	select {
++	case b := <-headBufs:
++		return b
++	default:
++		return make([]byte, uploadCompositeMin)
++	}
++}
++
++func putHeadBuf(b []byte) {
++	select {
++	case headBufs <- b[:cap(b)]:
++	default:
++	}
++}
++
+ func (g *gcsClient) PutObject(ctx context.Context, bucket, object string, reader io.Reader) error {
+-	head := make([]byte, uploadCompositeMin)
++	head := getHeadBuf()
++	defer putHeadBuf(head)
+ 	n, err := io.ReadFull(reader, head)
+ 	switch {
+ 	case errors.Is(err, io.EOF), errors.Is(err, io.ErrUnexpectedEOF):
+ 		// The whole object is in hand and fits in one request.
+-		return g.putSingle(ctx, bucket, object, bytes.NewReader(head[:n]))
++		return g.putSingle(ctx, bucket, object, bytes.NewReader(head[:n]), n)
+ 	case err != nil:
+ 		return fmt.Errorf("while reading object body: %w", err)
+ 	}
+@@ -104,9 +150,14 @@ func (g *gcsClient) PutObject(ctx context.Context, bucket, object string, reader
+ }
  
  // putSingle writes the whole body in one resumable request.
- func (g *gcsClient) putSingle(ctx context.Context, bucket, object string, reader io.Reader) error {
+-func (g *gcsClient) putSingle(ctx context.Context, bucket, object string, reader io.Reader) error {
 -	wc := g.client.Bucket(bucket).Object(object).NewWriter(ctx)
++func (g *gcsClient) putSingle(ctx context.Context, bucket, object string, reader io.Reader, size int) error {
 +	wc := g.nextClient(ctx).Bucket(bucket).Object(object).NewWriter(ctx)
++	// The writer allocates a ChunkSize media buffer per upload; size it to the object
++	// (rounded up to the 256 KiB the API requires) instead of a fixed 64 MiB.
  	wc.ChunkSize = uploadChunkSize
++	if size > 0 {
++		wc.ChunkSize = min(uploadChunkSize, (size+(256<<10)-1)/(256<<10)*(256<<10))
++	}
  	// io.Copy reports local read errors; wc.Close() reports the actual
  	// GCS upload (auth, permissions, transient). Join both so the caller
+ 	// doesn't lose either.
 diff --git a/pkg/objectstorage/gcscompose.go b/pkg/objectstorage/gcscompose.go
 index c093de76..ed29e040 100644
 --- a/pkg/objectstorage/gcscompose.go
@@ -272,8 +379,105 @@ index 5b8a91f4..a7b7545f 100644
  }
  
  // newSerialZstd is a plain streaming encoder, for callers that are already running one
+diff --git a/pkg/objectstorage/rangedget.go b/pkg/objectstorage/rangedget.go
+index a7837f2a..6b259c30 100644
+--- a/pkg/objectstorage/rangedget.go
++++ b/pkg/objectstorage/rangedget.go
+@@ -18,6 +18,7 @@ import (
+ 	"context"
+ 	"fmt"
+ 	"io"
++	"sync"
+ )
+ 
+ // A restore spends most of its download blocked on the socket: 450 MB of snapshot
+@@ -52,6 +53,10 @@ type rangedReader struct {
+ 	cur     []byte
+ 	curFull []byte
+ 	err     error
++	// bufs are every range buffer this reader took from rangeBufs; wg counts the
++	// schedule goroutine and in-flight fetches so Close can return them safely.
++	bufs [][]byte
++	wg   sync.WaitGroup
+ }
+ 
+ type rangeResult struct {
+@@ -62,6 +67,28 @@ type rangeResult struct {
+ // newRangedReader starts fetching size bytes as chunks, at most downloadConcurrency
+ // of them in flight. head supplies the first chunk when the caller already opened it
+ // and is closed with the returned reader.
++// rangeBufs is a bounded free list of range buffers shared by every download on the
++// node: a reader otherwise allocates downloadConcurrency x downloadChunkSize (128 MiB)
++// of fresh memory per object (measured: 14 % of the plugin's allocated bytes at 12
++// restores/s). Buffers go back when the reader is closed and its fetches have ended.
++var rangeBufs = make(chan []byte, 128)
++
++func getRangeBuf() []byte {
++	select {
++	case b := <-rangeBufs:
++		return b
++	default:
++		return make([]byte, downloadChunkSize)
++	}
++}
++
++func putRangeBuf(b []byte) {
++	select {
++	case rangeBufs <- b[:cap(b)]:
++	default:
++	}
++}
++
+ func newRangedReader(ctx context.Context, size int64, head io.ReadCloser, fetch fetchRangeFunc) *rangedReader {
+ 	ctx, cancel := context.WithCancel(ctx)
+ 	r := &rangedReader{
+@@ -71,14 +98,18 @@ func newRangedReader(ctx context.Context, size int64, head io.ReadCloser, fetch
+ 		free:    make(chan []byte, downloadConcurrency),
+ 	}
+ 	for range downloadConcurrency {
+-		r.free <- make([]byte, downloadChunkSize)
++		b := getRangeBuf()
++		r.bufs = append(r.bufs, b)
++		r.free <- b
+ 	}
++	r.wg.Add(1)
+ 	go r.schedule(ctx, size, head, fetch)
+ 	return r
+ }
+ 
+ // schedule issues the ranges in order, bounded by the free buffers.
+ func (r *rangedReader) schedule(ctx context.Context, size int64, head io.Reader, fetch fetchRangeFunc) {
++	defer r.wg.Done()
+ 	defer close(r.ordered)
+ 	for i, off := 0, int64(0); off < size; i, off = i+1, off+downloadChunkSize {
+ 		var buf []byte
+@@ -98,7 +129,9 @@ func (r *rangedReader) schedule(ctx context.Context, size int64, head io.Reader,
+ 		if i > 0 {
+ 			src = nil
+ 		}
++		r.wg.Add(1)
+ 		go func(i int, off, n int64, buf []byte, src io.Reader) {
++			defer r.wg.Done()
+ 			if src != nil {
+ 				if _, err := io.ReadFull(src, buf[:n]); err != nil {
+ 					out <- rangeResult{err: fmt.Errorf("while reading range %d+%d: %w", off, n, err)}
+@@ -146,6 +179,14 @@ func (r *rangedReader) Read(p []byte) (int, error) {
+ 
+ func (r *rangedReader) Close() error {
+ 	r.cancel()
++	// Hand the buffers back once nothing can touch them any more (the schedule
++	// goroutine has stopped issuing and every fetch has returned).
++	go func() {
++		r.wg.Wait()
++		for _, b := range r.bufs {
++			putRangeBuf(b)
++		}
++	}()
+ 	if r.head != nil {
+ 		return r.head.Close()
+ 	}
 diff --git a/pkg/objectstorage/sparsezstd.go b/pkg/objectstorage/sparsezstd.go
-index dc78ddd6..77d18e99 100644
+index dc78ddd6..a69f495a 100644
 --- a/pkg/objectstorage/sparsezstd.go
 +++ b/pkg/objectstorage/sparsezstd.go
 @@ -20,6 +20,7 @@ import (
@@ -298,7 +502,23 @@ index dc78ddd6..77d18e99 100644
  
  	var size int64
  	if err := binary.Read(zr, binary.LittleEndian, &size); err != nil {
-@@ -189,3 +190,30 @@ func readSparseZstd(dst *os.File, src io.Reader) (logical int64, err error) {
+@@ -159,6 +160,8 @@ func readSparseZstd(dst *os.File, src io.Reader) (logical int64, err error) {
+ 		return 0, err
+ 	}
+ 
++	cbuf := getCopyBuf()
++	defer putCopyBuf(cbuf)
+ 	// Replay the extent frames written by writeSparseZstd. Each frame is an offset
+ 	// (i64), a length (i64), then that many data bytes; the stream ends with a
+ 	// terminator frame whose offset is sparseEndOffset (-1) and carries no len/data.
+@@ -183,9 +186,65 @@ func readSparseZstd(dst *os.File, src io.Reader) (logical int64, err error) {
+ 		if _, err := dst.Seek(off, io.SeekStart); err != nil {
+ 			return 0, err
+ 		}
+-		if _, err := io.CopyN(dst, zr, length); err != nil {
++		if _, err := io.CopyBuffer(writerOnly{dst}, io.LimitReader(zr, length), cbuf); err != nil {
+ 			return 0, fmt.Errorf("writing extent @%d+%d: %w", off, length, err)
+ 		}
  	}
  	return size, nil
  }
@@ -307,7 +527,11 @@ index dc78ddd6..77d18e99 100644
 +// buffers afresh, and concurrent restores paid for that in page faults the same
 +// way the uploads did.
 +var zstdDecPool = sync.Pool{New: func() any {
-+	d, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(1))
++	// EXPERIMENT (agents-tco worktree): decode with 4 goroutines instead of 1. The
++	// stream is a concatenation of independent 8 MiB frames (parZstd), and under a
++	// dense restore load the single-threaded decode of a 128 MiB memory image was
++	// the largest term of the plugin's "download" stage.
++	d, err := zstd.NewReader(nil, zstd.WithDecoderConcurrency(4))
 +	if err != nil {
 +		panic(err) // options are compile-time constants
 +	}
@@ -328,4 +552,29 @@ index dc78ddd6..77d18e99 100644
 +func putDecoder(d *zstd.Decoder) {
 +	_ = d.Reset(nil)
 +	zstdDecPool.Put(d)
++}
++
++// writerOnly hides dst's ReadFrom so io.CopyBuffer uses the caller's buffer: the
++// generic os.File.ReadFrom path copied the decoded image in 32 KiB pieces (4,000
++// write syscalls per 128 MiB; ~4 cores at 12 restores/s).
++type writerOnly struct{ io.Writer }
++
++const copyBufSize = 1 << 20
++
++var copyBufs = make(chan []byte, 64)
++
++func getCopyBuf() []byte {
++	select {
++	case b := <-copyBufs:
++		return b
++	default:
++		return make([]byte, copyBufSize)
++	}
++}
++
++func putCopyBuf(b []byte) {
++	select {
++	case copyBufs <- b:
++	default:
++	}
 +}
