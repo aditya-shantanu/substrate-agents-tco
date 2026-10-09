@@ -68,6 +68,18 @@ _first clean run of the full patch set: 8 swaps/s passes; 12 swaps/s delivered e
 | 12 per tick | 12.00 | **11.80** | 1,341 / 1,901 / 2,816 | 1,228 / 1,534 / 2,207 | 0 + 0 | 12 | 0 | wake-p90-vs-baseline |
 | 8 per tick | 8.00 | **7.96** | 898 / 1,109 / 1,675 | 1,068 / 1,271 / 1,638 | 0 + 2 | 16 | 0 | pass |
 
+### Iteration 6: same build + pprof endpoint, ramp from 8 in ×1.2 steps
+
+_15 swaps/s passes (14.75 achieved, 0 errors); 18 swaps/s fails (latency + 12 refusals). CPU profile at 12 swaps/s: 24 cores in the plugin, of which ~8 are page faults/zeroing of fresh 64 MiB upload buffers and 128 MiB download range buffers, ~9 compression, ~4 decoded-output write syscalls_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 8 per tick | 8.00 | **7.87** | 914 / 1,097 / 1,395 | 1,072 / 1,268 / 1,530 | 0 + 1 | 8 | 0 | pass |
+| 10 per tick | 10.00 | **9.88** | 1,025 / 1,238 / 1,549 | 1,114 / 1,321 / 1,669 | 0 + 2 | 10 | 0 | pass |
+| 12 per tick | 12.00 | **11.80** | 1,338 / 1,849 / 2,315 | 1,308 / 1,641 / 1,929 | 0 + 2 | 12 | 0 | pass |
+| 15 per tick | 15.00 | **14.75** | 1,651 / 2,354 / 3,255 | 1,408 / 1,813 / 2,319 | 0 + 1 | 30 | 0 | pass |
+| 18 per tick | 18.00 | **17.42** | 3,479 / 5,216 / 13,106 | 1,885 / 2,468 / 3,400 | 2 + 12 | 54 | 0 | refusals+wake-p90-vs-baseline |
+
 ### Iteration 5: same build, ramp from 8 in ×1.2 steps
 
 _baseline for the relative gate is the 8 swaps/s level here; the 12 swaps/s resume P90 (1,839 ms) is also within 2.5× of the 2 swaps/s baseline of iteration 4 (751 ms × 2.5 = 1,878)_
@@ -78,6 +90,7 @@ _baseline for the relative gate is the 8 swaps/s level here; the 12 swaps/s resu
 | 10 per tick | 10.00 | **9.84** | 1,049 / 1,433 / 2,047 | 1,176 / 1,467 / 1,834 | 0 + 0 | 10 | 0 | pass |
 | 12 per tick | 12.00 | **11.80** | 1,363 / 1,839 / 2,350 | 1,326 / 1,641 / 1,952 | 0 + 0 | 12 | 0 | pass |
 | 15 per tick | 15.00 | **13.85** | 2,651 / 10,514 / 11,687 | 1,640 / 2,012 / 2,946 | 0 + 265 | 165 | 0 | refusals+wake-p90-vs-baseline+backlog |
+| 12 per tick | 12.00 | **9.76** | 1,842 / 4,639 / 55,258 | 1,384 / 35,205 / 58,084 | 419 + 1403 | 920 | 54 | refusals+errors+wake-p90-vs-baseline+park-p90-vs-baseline+backlog+crashed |
 
 ## gVisor (agents-tco-east, actor 2 vCPU + 2 GiB)
 
@@ -149,3 +162,14 @@ _see the agent's report for the change set_
 | 5 per tick | 5.00 | **4.96** | 784 / 935 / 1,071 | 650 / 728 / 870 | 0 + 0 | 0 | 0 | pass |
 | 8 per tick | 8.00 | **7.91** | 1,076 / 1,254 / 1,425 | 783 / 958 / 1,215 | 0 + 0 | 8 | 0 | pass |
 | 12 per tick | 12.00 | **11.77** | 1,584 / 2,365 / 2,877 | 1,024 / 1,367 / 1,658 | 0 + 0 | 24 | 0 | wake-p90-vs-baseline |
+
+### gVisor agent iteration 5
+
+_see the agent's report for the change set_
+
+| Level | Target swaps/s | Achieved | Resume P50 / P90 / P99 ms | Suspend P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| 2 per tick | 2.00 | **1.98** | 691 / 797 / 890 | 651 / 823 / 921 | 0 + 0 | 0 | 0 | pass |
+| 3 per tick | 3.00 | **2.97** | 761 / 862 / 971 | 677 / 842 / 956 | 0 + 0 | 0 | 0 | pass |
+| 5 per tick | 5.00 | **4.92** | 991 / 1,174 / 1,355 | 850 / 1,069 / 1,274 | 0 + 0 | 5 | 0 | pass |
+| 8 per tick | 8.00 | **7.77** | 2,328 / 2,786 / 3,166 | 1,860 / 2,265 / 2,520 | 0 + 0 | 24 | 0 | wake-p90-vs-baseline+park-p90-vs-baseline |
