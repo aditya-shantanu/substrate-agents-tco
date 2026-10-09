@@ -79,6 +79,7 @@ type cfg struct {
 	swapCycleAll        bool // after the ramp: keep swapping at the last clean N until every actor has been resident at least once
 	probeBytes          int
 	setupSuspend        bool
+	setupParkExisting   bool
 
 	// script mode (see script.go): sessions play an agent-session script
 	script        string  // built-in name or YAML path; empty = personal-agent turns
@@ -203,6 +204,7 @@ func main() {
 	flag.DurationVar(&c.pingWait, "ping-wait", 10*time.Second, "one-ping: gap between an actor's suspend and the user's next wake (wall clock, not compressed)")
 	flag.DurationVar(&c.pingLive, "ping-live", 0, "one-ping: how long the actor stays awake after its first ping (0 = suspend right after the ping)")
 	flag.BoolVar(&c.pingIndependent, "ping-independent", false, "one-ping without the user loop: every agent wakes on its own Poisson schedule with mean gap --ping-wait, pings, is parked by the driver; concurrency is random, so with --load-test the waves find the pool's real ceiling")
+	flag.BoolVar(&c.setupParkExisting, "setup-park-existing", false, "reuse a fleet: actors that already exist are not booted, but are suspended if they are awake (lets a rerun skip registration)")
 	flag.IntVar(&c.setupConcurrency, "setup-concurrency", 8, "actors booted and parked concurrently during setup")
 	flag.StringVar(&c.lifecycle, "lifecycle-mode", "suspend", "how the driver parks an actor it has finished with (script driver mode, one-ping, and the first park after setup): suspend = SuspendActor, durable checkpoint in the bucket; pause = PauseActor, node-local checkpoint, resumes on the same node (upstream's --lifecycle-mode)")
 	flag.StringVar(&actorPrefix, "actor-prefix", "sim", "actor name prefix (<prefix>-NNNN); use a unique one per run so leftovers of a previous fleet cannot be mistaken for this run's actors")
@@ -441,6 +443,21 @@ func (s *sim) setupOne(ctx context.Context, id int) error {
 			// (swap) decides what stays in RAM. Wake = page-in, not restore.
 			return nil
 		}
+		return s.setupPark(cctx, name, ref)
+	}
+	if s.cfg.setupParkExisting && s.cfg.setupSuspend {
+		// Reused fleet: whatever state the previous run left the actor in,
+		// start this one with it parked (FailedPrecondition = already parked).
+		cctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+		defer cancel()
+		return s.setupPark(cctx, name, ref)
+	}
+	return nil
+}
+
+// setupPark is setup's first suspend, retried on transient control-plane errors.
+func (s *sim) setupPark(cctx context.Context, name string, ref *ateapipb.ObjectRef) error {
+	{
 		for attempt := 0; ; attempt++ {
 			err := s.hibernateRPC(cctx, ref)
 			if err == nil || status.Code(err) == codes.FailedPrecondition {

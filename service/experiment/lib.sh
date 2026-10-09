@@ -224,6 +224,7 @@ export SWAP_START="${SWAP_START:-5}"
 export SWAP_MULT="${SWAP_MULT:-2}"
 export SWAP_EVERY="${SWAP_EVERY:-10s}"
 export SWAP_CYCLE_ALL="${SWAP_CYCLE_ALL:-false}"
+export SETUP_PARK_EXISTING="${SETUP_PARK_EXISTING:-false}"   # reuse an existing fleet: skip boots, park whatever is awake
 
 if [[ ! -d "${SUBSTRATE_REPO}" ]]; then
   echo "SUBSTRATE_REPO=${SUBSTRATE_REPO} does not exist." >&2
