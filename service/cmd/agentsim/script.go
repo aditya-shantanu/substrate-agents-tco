@@ -227,6 +227,12 @@ func (s *sim) runTask(ctx context.Context, id int, name string, rng *rand.Rand, 
 				// play its state-building ops (files written, RAM filled) with no
 				// think gap so later steps find what they expect, skip the rest.
 				cum += gap
+				if !s.cfg.scriptCatchup {
+					// Catch-up off: measured to fire tens to hundreds of requests per
+					// first wake (one per skipped op), a request storm that scales with
+					// the swap rate and is not part of what a turnover test measures.
+					continue
+				}
 				if s.swapGate != nil { // never touch a parked actor: the request would wake it behind the swap loop's back
 					if !s.swapGate.enter(ctx, id) {
 						return

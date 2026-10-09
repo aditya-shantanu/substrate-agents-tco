@@ -225,6 +225,7 @@ export SWAP_MULT="${SWAP_MULT:-2}"
 export SWAP_EVERY="${SWAP_EVERY:-10s}"
 export SWAP_CYCLE_ALL="${SWAP_CYCLE_ALL:-false}"
 export SETUP_PARK_EXISTING="${SETUP_PARK_EXISTING:-false}"   # reuse an existing fleet: skip boots, park whatever is awake
+export SCRIPT_CATCHUP="${SCRIPT_CATCHUP:-true}"   # swap mode: replay skipped steps' ops on first wake (false = no first-wake request burst)
 
 if [[ ! -d "${SUBSTRATE_REPO}" ]]; then
   echo "SUBSTRATE_REPO=${SUBSTRATE_REPO} does not exist." >&2

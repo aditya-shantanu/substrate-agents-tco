@@ -143,6 +143,7 @@ spec:
         - --swap-every=${SWAP_EVERY}
         - --swap-cycle-all=${SWAP_CYCLE_ALL}
         - --setup-park-existing=${SETUP_PARK_EXISTING}
+        - --script-catchup=${SCRIPT_CATCHUP}
         volumeMounts:
         - { name: servicedns-ca, mountPath: /run/servicedns-ca, readOnly: true }
         - { name: podidentity, mountPath: /run/podidentity.podcert.ate.dev, readOnly: true }
