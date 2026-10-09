@@ -111,6 +111,84 @@ Same test as the suspend campaign, with `PauseActor` instead of `SuspendActor`: 
 | 8 | **7.93** | 252 / 369 / 560 | 249 / 340 / 479 | 0 + 1 | 0 | 0 | pass |
 | 12 | **11.90** | 321 / 509 / 646 | 301 / 453 / 583 | 1 + 5 | 0 | 1 | latency rule |
 
+## Pause run 6
+
+**Node disk 7 min into registration:**
+
+```
+/dev/nvme0n1p1            2.9T    617.7G      2.3T  21% /host/mnt/stateful_partition
+596.1G	/host/var/lib/ate/actors
+57527
+```
+
+**Node disk at the end:**
+
+```
+/dev/nvme0n1p1            2.9T    617.7G      2.3T  21% /host/mnt/stateful_partition
+596.1G	/host/var/lib/ate/actors
+57527
+4	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/sandbox-assets.json
+4	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/system-info
+4	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/volumes
+125532	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/local-checkpoint
+```
+
+| Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend-or-pause P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|
+| 8 | **7.93** | 234 / 273 / 501 | 244 / 323 / 438 | 1 + 5 | 0 | 2 | refusals |
+
+## Pause run 7
+
+**Node disk 7 min into registration:**
+
+```
+/dev/nvme0n1p1            2.9T    618.7G      2.3T  21% /host/mnt/stateful_partition
+588.7G	/host/var/lib/ate/actors
+57527
+```
+
+**Node disk at the end:**
+
+```
+/dev/nvme0n1p1            2.9T    618.1G      2.3T  21% /host/mnt/stateful_partition
+597.4G	/host/var/lib/ate/actors
+57527
+4	/host/var/lib/ate/actors/1ca1329a-dfc3-4034-ba57-5a82288c3717/sandbox-assets.json
+4	/host/var/lib/ate/actors/1ca1329a-dfc3-4034-ba57-5a82288c3717/system-info
+4	/host/var/lib/ate/actors/1ca1329a-dfc3-4034-ba57-5a82288c3717/volumes
+124872	/host/var/lib/ate/actors/1ca1329a-dfc3-4034-ba57-5a82288c3717/local-checkpoint
+```
+
+| Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend-or-pause P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|
+| 8 | **7.93** | 698 / 800 / 1,998 | 240 / 328 / 731 | 0 + 4 | 0 | 2 | pass |
+| 11 | **10.91** | 286 / 506 / 1,427 | 299 / 507 / 862 | 0 + 0 | 0 | 2 | pass |
+| 15 | **14.42** | 1,039 / 4,645 / 7,434 | 699 / 3,678 / 7,349 | 64 + 11 | 135 | 5 | errors, backlog |
+
+## Pause run 8
+
+**Node disk 7 min into registration:**
+
+```
+/dev/nvme0n1p1            2.9T    611.0G      2.3T  21% /host/mnt/stateful_partition
+4.0K	/host/var/lib/ate/actors
+0
+```
+
+**Node disk at the end:**
+
+```
+/dev/nvme0n1p1            2.9T    611.1G      2.3T  21% /host/mnt/stateful_partition
+4.0K	/host/var/lib/ate/actors
+0
+```
+
+| Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend-or-pause P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
+|---|---|---|---|---|---|---|---|
+| 8 | **7.93** | 437 / 543 / 587 | 222 / 279 / 372 | 0 + 0 | 0 | 1 | pass |
+| 11 | **10.91** | 585 / 680 / 721 | 269 / 366 / 498 | 2 + 13 | 0 | 3 | pass |
+| 15 | **14.86** | 798 / 897 / 946 | 322 / 508 / 671 | 8 + 40 | 30 | 3 | refusals |
+
 ## Reference: the same ramp with suspend (bucket snapshots), final configuration, iteration 19 of the suspend campaign
 
 | Activations/s (target) | Achieved | Resume P50 / P90 / P99 ms | Suspend-or-pause P50 / P90 / P99 ms | Errors + refusals | Backlog | Crashed | Verdict |
@@ -127,7 +205,14 @@ Same test as the suspend campaign, with `PauseActor` instead of `SuspendActor`: 
 - **Run 3.** Lost to the sim's fill: a handful of crashed actors held the eight fill slots through twelve long retries each (fixed: the fill now gives up on CRASHED/DELETING/not-found actors, commit 1b118c8).
 - **Run 4 (crash gate count-only).** 2 swaps/s clean; 3 swaps/s failed on 13 refusals + 4 errors with 5 new crashes in two minutes. The medians are tiny — worker restore 160–200 ms, worker checkpoint 150–180 ms, node-agent restore ~190 ms end to end — but the P99 is 10 s: restores time out waiting for virtiofsd's socket or the VMM's API socket, or the guest agent does not answer the CRNG reseed within 30 s, and each such timeout crashes the actor. These are process-startup stalls on a disk that was only 5–15 % busy; the node's Hyperdisk was running the `bfq` I/O scheduler (8 ms idling slices, 128 KiB maximum request) with the actor state directory back on it. Before run 5 the queue scheduler was switched to `none` and read-ahead raised to 1 MiB.
 - **Run 5 (after the scheduler change).** Fill 25 s. 2 swaps/s: resume 158 / 171 / 205 ms, pause 170 / 203 / 229; 8 swaps/s: resume 252 / 369 / 560, pause 249 / 340 / 479, zero errors and zero crashes; 12 swaps/s delivered (11.9 achieved, 1 error, 5 refusals, 1 crash) at resume 321 / 509 / 646 ms — failed only the relative rule, because 2.5× a 171 ms baseline is 428 ms. The 10-s tails are gone: worker restore P99 542 ms at 8/s. **Within the 2.5× rule pause gives 8 swaps/s; it delivers 12 at a resume P90 of 0.5 s**, five times better latency than suspend at the same rate.
-- **Run 6.** Same fleet, ramp 8 → 11 → 15 → 20 → 27 with the relative latency rule off (errors, refusals, backlog, host and crash gates only), to find where pause actually breaks.
+- **Run 6 (latency rule off).** Ended at its first level: 5 refusals + 1 error in 952 wakes is 0.63 %, over the 0.5 % gate, with 2 more crashes — the residual 10-s socket/agent timeouts still crashed an actor every few hundred restores.
+- **Run 7 (worker socket and agent waits raised 10–15 s → 45–60 s so a stall becomes latency instead of a crash; error and refusal gates at 2 %; latency rule off).** 8 swaps/s: resume 698 / 800 / 1,998 ms (this level still woke the actors the pool roll had suspended to the bucket), 11 swaps/s: resume 286 / 506 / 1,427, pause 299 / 507 / 862, 0 errors, 0 refusals; **15 swaps/s collapses on the disk**: resume P50 1.0 s / P90 4.6 s, pause P90 3.7 s, 64 errors, backlog 135, PSI io 46 %. Hold at 11. On this Hyperdisk, pause delivers ~11–12 activations/s; suspend delivered 17 because its bytes went compressed to the network and its staging to tmpfs.
+
+- **Run 8 (actor state on a 2 TB Hyperdisk Extreme, 350k IOPS, attached and migrated between runs — 591 GB copied at 1.3 GB/s; same gates as run 7).** 8 swaps/s: resume 437 / 543 / 587 ms, pause 222 / 279 / 372, 0 errors; 11 swaps/s: resume 585 / 680 / 721, pause 269 / 366 / 498; **15 swaps/s delivered (14.86 achieved) at resume 798 / 897 / 946 ms and pause 322 / 508 / 671** — the tightest tail of the whole day — but 8 errors + 40 refusals (3.2 %) failed the 2 % gate; PSI io 22 % (46 % on the boot disk at the same rate). The hold at 11 then tripped the memory-pressure gate: with 591 GB of local checkpoints the page cache holds 710 GB of a 792 GB node and reclaim runs continuously (PSI memory full 11–14 % even idle). The remaining errors are not the disk: 8 restores had virtiofsd never bring up its socket within 60 s and 5 had the guest agent not answer the CRNG reseed within 2 × 15 s; each such failure crashes the actor and the actor's next wakes answer 503 until it is deleted.
+
+## Why pause is not simply "suspend minus the network"
+
+Pause removes GCS and the network and the latency shows it (resume P50 160–300 ms against 1,100–1,300 ms for suspend at the same rates). Throughput does not follow, because suspend never used the local disk and pause uses nothing else: a park writes the uncompressed 128 MiB memory image plus the rootfs tar (~133 MB measured from the write rate) to the one Hyperdisk, and a wake reads 128 MiB back — three times the bytes of suspend's 42 MiB object, all on a 2,400 MiB/s volume, with the CPU idle at 7 %. The two remedies are a faster volume (Hyperdisk Extreme: run 8 took the disk out of the way, 15 swaps/s at a 0.9 s P90) and compressing the local checkpoint the way the suspend path does, which would cut the disk bytes by three and also shrink the page-cache footprint that has the node in continuous reclaim with 5,000 local checkpoints. After the disk, what stops pause is the same per-VM startup failure rate (virtiofsd not coming up, guest agent not answering) that costs ~0.3–0.5 % of restores and, because each one crashes the actor, turns into refusals at the gate.
 
 ## Where the time goes with pause (run 5, medians)
 

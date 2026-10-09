@@ -1,0 +1,7 @@
+/dev/nvme0n1p1            2.9T    617.7G      2.3T  21% /host/mnt/stateful_partition
+596.1G	/host/var/lib/ate/actors
+57527
+4	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/sandbox-assets.json
+4	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/system-info
+4	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/volumes
+125532	/host/var/lib/ate/actors/12fddf67-b7d1-482d-80f1-e6071d62df0c/local-checkpoint
