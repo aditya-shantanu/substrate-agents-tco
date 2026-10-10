@@ -1,0 +1,831 @@
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [1/5] GKE cluster 'agents-tco-east' + snapshot bucket + IAM  [2m(~10-15 min first time)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2m2026/10/09 19:37:21 WARN GVISOR_NODE_MACHINE_TYPE is deprecated; use NODE_MACHINE_TYPE instead[0m
+   [2m2026/10/09 19:37:21 INFO Starting full bootstrap...[0m
+   [2m2026/10/09 19:37:21 INFO Step 1/7: Enabling required APIs...[0m
+   [2m2026/10/09 19:37:21 INFO Batch enabling services services="artifactregistry.googleapis.com, cloudresourcemanager.googleapis.com, container.googleapis.com, networkconnectivity.googleapis.com, serviceusage.googleapis.com, storage.googleapis.com, logging.googleapis.com, monitoring.googleapis.com, cloudtrace.googleapis.com, telemetry.googleapis.com"[0m
+   [2m2026/10/09 19:37:26 INFO Successfully enabled required services.[0m
+   [2m2026/10/09 19:37:26 INFO Step 2/7: Creating GKE Cluster...[0m
+   [2m2026/10/09 19:37:26 INFO Checking if cluster exists cluster=agents-tco-east location=us-east4-a[0m
+   [2m2026/10/09 19:37:27 INFO Cluster exists. Checking attributes... cluster=agents-tco-east[0m
+   [2m2026/10/09 19:37:27 INFO Cluster WorkloadIdentityConfig match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:37:27 INFO Cluster EnableK8SBetaApis match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:37:27 INFO Cluster ManagedOpentelemetryConfig match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:37:27 INFO Cluster Filestore CSI driver match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:37:27 INFO Step 3/7: Creating GCS Bucket for snapshots...[0m
+   [2m2026/10/09 19:37:27 INFO Checking if Bucket exists bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:37:28 INFO Bucket exists. Checking attributes... bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:37:28 INFO Bucket is in the correct project and region. Checking uniform-bucket-level-access setting... bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:37:28 INFO uniform-bucket-level-access is already correct bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:37:28 INFO Step 4/7: Granting GKE Node permissions...[0m
+   [2m2026/10/09 19:37:28 INFO IAM policy already has required GKE node permissions. Skipping update. project=gke-ai-eco-dev[0m
+   [2m2026/10/09 19:37:28 INFO Step 5/7: Granting Atelet permissions...[0m
+   [2m2026/10/09 19:37:29 INFO IAM policy already has required GKE node permissions. Skipping update. project=gke-ai-eco-dev[0m
+   [2m2026/10/09 19:37:29 INFO Step 6/7: Creating IAM policy bindings for bucket...[0m
+   [2m2026/10/09 19:37:29 INFO IAM policy is already correct bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:37:29 INFO Step 7/7: Creating Monitoring Dashboards...[0m
+   [2m2026/10/09 19:37:30 INFO Updating dashboard displayName="Substrate gRPC Server — latency / QPS / errors" name=projects/142966328212/dashboards/4a536150-e3a1-4c68-9902-f508286b0b58 file=ate-grpc-dashboard.json[0m
+   [2m2026/10/09 19:37:30 INFO Updating dashboard displayName="Substrate Routing & E2E Latency" name=projects/142966328212/dashboards/9c55250b-9673-4c45-98e5-1301b56faa99 file=ate-e2e-latency-dashboard.json[0m
+   [2m2026/10/09 19:37:30 INFO Updating dashboard displayName="Substrate Snapshot Size & QPS" name=projects/142966328212/dashboards/dd8724e4-68ed-46b5-b625-b285c2b22981 file=ate-snapshot-dashboard.json[0m
+   [2m2026/10/09 19:37:31 INFO Bootstrap completed successfully.[0m
+   [2mFetching cluster endpoint and auth data.[0m
+   [2mkubeconfig entry generated for agents-tco-east.[0m
+   [2mUpdating node pool metal-pool...[0m
+   [2m..........................done.[0m
+   [2mUpdated [https://container.googleapis.com/v1/projects/gke-ai-eco-dev/zones/us-east4-a/clusters/agents-tco-east/nodePools/metal-pool].[0m
+   [2mNAME                                           STATUS   ROLES    AGE     VERSION[0m
+   [2mgke-agents-tco-east-metal-pool-539d6ba3-4723   Ready    <none>   3d21h   v1.36.4-gke.1495000[0m
+[32m[1m ✓ done in 22s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [2/5] Substrate control plane  [2m(ateapi · scheduler · router · atelet)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mbare-metal node(s): default StorageClass set to hyperdisk-balanced[0m
+   [2mconfiguration: 10 set, 34 default[0m
+   [2m  actorJWT.algorithm                          ES256                                          (from default)[0m
+   [2m  ateapi.expectedJWTIssuer                    ""                                             (from default)[0m
+   [2m  ateapi.postgres.cloudsql.gsa                ""                                             (from default)[0m
+   [2m  ateapi.postgres.cloudsql.iamAuth            ""                                             (from default)[0m
+   [2m  ateapi.postgres.cloudsql.instance           ""                                             (from default)[0m
+   [2m  ateapi.postgres.cloudsql.ipType             ""                                             (from default)[0m
+   [2m  ateapi.postgres.owner.connectionString      ""                                             (from default)[0m
+   [2m  ateapi.postgres.owner.role                  substrate_owner                                (from default)[0m
+   [2m  ateapi.postgres.poolMaxConns                ""                                             (from default)[0m
+   [2m  ateapi.postgres.readWrite.connectionString  ""                                             (from default)[0m
+   [2m  ateapi.postgres.readWrite.role              substrate_readwrite                            (from default)[0m
+   [2m  ateapi.postgres.schema                      ""                                             (from default)[0m
+   [2m  ateapi.postgres.serverCAFile                ""                                             (from default)[0m
+   [2m  ateapi.postgres.storageClass                ""                                             (from default)[0m
+   [2m  atenet.dataplane                            envoy                                          (from default)[0m
+   [2m  atenet.egress.additionalExtprocService      ""                                             (from default)[0m
+   [2m  atenet.egress.credentialProvider            {"enabled":false}                              (from --credential-provider)[0m
+   [2m  benchmark.actorMemory                       ""                                             (from default)[0m
+   [2m  benchmark.sandboxClass                      gvisor                                         (from default)[0m
+   [2m  benchmark.workerCount                       1                                              (from default)[0m
+   [2m  clusterSize                                 size0                                          (from default)[0m
+   [2m  context                                     gke_gke-ai-eco-dev_us-east4-a_agents-tco-east  (from KUBECTL_CONTEXT)[0m
+   [2m  cordonControlPlane                          false                                          (from default)[0m
+   [2m  csi.setup                                   none                                           (from --setup-csi)[0m
+   [2m  demo.anthropicAPIKey                        ""                                             (from default)[0m
+   [2m  demo.counter.storageClass                   standard                                       (from default)[0m
+   [2m  demo.counter.withExternalVolume             false                                          (from default)[0m
+   [2m  docker.buildFlags                           ""                                             (from default)[0m
+   [2m  gcp.clusterLocation                         us-east4-a                                     (from CLUSTER_LOCATION)[0m
+   [2m  gcp.clusterName                             agents-tco-east                                (from CLUSTER_NAME)[0m
+   [2m  gcp.projectID                               gke-ai-eco-dev                                 (from PROJECT_ID)[0m
+   [2m  images.repo                                 ""                                             (from default)[0m
+   [2m  images.tag                                  ""                                             (from default)[0m
+   [2m  kindCluster.enabled                         false                                          (from default)[0m
+   [2m  kindCluster.name                            kind                                           (from default)[0m
+   [2m  ko.defaultPlatforms                         linux/amd64                                    (from KO_DEFAULTPLATFORMS)[0m
+   [2m  ko.dockerRepo                               gcr.io/gke-ai-eco-dev/ate-images               (from KO_DOCKER_REPO)[0m
+   [2m  kubeconfig                                  /tmp/tco-runs/east.kubeconfig                  (from KUBECONFIG)[0m
+   [2m  namespace                                   ate-system                                     (from default)[0m
+   [2m  otlpEndpoint                                ""                                             (from default)[0m
+   [2m  podcert.workersPerSigner                    0                                              (from default)[0m
+   [2m  record.dir                                  ""                                             (from default)[0m
+   [2m  rolloutTimeout                              1m0s                                           (from default)[0m
+   [2m  storage.bucketName                          snapshot-agents-tco-east-gke-ai-eco-dev        (from BUCKET_NAME)[0m
+   [2m[1;36m[step]: deploy_ate_system[0m[0m
+   [2m  (apply of 1 objects took 0.360s)[0m
+   [2m[1;36m[step]: label_nodes_substrate_version (v0.4.0-25-g66f8a888-dirty)[0m[0m
+   [2m[1;36m[step]: deploy_crds[0m[0m
+   [2m[1;36m[step]: images: built from source with ko[0m[0m
+   [2m  (ko resolve -f /Users/adityashantanu/repos/substrate-east/manifests/ate-install/generated took 0.092s)[0m
+   [2m  (apply of 5 objects took 2.198s)[0m
+   [2m[1;36m[step]: ensure_apiserver_prerequisites[0m[0m
+   [2m[1;36m[step]: create_api_server_env_vars[0m[0m
+   [2m2026/10/09 19:37:56 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/podcertcontroller[0m
+   [2m2026/10/09 19:37:56 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m M cmd/ateom-gvisor/main.go[0m
+   [2m M cmd/ateom-gvisor/runsc.go[0m
+   [2m M cmd/ateom-gvisor/stats.go[0m
+   [2m M internal/ateomnet/netns/netns.go[0m
+   [2m M internal/ateomnet/sandbox.go[0m
+   [2m M internal/tarutil/tarutil.go[0m
+   [2m M pkg/objectstorage/gcs.go[0m
+   [2m M pkg/objectstorage/gcscompose.go[0m
+   [2m M pkg/objectstorage/gcsranged.go[0m
+   [2m M pkg/objectstorage/objects.go[0m
+   [2m M pkg/objectstorage/parzstd.go[0m
+   [2m M pkg/objectstorage/sparsezstd.go[0m
+   [2m?? cmd/ateom-gvisor/cgroupslots.go[0m
+   [2m?? cmd/ateom-gvisor/experiment_defaults.go[0m
+   [2m?? internal/ateomnet/netpool.go[0m
+   [2m[0m
+   [2m2026/10/09 19:37:56 Building github.com/agent-substrate/substrate/cmd/podcertcontroller for linux/amd64[0m
+   [2m2026/10/09 19:37:58 Publishing gcr.io/gke-ai-eco-dev/ate-images/podcertcontroller:latest[0m
+   [2m2026/10/09 19:37:59 existing manifest: sha256-a41208341bb07201ba0ed305fe3361b170708f8f300ee95d5a36706f0ce2ca45.sbom@sha256:47b7eff8a30c11c506c20cda92323b2cee91f74241a2e0d7162d88e617c94595[0m
+   [2m2026/10/09 19:37:59 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/podcertcontroller:sha256-a41208341bb07201ba0ed305fe3361b170708f8f300ee95d5a36706f0ce2ca45.sbom[0m
+   [2m2026/10/09 19:37:59 existing manifest: latest@sha256:a41208341bb07201ba0ed305fe3361b170708f8f300ee95d5a36706f0ce2ca45[0m
+   [2m2026/10/09 19:37:59 Published gcr.io/gke-ai-eco-dev/ate-images/podcertcontroller@sha256:a41208341bb07201ba0ed305fe3361b170708f8f300ee95d5a36706f0ce2ca45[0m
+   [2m  (ko resolve -f - took 4.552s)[0m
+   [2m  (apply of 6 objects took 0.935s)[0m
+   [2m  (rollout status deployment/podcertificate-controller took 0.119s)[0m
+   [2mWaiting for podcertificate ClusterTrustBundles to be ready...[0m
+   [2m  (wait for clustertrustbundles took 0.843s)[0m
+   [2m[1;36m[step]: setup_csi[0m[0m
+   [2mSkipping CSI driver setup.[0m
+   [2m[1;36m[step]: deploy_sandboxconfig[0m[0m
+   [2m[1;36m[step]: ensure_crds[0m[0m
+   [2m  (apply of 2 objects took 0.245s)[0m
+   [2m  (apply of 1 objects took 0.114s)[0m
+   [2m  (apply of 1 objects took 0.139s)[0m
+   [2m  (apply of 3 objects took 0.363s)[0m
+   [2m  (rollout status statefulset/postgres took 0.116s)[0m
+   [2m[1;36m[step]: setup_bundled_postgres[0m[0m
+   [2m2026/10/09 19:38:05 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/ateapi[0m
+   [2m2026/10/09 19:38:05 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/atecontroller[0m
+   [2m2026/10/09 19:38:05 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/snapshot-plugin[0m
+   [2m2026/10/09 19:38:05 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/atenet[0m
+   [2m2026/10/09 19:38:05 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m M cmd/ateom-gvisor/main.go[0m
+   [2m M cmd/ateom-gvisor/runsc.go[0m
+   [2m M cmd/ateom-gvisor/stats.go[0m
+   [2m M internal/ateomnet/netns/netns.go[0m
+   [2m M internal/ateomnet/sandbox.go[0m
+   [2m M internal/tarutil/tarutil.go[0m
+   [2m M pkg/objectstorage/gcs.go[0m
+   [2m M pkg/objectstorage/gcscompose.go[0m
+   [2m M pkg/objectstorage/gcsranged.go[0m
+   [2m M pkg/objectstorage/objects.go[0m
+   [2m M pkg/objectstorage/parzstd.go[0m
+   [2m M pkg/objectstorage/sparsezstd.go[0m
+   [2m?? cmd/ateom-gvisor/cgroupslots.go[0m
+   [2m?? cmd/ateom-gvisor/experiment_defaults.go[0m
+   [2m?? internal/ateomnet/netpool.go[0m
+   [2m[0m
+   [2m2026/10/09 19:38:05 Building github.com/agent-substrate/substrate/cmd/snapshot-plugin for linux/amd64[0m
+   [2m2026/10/09 19:38:05 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m M cmd/ateom-gvisor/main.go[0m
+   [2m M cmd/ateom-gvisor/runsc.go[0m
+   [2m M cmd/ateom-gvisor/stats.go[0m
+   [2m M internal/ateomnet/netns/netns.go[0m
+   [2m M internal/ateomnet/sandbox.go[0m
+   [2m M internal/tarutil/tarutil.go[0m
+   [2m M pkg/objectstorage/gcs.go[0m
+   [2m M pkg/objectstorage/gcscompose.go[0m
+   [2m M pkg/objectstorage/gcsranged.go[0m
+   [2m M pkg/objectstorage/objects.go[0m
+   [2m M pkg/objectstorage/parzstd.go[0m
+   [2m M pkg/objectstorage/sparsezstd.go[0m
+   [2m?? cmd/ateom-gvisor/cgroupslots.go[0m
+   [2m?? cmd/ateom-gvisor/experiment_defaults.go[0m
+   [2m?? internal/ateomnet/netpool.go[0m
+   [2m[0m
+   [2m2026/10/09 19:38:05 Building github.com/agent-substrate/substrate/cmd/atecontroller for linux/amd64[0m
+   [2m2026/10/09 19:38:06 Using base gcr.io/distroless/base-debian13:latest@sha256:389cad21f73e4c37b94ffe5b13736d5a92bd5bd3c6c6b38c2be1c881e14ba2bd for github.com/agent-substrate/substrate/cmd/atelet[0m
+   [2m2026/10/09 19:38:06 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m M cmd/ateom-gvisor/main.go[0m
+   [2m M cmd/ateom-gvisor/runsc.go[0m
+   [2m M cmd/ateom-gvisor/stats.go[0m
+   [2m M internal/ateomnet/netns/netns.go[0m
+   [2m M internal/ateomnet/sandbox.go[0m
+   [2m M internal/tarutil/tarutil.go[0m
+   [2m M pkg/objectstorage/gcs.go[0m
+   [2m M pkg/objectstorage/gcscompose.go[0m
+   [2m M pkg/objectstorage/gcsranged.go[0m
+   [2m M pkg/objectstorage/objects.go[0m
+   [2m M pkg/objectstorage/parzstd.go[0m
+   [2m M pkg/objectstorage/sparsezstd.go[0m
+   [2m?? cmd/ateom-gvisor/cgroupslots.go[0m
+   [2m?? cmd/ateom-gvisor/experiment_defaults.go[0m
+   [2m?? internal/ateomnet/netpool.go[0m
+   [2m[0m
+   [2m2026/10/09 19:38:06 Building github.com/agent-substrate/substrate/cmd/ateapi for linux/amd64[0m
+   [2m2026/10/09 19:38:07 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m M cmd/ateom-gvisor/main.go[0m
+   [2m M cmd/ateom-gvisor/runsc.go[0m
+   [2m M cmd/ateom-gvisor/stats.go[0m
+   [2m M internal/ateomnet/netns/netns.go[0m
+   [2m M internal/ateomnet/sandbox.go[0m
+   [2m M internal/tarutil/tarutil.go[0m
+   [2m M pkg/objectstorage/gcs.go[0m
+   [2m M pkg/objectstorage/gcscompose.go[0m
+   [2m M pkg/objectstorage/gcsranged.go[0m
+   [2m M pkg/objectstorage/objects.go[0m
+   [2m M pkg/objectstorage/parzstd.go[0m
+   [2m M pkg/objectstorage/sparsezstd.go[0m
+   [2m?? cmd/ateom-gvisor/cgroupslots.go[0m
+   [2m?? cmd/ateom-gvisor/experiment_defaults.go[0m
+   [2m?? internal/ateomnet/netpool.go[0m
+   [2m[0m
+   [2m2026/10/09 19:38:07 Building github.com/agent-substrate/substrate/cmd/atenet for linux/amd64[0m
+   [2m2026/10/09 19:38:07 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m M cmd/ateom-gvisor/main.go[0m
+   [2m M cmd/ateom-gvisor/runsc.go[0m
+   [2m M cmd/ateom-gvisor/stats.go[0m
+   [2m M internal/ateomnet/netns/netns.go[0m
+   [2m M internal/ateomnet/sandbox.go[0m
+   [2m M internal/tarutil/tarutil.go[0m
+   [2m M pkg/objectstorage/gcs.go[0m
+   [2m M pkg/objectstorage/gcscompose.go[0m
+   [2m M pkg/objectstorage/gcsranged.go[0m
+   [2m M pkg/objectstorage/objects.go[0m
+   [2m M pkg/objectstorage/parzstd.go[0m
+   [2m M pkg/objectstorage/sparsezstd.go[0m
+   [2m?? cmd/ateom-gvisor/cgroupslots.go[0m
+   [2m?? cmd/ateom-gvisor/experiment_defaults.go[0m
+   [2m?? internal/ateomnet/netpool.go[0m
+   [2m[0m
+   [2m2026/10/09 19:38:07 Building github.com/agent-substrate/substrate/cmd/atelet for linux/amd64[0m
+   [2m2026/10/09 19:38:10 Publishing gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin:latest[0m
+   [2m2026/10/09 19:38:10 Publishing gcr.io/gke-ai-eco-dev/ate-images/atecontroller:latest[0m
+   [2m2026/10/09 19:38:11 existing manifest: sha256-8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691.sbom@sha256:e3441ef6b29c76c14e47624d5f49e7ab057a6b1b46f498450bb91929a792c472[0m
+   [2m2026/10/09 19:38:11 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin:sha256-8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691.sbom[0m
+   [2m2026/10/09 19:38:11 Publishing gcr.io/gke-ai-eco-dev/ate-images/atenet:latest[0m
+   [2m2026/10/09 19:38:12 Publishing gcr.io/gke-ai-eco-dev/ate-images/atelet:latest[0m
+   [2m2026/10/09 19:38:12 Publishing gcr.io/gke-ai-eco-dev/ate-images/ateapi:latest[0m
+   [2m2026/10/09 19:38:12 existing manifest: sha256-844a7407eb147e27d5fd6cf35c83543b9c2a0602c4bb3ca5b23d2354e71df084.sbom@sha256:3b0ab5844537cfaaa66f10c80f36889b81331bb268d2c34f1eaf797f08003235[0m
+   [2m2026/10/09 19:38:12 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/atecontroller:sha256-844a7407eb147e27d5fd6cf35c83543b9c2a0602c4bb3ca5b23d2354e71df084.sbom[0m
+   [2m2026/10/09 19:38:12 existing manifest: latest@sha256:844a7407eb147e27d5fd6cf35c83543b9c2a0602c4bb3ca5b23d2354e71df084[0m
+   [2m2026/10/09 19:38:12 Published gcr.io/gke-ai-eco-dev/ate-images/atecontroller@sha256:844a7407eb147e27d5fd6cf35c83543b9c2a0602c4bb3ca5b23d2354e71df084[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:4a2796d8ea5ef7ae1a64ba20ba56759987f49f2ea2091ddce6bade81c0ad1fa6[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:1eed391ea893e6015bf4ce4ed366909975d2acdbe907670919236a8d18ea6b07[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:c172f21841dff4c8cf45cde46589c1c2616cefe7e819965e92e6d3475c428aa0[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:d6b1b89eccacc15c2420b2776d72c1dae334a00805ed9af54bf2f71e4d536f28[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:99ba982a9142213c751a1709dcf088e63d8601f03b3f211bae037be698fef270[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:c4bc6f35ff5e25aa1afe7a148a0b6f10a760f54e298f86a4a4d44b91f1afbfab[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:99515e7b4d35e0652d3b0fde571b6ec269222ecacc506f026e1758d6261e9109[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:b839dfae01f66e15c6a8b63520557ed315bdfe036342fa7a0c537259f10d7a9a[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:f0a6722c4e9158a0b2a8277fe25de9c94b79150a5ca0a608d1076b7fb8d4b9be[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:9a19f26046fc13c6efc89e41ea98e8e14a3c3dd1c7f277a8b2fcd446ce88c366[0m
+   [2m2026/10/09 19:38:13 existing blob: sha256:ebddc55facdc6b1f7e0f30816a5fc7cc62f38abdf76c0a8b0a0ce52085754795[0m
+   [2m2026/10/09 19:38:13 existing manifest: sha256-a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6.sbom@sha256:5d87051e4f355591cb1e4f840966a68be71f12a26818bb8b6540b43d7b8c64c6[0m
+   [2m2026/10/09 19:38:13 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/atenet:sha256-a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6.sbom[0m
+   [2m2026/10/09 19:38:13 existing manifest: latest@sha256:a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6[0m
+   [2m2026/10/09 19:38:13 Published gcr.io/gke-ai-eco-dev/ate-images/atenet@sha256:a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6[0m
+   [2m2026/10/09 19:38:13 existing manifest: sha256-4e96f9ae2d1f45066d71fd10fd10b212a3ac173fe8c8e893044727acb5c4a387.sbom@sha256:1315dfe8082852704dd3ba524e318b401ac8284773983d2beac32f076562c7bb[0m
+   [2m2026/10/09 19:38:13 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/atelet:sha256-4e96f9ae2d1f45066d71fd10fd10b212a3ac173fe8c8e893044727acb5c4a387.sbom[0m
+   [2m2026/10/09 19:38:13 existing manifest: latest@sha256:4e96f9ae2d1f45066d71fd10fd10b212a3ac173fe8c8e893044727acb5c4a387[0m
+   [2m2026/10/09 19:38:13 Published gcr.io/gke-ai-eco-dev/ate-images/atelet@sha256:4e96f9ae2d1f45066d71fd10fd10b212a3ac173fe8c8e893044727acb5c4a387[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:52630fc75a18675c530ed9eba5f55eca09b03e91bd5bc15307918bbc1a7e7296[0m
+   [2m2026/10/09 19:38:14 gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin:latest: digest: sha256:8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691 size: 2937[0m
+   [2m2026/10/09 19:38:14 Published gcr.io/gke-ai-eco-dev/ate-images/snapshot-plugin@sha256:8c878fda3b7eb16a04f0752b86b0ddfe00ba6719b7ef57a2fc38773b7b551691[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:4a2796d8ea5ef7ae1a64ba20ba56759987f49f2ea2091ddce6bade81c0ad1fa6[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:dd64bf2dd177757451a98fcdc999a339c35dee5d9872d8f4dc69c8f3c4dd0112[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:99ba982a9142213c751a1709dcf088e63d8601f03b3f211bae037be698fef270[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:1eed391ea893e6015bf4ce4ed366909975d2acdbe907670919236a8d18ea6b07[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:ebddc55facdc6b1f7e0f30816a5fc7cc62f38abdf76c0a8b0a0ce52085754795[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:c172f21841dff4c8cf45cde46589c1c2616cefe7e819965e92e6d3475c428aa0[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:99515e7b4d35e0652d3b0fde571b6ec269222ecacc506f026e1758d6261e9109[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:2780920e5dbfbe103d03a583ed75345306e572ec5a48cb10361f046767d9f29a[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:b839dfae01f66e15c6a8b63520557ed315bdfe036342fa7a0c537259f10d7a9a[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:3214acf345c0cc6bbdb56b698a41ccdefc624a09d6beb0d38b5de0b2303ecaf4[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:c4bc6f35ff5e25aa1afe7a148a0b6f10a760f54e298f86a4a4d44b91f1afbfab[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:d6b1b89eccacc15c2420b2776d72c1dae334a00805ed9af54bf2f71e4d536f28[0m
+   [2m2026/10/09 19:38:14 existing blob: sha256:7c12895b777bcaa8ccae0605b4de635b68fc32d60fa08f421dc3818bf55ee212[0m
+   [2m2026/10/09 19:38:15 pushed blob: sha256:a903826272be8f985091870cf3d4a25bd1a614a48f6954ff37d4f557b4db0f6b[0m
+   [2m2026/10/09 19:38:15 pushed blob: sha256:8f746eb083c51364995f98ee5047c15aa9c3c2ef17daf742a4ca9d9fef481347[0m
+   [2m2026/10/09 19:38:16 pushed blob: sha256:ea4c93dcee701eadbcaa7988233a9d210d80b7856a20b34a88e8b16de0a1fc79[0m
+   [2m2026/10/09 19:38:17 gcr.io/gke-ai-eco-dev/ate-images/ateapi:sha256-ea8b790b19ff86125b535322f1e4c40f89416bf2c67b4e4232a416fc67709f51.sbom: digest: sha256:993dc572d70a383c7599f0c040b92704d0caffb669a15111146fb31e2de15a50 size: 375[0m
+   [2m2026/10/09 19:38:17 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/ateapi:sha256-ea8b790b19ff86125b535322f1e4c40f89416bf2c67b4e4232a416fc67709f51.sbom[0m
+   [2m2026/10/09 19:38:29 pushed blob: sha256:b2387d8e33f2d5d49d009ccbcbe8dfb76a29625712d7ca6c6159cc5d0614221f[0m
+   [2m2026/10/09 19:38:29 gcr.io/gke-ai-eco-dev/ate-images/ateapi:latest: digest: sha256:ea8b790b19ff86125b535322f1e4c40f89416bf2c67b4e4232a416fc67709f51 size: 2937[0m
+   [2m2026/10/09 19:38:29 Published gcr.io/gke-ai-eco-dev/ate-images/ateapi@sha256:ea8b790b19ff86125b535322f1e4c40f89416bf2c67b4e4232a416fc67709f51[0m
+   [2m  (ko resolve -f - took 26.296s)[0m
+   [2m  (apply of 28 objects took 3.698s)[0m
+   [2m#0 building with "gke-builder" instance using kubernetes driver[0m
+   [2m[0m
+   [2m#1 [internal] load build definition from Dockerfile[0m
+   [2m#1 transferring dockerfile: 30B 0.1s[0m
+   [2m#1 transferring dockerfile: 2.04kB 0.3s done[0m
+   [2m#1 DONE 0.3s[0m
+   [2m[0m
+   [2m#2 [internal] load metadata for docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#2 ...[0m
+   [2m[0m
+   [2m#3 [internal] load metadata for docker.io/envoyproxy/envoy:v1.39.1@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4[0m
+   [2m#3 DONE 0.7s[0m
+   [2m[0m
+   [2m#2 [internal] load metadata for docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#2 DONE 0.7s[0m
+   [2m[0m
+   [2m#4 [internal] load .dockerignore[0m
+   [2m#4 transferring context: 2B 0.2s done[0m
+   [2m#4 DONE 0.2s[0m
+   [2m[0m
+   [2m#5 [internal] load build context[0m
+   [2m#5 DONE 0.0s[0m
+   [2m[0m
+   [2m#6 [builder 1/5] FROM docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#6 resolve docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e 0.0s done[0m
+   [2m#6 DONE 0.3s[0m
+   [2m[0m
+   [2m#7 [stage-1 1/2] FROM docker.io/envoyproxy/envoy:v1.39.1@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4[0m
+   [2m#7 resolve docker.io/envoyproxy/envoy:v1.39.1@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4 0.0s done[0m
+   [2m#7 ...[0m
+   [2m[0m
+   [2m#5 [internal] load build context[0m
+   [2m#5 transferring context: 31.90kB 0.3s done[0m
+   [2m#5 DONE 0.4s[0m
+   [2m[0m
+   [2m#7 [stage-1 1/2] FROM docker.io/envoyproxy/envoy:v1.39.1@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4[0m
+   [2m#7 sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 32B / 32B 0.0s done[0m
+   [2m#7 sha256:2df165c0a5be5ac9cf034c8a5172fec1c815200292a03efb33de8bf70047f34e 37.39MB / 37.39MB 0.1s done[0m
+   [2m#7 sha256:3ea1838a2ea8b770d9f47f321ef74d4441e21fe5dc56cd098daeca19e596cd2d 4.68kB / 4.68kB 0.0s done[0m
+   [2m#7 sha256:af3841536ea1c5592a27be0df886ee66edb1b01ce73981b0c17d3bd8a5d0994a 485B / 485B 0.1s done[0m
+   [2m#7 sha256:1f726f3ca0f1d8f6a153772e56caefb2a7b3247469181cbee142322291718447 789B / 789B 0.1s done[0m
+   [2m#7 sha256:0d61536559e8daffc0b909d79c03bb0a9aa808d0ed4082eba3e8c4a300b488b2 6.56MB / 6.56MB 0.2s done[0m
+   [2m#7 sha256:671ccc5b2b2dbe653e82c383a22f8d2afbcdb4dbbc628b8d4bd6073f92d10df0 173B / 173B 0.1s done[0m
+   [2m#7 sha256:1caf590142c62615f643ca646acf32f15f86c63ddee8d1cec049add5f79506fe 1.40kB / 1.40kB 0.0s done[0m
+   [2m#7 sha256:d544298cabd50e7c86bfef1e52b67f01db6b3a57bfecfe37a851873dee83e52a 29.74MB / 29.74MB 0.1s done[0m
+   [2m#7 extracting sha256:d544298cabd50e7c86bfef1e52b67f01db6b3a57bfecfe37a851873dee83e52a[0m
+   [2m#7 extracting sha256:d544298cabd50e7c86bfef1e52b67f01db6b3a57bfecfe37a851873dee83e52a 0.4s done[0m
+   [2m#7 DONE 1.7s[0m
+   [2m[0m
+   [2m#6 [builder 1/5] FROM docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#6 sha256:47495189b3619615361bf1ba54a703b2a44cb7d76757ae1cd6a77d4f845bd357 213.84MB / 213.84MB 0.9s done[0m
+   [2m#6 sha256:7b2de2423ebd9d3290883175c0e46dccd6de955b08e6e9a5bd20909e3face240 24.06MB / 24.06MB 0.4s done[0m
+   [2m#6 sha256:81578410df169380efec491bfdc60a7e586d4b48ef4c0aeb9b6ff085812d9a7d 64.42MB / 64.42MB 0.4s done[0m
+   [2m#6 sha256:de9e8d0a007171cac57d643a3982902d45431cd860400eea55e18df75fc0b12a 211.71MB / 211.71MB 0.8s done[0m
+   [2m#6 sha256:eaac70c68abdf6ffacf6de10d31ed9de4813505d1a794eb7393cb27fceb624a6 48.50MB / 48.50MB 0.2s done[0m
+   [2m#6 extracting sha256:eaac70c68abdf6ffacf6de10d31ed9de4813505d1a794eb7393cb27fceb624a6[0m
+   [2m#6 extracting sha256:eaac70c68abdf6ffacf6de10d31ed9de4813505d1a794eb7393cb27fceb624a6 0.9s done[0m
+   [2m#6 DONE 1.8s[0m
+   [2m[0m
+   [2m#7 [stage-1 1/2] FROM docker.io/envoyproxy/envoy:v1.39.1@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4[0m
+   [2m#7 extracting sha256:1caf590142c62615f643ca646acf32f15f86c63ddee8d1cec049add5f79506fe 0.0s done[0m
+   [2m#7 extracting sha256:671ccc5b2b2dbe653e82c383a22f8d2afbcdb4dbbc628b8d4bd6073f92d10df0 0.1s done[0m
+   [2m#7 extracting sha256:0d61536559e8daffc0b909d79c03bb0a9aa808d0ed4082eba3e8c4a300b488b2[0m
+   [2m#7 extracting sha256:0d61536559e8daffc0b909d79c03bb0a9aa808d0ed4082eba3e8c4a300b488b2 0.2s done[0m
+   [2m#7 DONE 1.9s[0m
+   [2m[0m
+   [2m#6 [builder 1/5] FROM docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#6 extracting sha256:7b2de2423ebd9d3290883175c0e46dccd6de955b08e6e9a5bd20909e3face240[0m
+   [2m#6 extracting sha256:7b2de2423ebd9d3290883175c0e46dccd6de955b08e6e9a5bd20909e3face240 0.3s done[0m
+   [2m#6 DONE 2.1s[0m
+   [2m[0m
+   [2m#7 [stage-1 1/2] FROM docker.io/envoyproxy/envoy:v1.39.1@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4[0m
+   [2m#7 extracting sha256:1f726f3ca0f1d8f6a153772e56caefb2a7b3247469181cbee142322291718447 0.0s done[0m
+   [2m#7 extracting sha256:af3841536ea1c5592a27be0df886ee66edb1b01ce73981b0c17d3bd8a5d0994a 0.0s done[0m
+   [2m#7 extracting sha256:3ea1838a2ea8b770d9f47f321ef74d4441e21fe5dc56cd098daeca19e596cd2d 0.0s done[0m
+   [2m#7 extracting sha256:2df165c0a5be5ac9cf034c8a5172fec1c815200292a03efb33de8bf70047f34e[0m
+   [2m#7 extracting sha256:2df165c0a5be5ac9cf034c8a5172fec1c815200292a03efb33de8bf70047f34e 0.5s done[0m
+   [2m#7 DONE 2.4s[0m
+   [2m[0m
+   [2m#6 [builder 1/5] FROM docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#6 extracting sha256:81578410df169380efec491bfdc60a7e586d4b48ef4c0aeb9b6ff085812d9a7d[0m
+   [2m#6 ...[0m
+   [2m[0m
+   [2m#7 [stage-1 1/2] FROM docker.io/envoyproxy/envoy:v1.39.1@sha256:57e14a549d7bd43c8d3f6d03e8cfa653e037d4b38e133acd9b54f38c524401b4[0m
+   [2m#7 extracting sha256:4f4fb700ef54461cfa02571ae0db9a0dc1e0cdb5577484a6d75e68dc38e8acc1 done[0m
+   [2m#7 DONE 2.4s[0m
+   [2m[0m
+   [2m#6 [builder 1/5] FROM docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#6 extracting sha256:81578410df169380efec491bfdc60a7e586d4b48ef4c0aeb9b6ff085812d9a7d 0.8s done[0m
+   [2m#6 DONE 3.0s[0m
+   [2m[0m
+   [2m#6 [builder 1/5] FROM docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#6 extracting sha256:de9e8d0a007171cac57d643a3982902d45431cd860400eea55e18df75fc0b12a[0m
+   [2m#6 extracting sha256:de9e8d0a007171cac57d643a3982902d45431cd860400eea55e18df75fc0b12a 2.5s done[0m
+   [2m#6 DONE 5.5s[0m
+   [2m[0m
+   [2m#6 [builder 1/5] FROM docker.io/library/rust:bookworm@sha256:93ce27a88655056a51dbdd8f5f2d7ddc071c7b0070fb288a37b5a285fc83971e[0m
+   [2m#6 extracting sha256:47495189b3619615361bf1ba54a703b2a44cb7d76757ae1cd6a77d4f845bd357[0m
+   [2m#6 extracting sha256:47495189b3619615361bf1ba54a703b2a44cb7d76757ae1cd6a77d4f845bd357 2.4s done[0m
+   [2m#6 DONE 7.8s[0m
+   [2m[0m
+   [2m#8 [builder 2/5] WORKDIR /usr/src/dynamic-modules/egress-policy[0m
+   [2m#8 DONE 1.3s[0m
+   [2m[0m
+   [2m#9 [builder 3/5] RUN apt-get update && apt-get install -y --no-install-recommends     clang     libclang-dev     && rm -rf /var/lib/apt/lists/*[0m
+   [2m#9 0.273 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB][0m
+   [2m#9 0.280 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB][0m
+   [2m#9 0.280 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB][0m
+   [2m#9 0.324 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8790 kB][0m
+   [2m#9 0.363 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B][0m
+   [2m#9 0.399 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [349 kB][0m
+   [2m#9 1.102 Fetched 9388 kB in 1s (10.8 MB/s)[0m
+   [2m#9 1.102 Reading package lists...[0m
+   [2m#9 1.493 Reading package lists...[0m
+   [2m#9 1.836 Building dependency tree...[0m
+   [2m#9 1.900 Reading state information...[0m
+   [2m#9 1.994 The following additional packages will be installed:[0m
+   [2m#9 1.994   clang-14 libclang-14-dev libclang-common-14-dev libclang-cpp14 libclang1-14[0m
+   [2m#9 1.995   libgc1 libllvm14 libobjc-12-dev libobjc4 libz3-4 llvm-14-linker-tools[0m
+   [2m#9 1.995 Suggested packages:[0m
+   [2m#9 1.995   clang-14-doc wasi-libc[0m
+   [2m#9 1.995 Recommended packages:[0m
+   [2m#9 1.995   llvm-14-dev libclang-rt-14-dev[0m
+   [2m#9 2.088 The following NEW packages will be installed:[0m
+   [2m#9 2.088   clang clang-14 libclang-14-dev libclang-common-14-dev libclang-cpp14[0m
+   [2m#9 2.088   libclang-dev libclang1-14 libgc1 libllvm14 libobjc-12-dev libobjc4 libz3-4[0m
+   [2m#9 2.088   llvm-14-linker-tools[0m
+   [2m#9 2.101 0 upgraded, 13 newly installed, 0 to remove and 22 not upgraded.[0m
+   [2m#9 2.101 Need to get 72.1 MB of archives.[0m
+   [2m#9 2.101 After this operation, 496 MB of additional disk space will be used.[0m
+   [2m#9 2.101 Get:1 http://deb.debian.org/debian bookworm/main amd64 libz3-4 amd64 4.8.12-3.1 [7216 kB][0m
+   [2m#9 2.155 Get:2 http://deb.debian.org/debian bookworm/main amd64 libllvm14 amd64 1:14.0.6-12 [21.8 MB][0m
+   [2m#9 2.218 Get:3 http://deb.debian.org/debian bookworm/main amd64 libclang-cpp14 amd64 1:14.0.6-12 [11.1 MB][0m
+   [2m#9 2.250 Get:4 http://deb.debian.org/debian bookworm/main amd64 libgc1 amd64 1:8.2.2-3 [245 kB][0m
+   [2m#9 2.250 Get:5 http://deb.debian.org/debian bookworm/main amd64 libobjc4 amd64 12.2.0-14+deb12u1 [43.2 kB][0m
+   [2m#9 2.251 Get:6 http://deb.debian.org/debian bookworm/main amd64 libobjc-12-dev amd64 12.2.0-14+deb12u1 [170 kB][0m
+   [2m#9 2.251 Get:7 http://deb.debian.org/debian bookworm/main amd64 libclang-common-14-dev all 1:14.0.6-12 [890 kB][0m
+   [2m#9 2.254 Get:8 http://deb.debian.org/debian bookworm/main amd64 llvm-14-linker-tools amd64 1:14.0.6-12 [1288 kB][0m
+   [2m#9 2.258 Get:9 http://deb.debian.org/debian bookworm/main amd64 libclang1-14 amd64 1:14.0.6-12 [6157 kB][0m
+   [2m#9 2.275 Get:10 http://deb.debian.org/debian bookworm/main amd64 clang-14 amd64 1:14.0.6-12 [102 kB][0m
+   [2m#9 2.275 Get:11 http://deb.debian.org/debian bookworm/main amd64 clang amd64 1:14.0-55.7~deb12u1 [5144 B][0m
+   [2m#9 2.275 Get:12 http://deb.debian.org/debian bookworm/main amd64 libclang-14-dev amd64 1:14.0.6-12 [23.1 MB][0m
+   [2m#9 2.343 Get:13 http://deb.debian.org/debian bookworm/main amd64 libclang-dev amd64 1:14.0-55.7~deb12u1 [4728 B][0m
+   [2m#9 2.473 debconf: delaying package configuration, since apt-utils is not installed[0m
+   [2m#9 2.532 Fetched 72.1 MB in 0s (288 MB/s)[0m
+   [2m#9 2.551 Selecting previously unselected package libz3-4:amd64.[0m
+   [2m#9 2.551 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 23263 files and directories currently installed.)[0m
+   [2m#9 2.561 Preparing to unpack .../00-libz3-4_4.8.12-3.1_amd64.deb ...[0m
+   [2m#9 2.565 Unpacking libz3-4:amd64 (4.8.12-3.1) ...[0m
+   [2m#9 2.966 Selecting previously unselected package libllvm14:amd64.[0m
+   [2m#9 2.967 Preparing to unpack .../01-libllvm14_1%3a14.0.6-12_amd64.deb ...[0m
+   [2m#9 2.969 Unpacking libllvm14:amd64 (1:14.0.6-12) ...[0m
+   [2m#9 3.592 Selecting previously unselected package libclang-cpp14.[0m
+   [2m#9 3.595 Preparing to unpack .../02-libclang-cpp14_1%3a14.0.6-12_amd64.deb ...[0m
+   [2m#9 3.597 Unpacking libclang-cpp14 (1:14.0.6-12) ...[0m
+   [2m#9 3.989 Selecting previously unselected package libgc1:amd64.[0m
+   [2m#9 3.991 Preparing to unpack .../03-libgc1_1%3a8.2.2-3_amd64.deb ...[0m
+   [2m#9 3.993 Unpacking libgc1:amd64 (1:8.2.2-3) ...[0m
+   [2m#9 4.027 Selecting previously unselected package libobjc4:amd64.[0m
+   [2m#9 4.029 Preparing to unpack .../04-libobjc4_12.2.0-14+deb12u1_amd64.deb ...[0m
+   [2m#9 4.031 Unpacking libobjc4:amd64 (12.2.0-14+deb12u1) ...[0m
+   [2m#9 4.052 Selecting previously unselected package libobjc-12-dev:amd64.[0m
+   [2m#9 4.054 Preparing to unpack .../05-libobjc-12-dev_12.2.0-14+deb12u1_amd64.deb ...[0m
+   [2m#9 4.056 Unpacking libobjc-12-dev:amd64 (12.2.0-14+deb12u1) ...[0m
+   [2m#9 4.087 Selecting previously unselected package libclang-common-14-dev.[0m
+   [2m#9 4.088 Preparing to unpack .../06-libclang-common-14-dev_1%3a14.0.6-12_all.deb ...[0m
+   [2m#9 4.091 Unpacking libclang-common-14-dev (1:14.0.6-12) ...[0m
+   [2m#9 4.189 Selecting previously unselected package llvm-14-linker-tools.[0m
+   [2m#9 4.191 Preparing to unpack .../07-llvm-14-linker-tools_1%3a14.0.6-12_amd64.deb ...[0m
+   [2m#9 4.193 Unpacking llvm-14-linker-tools (1:14.0.6-12) ...[0m
+   [2m#9 4.290 Selecting previously unselected package libclang1-14.[0m
+   [2m#9 4.291 Preparing to unpack .../08-libclang1-14_1%3a14.0.6-12_amd64.deb ...[0m
+   [2m#9 4.294 Unpacking libclang1-14 (1:14.0.6-12) ...[0m
+   [2m#9 4.646 Selecting previously unselected package clang-14.[0m
+   [2m#9 4.647 Preparing to unpack .../09-clang-14_1%3a14.0.6-12_amd64.deb ...[0m
+   [2m#9 4.650 Unpacking clang-14 (1:14.0.6-12) ...[0m
+   [2m#9 4.677 Selecting previously unselected package clang.[0m
+   [2m#9 4.679 Preparing to unpack .../10-clang_1%3a14.0-55.7~deb12u1_amd64.deb ...[0m
+   [2m#9 4.681 Unpacking clang (1:14.0-55.7~deb12u1) ...[0m
+   [2m#9 4.703 Selecting previously unselected package libclang-14-dev.[0m
+   [2m#9 4.704 Preparing to unpack .../11-libclang-14-dev_1%3a14.0.6-12_amd64.deb ...[0m
+   [2m#9 4.707 Unpacking libclang-14-dev (1:14.0.6-12) ...[0m
+   [2m#9 5.540 Selecting previously unselected package libclang-dev.[0m
+   [2m#9 5.542 Preparing to unpack .../12-libclang-dev_1%3a14.0-55.7~deb12u1_amd64.deb ...[0m
+   [2m#9 5.544 Unpacking libclang-dev (1:14.0-55.7~deb12u1) ...[0m
+   [2m#9 5.573 Setting up libz3-4:amd64 (4.8.12-3.1) ...[0m
+   [2m#9 5.619 Setting up libgc1:amd64 (1:8.2.2-3) ...[0m
+   [2m#9 5.625 Setting up libllvm14:amd64 (1:14.0.6-12) ...[0m
+   [2m#9 5.631 Setting up llvm-14-linker-tools (1:14.0.6-12) ...[0m
+   [2m#9 5.635 Setting up libclang1-14 (1:14.0.6-12) ...[0m
+   [2m#9 5.640 Setting up libobjc4:amd64 (12.2.0-14+deb12u1) ...[0m
+   [2m#9 5.646 Setting up libclang-common-14-dev (1:14.0.6-12) ...[0m
+   [2m#9 5.651 Setting up libclang-cpp14 (1:14.0.6-12) ...[0m
+   [2m#9 5.657 Setting up libobjc-12-dev:amd64 (12.2.0-14+deb12u1) ...[0m
+   [2m#9 5.662 Setting up libclang-14-dev (1:14.0.6-12) ...[0m
+   [2m#9 5.668 Setting up clang-14 (1:14.0.6-12) ...[0m
+   [2m#9 5.673 Setting up libclang-dev (1:14.0-55.7~deb12u1) ...[0m
+   [2m#9 5.679 Setting up clang (1:14.0-55.7~deb12u1) ...[0m
+   [2m#9 5.759 Processing triggers for libc-bin (2.36-9+deb12u14) ...[0m
+   [2m#9 DONE 6.0s[0m
+   [2m[0m
+   [2m#10 [builder 4/5] COPY dynamic-modules/egress-policy/ .[0m
+   [2m#10 DONE 0.1s[0m
+   [2m[0m
+   [2m#11 [builder 5/5] RUN cargo build --release --locked[0m
+   [2m#11 0.140     Updating git repository `https://github.com/envoyproxy/envoy`[0m
+   [2m#11 25.95     Updating crates.io index[0m
+   [2m#11 26.11  Downloading crates ...[0m
+   [2m#11 26.17   Downloaded serde_json v1.0.151[0m
+   [2m#11 26.18   Downloaded anstyle v1.0.14[0m
+   [2m#11 26.18   Downloaded bindgen v0.70.1[0m
+   [2m#11 26.18   Downloaded aho-corasick v1.1.5[0m
+   [2m#11 26.19   Downloaded bitflags v2.13.1[0m
+   [2m#11 26.19   Downloaded cexpr v0.6.0[0m
+   [2m#11 26.19   Downloaded either v1.18.0[0m
+   [2m#11 26.19   Downloaded regex-syntax v0.8.11[0m
+   [2m#11 26.19   Downloaded unicode-ident v1.0.24[0m
+   [2m#11 26.20   Downloaded clang-sys v1.9.1[0m
+   [2m#11 26.20   Downloaded downcast v0.11.0[0m
+   [2m#11 26.20   Downloaded nom v7.1.3[0m
+   [2m#11 26.20   Downloaded rustc-hash v1.1.0[0m
+   [2m#11 26.20   Downloaded prettyplease v0.2.37[0m
+   [2m#11 26.20   Downloaded libloading v0.8.9[0m
+   [2m#11 26.20   Downloaded termtree v0.5.1[0m
+   [2m#11 26.20   Downloaded zmij v1.0.23[0m
+   [2m#11 26.21   Downloaded minimal-lexical v0.2.1[0m
+   [2m#11 26.21   Downloaded futures-core v0.3.34[0m
+   [2m#11 26.21   Downloaded quote v1.0.47[0m
+   [2m#11 26.21   Downloaded itoa v1.0.18[0m
+   [2m#11 26.21   Downloaded glob v0.3.4[0m
+   [2m#11 26.21   Downloaded predicates-core v1.0.10[0m
+   [2m#11 26.21   Downloaded predicates v3.1.4[0m
+   [2m#11 26.21   Downloaded regex v1.13.1[0m
+   [2m#11 26.22   Downloaded mockall_derive v0.13.1[0m
+   [2m#11 26.22   Downloaded syn v2.0.119[0m
+   [2m#11 26.22   Downloaded cfg-if v1.0.4[0m
+   [2m#11 26.22   Downloaded syn v3.0.6[0m
+   [2m#11 26.23   Downloaded predicates-tree v1.0.13[0m
+   [2m#11 26.23   Downloaded mockall v0.13.1[0m
+   [2m#11 26.23   Downloaded shlex v1.3.0[0m
+   [2m#11 26.23   Downloaded fragile v2.1.0[0m
+   [2m#11 26.23   Downloaded log v0.4.34[0m
+   [2m#11 26.23   Downloaded serde_core v1.0.229[0m
+   [2m#11 26.24   Downloaded serde v1.0.229[0m
+   [2m#11 26.24   Downloaded serde_derive v1.0.229[0m
+   [2m#11 26.24   Downloaded memchr v2.8.3[0m
+   [2m#11 26.24   Downloaded proc-macro2 v1.0.107[0m
+   [2m#11 26.24   Downloaded itertools v0.13.0[0m
+   [2m#11 26.25   Downloaded regex-automata v0.4.18[0m
+   [2m#11 26.26   Downloaded libc v0.2.189[0m
+   [2m#11 26.30    Compiling proc-macro2 v1.0.107[0m
+   [2m#11 26.30    Compiling quote v1.0.47[0m
+   [2m#11 26.30    Compiling unicode-ident v1.0.24[0m
+   [2m#11 26.30    Compiling cfg-if v1.0.4[0m
+   [2m#11 26.30    Compiling glob v0.3.4[0m
+   [2m#11 26.30    Compiling libc v0.2.189[0m
+   [2m#11 26.30    Compiling prettyplease v0.2.37[0m
+   [2m#11 26.30    Compiling memchr v2.8.3[0m
+   [2m#11 26.31    Compiling regex-syntax v0.8.11[0m
+   [2m#11 26.31    Compiling minimal-lexical v0.2.1[0m
+   [2m#11 26.31    Compiling either v1.18.0[0m
+   [2m#11 26.31    Compiling bindgen v0.70.1[0m
+   [2m#11 26.31    Compiling log v0.4.34[0m
+   [2m#11 26.31    Compiling predicates-core v1.0.10[0m
+   [2m#11 26.31    Compiling rustc-hash v1.1.0[0m
+   [2m#11 26.32    Compiling mockall_derive v0.13.1[0m
+   [2m#11 26.32    Compiling bitflags v2.13.1[0m
+   [2m#11 26.32    Compiling serde_core v1.0.229[0m
+   [2m#11 26.32    Compiling shlex v1.3.0[0m
+   [2m#11 26.32    Compiling anstyle v1.0.14[0m
+   [2m#11 26.32    Compiling zmij v1.0.23[0m
+   [2m#11 26.32    Compiling termtree v0.5.1[0m
+   [2m#11 26.32    Compiling futures-core v0.3.34[0m
+   [2m#11 26.33    Compiling serde v1.0.229[0m
+   [2m#11 26.33    Compiling serde_json v1.0.151[0m
+   [2m#11 26.33    Compiling downcast v0.11.0[0m
+   [2m#11 26.33    Compiling itoa v1.0.18[0m
+   [2m#11 26.33    Compiling libloading v0.8.9[0m
+   [2m#11 26.40    Compiling itertools v0.13.0[0m
+   [2m#11 26.40    Compiling fragile v2.1.0[0m
+   [2m#11 26.42    Compiling predicates-tree v1.0.13[0m
+   [2m#11 26.46    Compiling clang-sys v1.9.1[0m
+   [2m#11 26.46    Compiling predicates v3.1.4[0m
+   [2m#11 26.56    Compiling nom v7.1.3[0m
+   [2m#11 26.74    Compiling syn v2.0.119[0m
+   [2m#11 26.74    Compiling syn v3.0.6[0m
+   [2m#11 26.96    Compiling regex-automata v0.4.18[0m
+   [2m#11 27.44    Compiling cexpr v0.6.0[0m
+   [2m#11 27.63    Compiling serde_derive v1.0.229[0m
+   [2m#11 27.72    Compiling regex v1.13.1[0m
+   [2m#11 29.39    Compiling mockall v0.13.1[0m
+   [2m#11 30.67    Compiling envoy-proxy-dynamic-modules-rust-sdk v0.1.0 (https://github.com/envoyproxy/envoy?rev=b579d07d3ad7ee11d32b105e91a5a39ad24718d7#b579d07d)[0m
+   [2m#11 54.67    Compiling substrate-envoy-egress-policy v0.1.0 (/usr/src/dynamic-modules/egress-policy)[0m
+   [2m#11 55.06     Finished `release` profile [optimized] target(s) in 54.95s[0m
+   [2m#11 DONE 55.2s[0m
+   [2m[0m
+   [2m#12 [stage-1 2/2] COPY --from=builder /usr/src/dynamic-modules/egress-policy/target/release/libenvoy_substrate_egress_policy.so /usr/local/lib/libenvoy_substrate_egress_policy.so[0m
+   [2m#12 DONE 0.0s[0m
+   [2m[0m
+   [2m#13 exporting to image[0m
+   [2m#13 exporting layers 0.1s done[0m
+   [2m#13 exporting manifest sha256:ecbd9ac3c2b88da56ed6ea8955be3eafa9840a1ef082ea4aba5e342e793199dd 0.0s done[0m
+   [2m#13 exporting config sha256:ec962319a7f85403eb0063fe1f902422ef7a1ead66e32dc97e74b31fd3b36265 done[0m
+   [2m#13 exporting attestation manifest sha256:5bc97258cabb742ec0fadeeca186d69a934450316ef010cfb34848637a11c401 0.0s done[0m
+   [2m#13 exporting manifest list sha256:f07d82b7b606e2d693647619b5819b6356a6d5341858e8090205a832b75f1c8e done[0m
+   [2m#13 pushing layers[0m
+   [2m#13 ...[0m
+   [2m[0m
+   [2m#14 [auth] gke-ai-eco-dev/ate-images/envoy-dataplane:pull,push gke-ai-eco-dev/gcr.io/ate-images/envoy-dataplane:pull token for gcr.io[0m
+   [2m#14 DONE 0.0s[0m
+   [2m[0m
+   [2m#13 exporting to image[0m
+   [2m#13 pushing layers 3.2s done[0m
+   [2m#13 pushing manifest for gcr.io/gke-ai-eco-dev/ate-images/envoy-dataplane:build-1791599914@sha256:f07d82b7b606e2d693647619b5819b6356a6d5341858e8090205a832b75f1c8e[0m
+   [2m#13 pushing manifest for gcr.io/gke-ai-eco-dev/ate-images/envoy-dataplane:build-1791599914@sha256:f07d82b7b606e2d693647619b5819b6356a6d5341858e8090205a832b75f1c8e 1.2s done[0m
+   [2m#13 DONE 4.5s[0m
+   [2m2026/10/09 19:39:57 Using base gcr.io/distroless/static-debian13:latest@sha256:f2ea2709ac8db56323cbd7d014277f32cb572d9ea124b0076f7aafe5980678fe for github.com/agent-substrate/substrate/cmd/atenet[0m
+   [2m2026/10/09 19:39:58 git is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M benchmarking/workloads/deploy.sh[0m
+   [2m M benchmarking/workloads/manifests/glutton-template.yaml.tmpl[0m
+   [2m M cmd/ateom-gvisor/main.go[0m
+   [2m M cmd/ateom-gvisor/runsc.go[0m
+   [2m M cmd/ateom-gvisor/stats.go[0m
+   [2m M internal/ateomnet/netns/netns.go[0m
+   [2m M internal/ateomnet/sandbox.go[0m
+   [2m M internal/tarutil/tarutil.go[0m
+   [2m M pkg/objectstorage/gcs.go[0m
+   [2m M pkg/objectstorage/gcscompose.go[0m
+   [2m M pkg/objectstorage/gcsranged.go[0m
+   [2m M pkg/objectstorage/objects.go[0m
+   [2m M pkg/objectstorage/parzstd.go[0m
+   [2m M pkg/objectstorage/sparsezstd.go[0m
+   [2m?? cmd/ateom-gvisor/cgroupslots.go[0m
+   [2m?? cmd/ateom-gvisor/experiment_defaults.go[0m
+   [2m?? internal/ateomnet/netpool.go[0m
+   [2m[0m
+   [2m2026/10/09 19:39:58 Building github.com/agent-substrate/substrate/cmd/atenet for linux/amd64[0m
+   [2m2026/10/09 19:40:01 Publishing gcr.io/gke-ai-eco-dev/ate-images/atenet:latest[0m
+   [2m2026/10/09 19:40:02 existing manifest: sha256-a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6.sbom@sha256:5d87051e4f355591cb1e4f840966a68be71f12a26818bb8b6540b43d7b8c64c6[0m
+   [2m2026/10/09 19:40:02 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/atenet:sha256-a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6.sbom[0m
+   [2m2026/10/09 19:40:02 existing manifest: latest@sha256:a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6[0m
+   [2m2026/10/09 19:40:02 Published gcr.io/gke-ai-eco-dev/ate-images/atenet@sha256:a8c339b77746d0fba49942dc86af1e8c88610c5a12cb766818715790b0285ea6[0m
+   [2m  (ko resolve -f - took 5.828s)[0m
+   [2m  (apply of 4 objects took 1.145s)[0m
+   [2m[1;36m[step]: Waiting for ATE system components to be ready...[0m[0m
+   [2m  (rollout status deployment/ate-api-server took 0.126s)[0m
+   [2m  (rollout status deployment/ate-controller took 0.121s)[0m
+   [2m  (rollout status deployment/atenet-router took 0.120s)[0m
+   [2m  (rollout status deployment/atenet-egress took 12.091s)[0m
+   [2m  (rollout status daemonset/atelet-v0-4-0-25-g66f8a888-dirty took 0.116s)[0m
+   [2mrecorded this configuration in /Users/adityashantanu/Library/Caches/ate-setup/installs/gke_gke-ai-eco-dev_us-east4-a_agents-tco-east.yaml[0m
+   [2mWARNING: 1 node(s) not labeled for daemonset.apps/atelet-v0-4-0-25-g66f8a888-dirty — relabeling all nodes to v0.4.0-25-g66f8a888-dirty[0m
+   [2mnode/gke-agents-tco-east-metal-pool-539d6ba3-4723 labeled[0m
+   [2mWaiting for daemon set "atelet-v0-4-0-25-g66f8a888-dirty" rollout to finish: 0 of 1 updated pods are available...[0m
+   [2mdaemon set "atelet-v0-4-0-25-g66f8a888-dirty" successfully rolled out[0m
+   [2mNAME                                     READY   STATUS        RESTARTS        AGE[0m
+   [2mate-api-server-6fd7799684-pqtmw          2/2     Running       0               118s[0m
+   [2mate-api-server-6fd7799684-xmxnk          2/2     Running       0               106s[0m
+   [2mate-controller-69895d77cc-2zvsj          1/1     Running       1 (11m ago)     27h[0m
+   [2matelet-v0-4-0-25-g66f8a888-dirty-b2kp2   2/2     Running       0               10s[0m
+   [2matenet-egress-5f4845c859-srkh4           3/3     Running       0               25s[0m
+   [2matenet-egress-f8695dd94-wnj8k            2/3     Terminating   3 (9m23s ago)   27h[0m
+   [2matenet-router-7dc966cdb5-cspvd           2/2     Running       2 (9m23s ago)   27h[0m
+   [2mpostgres-0                               2/2     Running       2 (11m ago)     27h[0m
+[32m[1m ✓ done in 166s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [3/5] Sandbox workload (glutton) + 100-worker pool[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [4/5] Experiment services  [2m(auto-suspender + 9000 simulated personal agents)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2m2026/10/09 19:40:32 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender[0m
+   [2m2026/10/09 19:40:33 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 19:40:33 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender for linux/amd64[0m
+   [2m2026/10/09 19:40:33 Publishing gcr.io/gke-ai-eco-dev/ate-images/autosuspender:latest[0m
+   [2m2026/10/09 19:40:34 existing manifest: latest@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2m2026/10/09 19:40:34 existing manifest: sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom@sha256:f2cf270cdadc26db31725efed49b76eb735f5a2d7d6a89b279d4ae6ccda5704b[0m
+   [2m2026/10/09 19:40:34 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/autosuspender:sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom[0m
+   [2m2026/10/09 19:40:34 Published gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2m2026/10/09 19:40:34 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim[0m
+   [2m2026/10/09 19:40:35 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 19:40:35 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim for linux/amd64[0m
+   [2m2026/10/09 19:40:36 Publishing gcr.io/gke-ai-eco-dev/ate-images/agentsim:latest[0m
+   [2m2026/10/09 19:40:37 existing manifest: sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom@sha256:ebd9884f6879006b39899e8856ae910c4d4f54006d117ebb5f81e6a8daf4a67a[0m
+   [2m2026/10/09 19:40:37 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/agentsim:sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom[0m
+   [2m2026/10/09 19:40:37 existing manifest: latest@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2m2026/10/09 19:40:37 Published gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mautosuspender: gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2magentsim:      gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mworkload: nano-personal-agent (script=nano-personal-agent, think ×0.02, suspend=idle, 1 sessions/tasks + 0 wakes per day, actor memory 2Gi)[0m
+   [2mnamespace/agent-sim configured[0m
+   [2mdeployment.apps/autosuspender unchanged[0m
+   [2mservice/autosuspender unchanged[0m
+   [2mjob.batch/agentsim created[0m
+   [2mdeployment "autosuspender" successfully rolled out[0m
+   [2mNAME                             READY   STATUS              RESTARTS      AGE[0m
+   [2magentsim-q5kpz                   0/1     ContainerCreating   0             1s[0m
+   [2mautosuspender-664987dd68-9hgp4   1/1     Running             1 (12m ago)   19m[0m
+   [2m[0m
+   [2mLive dashboard:  kubectl -n agent-sim port-forward svc/autosuspender 8080 &[0m
+   [2m                 open http://localhost:8080/[0m
+   [2mJob logs:        kubectl -n agent-sim logs -f job/agentsim | tee run.log[0m
+[32m[1m ✓ done in 10s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [5/5] TEST RUNNING — 9000 agents · 100 workers · window 240m (wall ≈ prep + window + drain) · time ×1[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mlive dashboard: http://localhost:18080/   (kept open while this runs)[0m
+
+[19:40:46] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:41:08] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:41:30] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:41:53] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:42:15] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:42:37] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:43:00] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:43:22] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:43:45] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:44:07] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:44:29] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:44:52] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:45:14] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:45:37] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:45:59] agents: 32 awake / 9939 asleep | workers [##############################......................................................................] 30/100 | 0 suspends, avg 0.0s | density now 355.1:1
+[19:46:22] agents: 41 awake / 9940 asleep | workers [######################################..............................................................] 38/100 | 0 suspends, avg 0.0s | density now 280.6:1
+[19:46:44] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:47:06] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:47:29] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:47:51] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:48:14] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:48:36] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:48:58] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:49:21] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:49:43] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:50:06] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:50:28] agents: 64 awake / 9940 asleep | workers [#####################################################...............................................] 53/100 | 0 suspends, avg 0.0s | density now 201.6:1
+[19:50:50] agents: 75 awake / 9940 asleep | workers [###############################################################.....................................] 63/100 | 0 suspends, avg 0.0s | density now 169.8:1
+[19:51:13] agents: 95 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:51:35] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:51:57] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:52:20] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:52:42] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:53:05] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:53:27] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:53:49] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:54:12] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:54:34] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:54:57] agents: 96 awake / 9940 asleep | workers [###########################################################################.........................] 75/100 | 0 suspends, avg 0.0s | density now 142.9:1
+[19:55:19] agents: 101 awake / 9940 asleep | workers [###############################################################################.....................] 79/100 | 0 suspends, avg 0.0s | density now 135.7:1
+[19:55:41] agents: 126 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:56:04] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:56:26] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:56:49] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:57:11] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:57:33] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:57:56] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:58:18] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:58:40] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:59:03] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:59:25] agents: 128 awake / 9940 asleep | workers [#######################################################################################.............] 87/100 | 0 suspends, avg 0.0s | density now 123.6:1
+[19:59:47] agents: 133 awake / 9940 asleep | workers [########################################################################################............] 88/100 | 0 suspends, avg 0.0s | density now 122.2:1
+[20:00:10] agents: 153 awake / 9940 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 115.9:1
+[20:00:32] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:00:55] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:01:17] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:01:39] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:02:02] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:02:24] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:02:46] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:03:09] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:03:31] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:03:54] agents: 160 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:04:16] agents: 166 awake / 9941 asleep | workers [#############################################################################################.......] 93/100 | 0 suspends, avg 0.0s | density now 116.0:1
+[20:04:38] agents: 185 awake / 9941 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.8:1
+[20:05:01] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:05:23] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:05:46] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:06:08] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:06:30] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:06:53] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:07:15] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:07:38] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:08:01] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:08:23] agents: 192 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:08:45] agents: 195 awake / 9942 asleep | workers [###############################################################################################.....] 95/100 | 0 suspends, avg 0.0s | density now 113.9:1
+[20:09:08] agents: 216 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.6:1
+[20:09:30] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:09:53] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:10:15] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:10:37] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:11:00] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:11:22] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:11:44] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:12:07] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:12:29] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.7:1
+[20:12:52] agents: 224 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.5:1
+[20:13:14] agents: 225 awake / 9943 asleep | workers [##################################################################################################..] 98/100 | 0 suspends, avg 0.0s | density now 110.4:1
+[20:13:36] agents: 248 awake / 9942 asleep | workers [###################################################################################################.] 99/100 | 0 suspends, avg 0.0s | density now 109.5:1
+[20:13:59] agents: 256 awake / 9943 asleep | workers [###################################################################################################.] 99/100 | 0 suspends, avg 0.0s | density now 109.6:1
+[20:14:21] agents: 257 awake / 9943 asleep | workers [###################################################################################################.] 99/100 | 0 suspends, avg 0.0s | density now 109.6:1
+[20:14:44] agents: 257 awake / 9943 asleep | workers [###################################################################################################.] 99/100 | 0 suspends, avg 0.0s | density now 109.6:1
+[20:15:06] agents: 257 awake / 9943 asleep | workers [###################################################################################################.] 99/100 | 0 suspends, avg 0.0s | density now 109.6:1
+[20:15:28] agents: 257 awake / 9943 asleep | workers [###################################################################################################.] 99/100 | 0 suspends, avg 0.0s | density now 109.6:1
+[20:15:51] agents: 220 awake / 9943 asleep | workers [###################################################################################...............] 83/98 | 0 suspends, avg 0.0s | density now 130.7:1
+[20:16:13] agents: 110 awake / 9943 asleep | workers [######################################..............................................................] 38/100 | 0 suspends, avg 0.0s | density now 285.5:1
+[20:16:36] agents:  0 awake / 9943 asleep | workers [....................................................................................................] 0/100 | 0 suspends, avg 0.0s | density now -
+[20:16:58] agents:  3 awake / 9940 asleep | workers [###.................................................................................................] 3/100 | 0 suspends, avg 0.0s | density now 3616.7:1

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: hostprobe, namespace: default}
+spec:
+  restartPolicy: Never
+  hostPID: true
+  hostNetwork: true
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    securityContext: {privileged: true}
+    volumeMounts: [{name: host, mountPath: /host}]
+    command: ["sh", "-c", "while true; do echo \"T $(date +%s)\"; grep -E '^(MemTotal|MemAvailable|Dirty|Writeback):' /proc/meminfo; head -1 /proc/stat; grep -E ' (nvme[0-9]+n[0-9]+|sd[a-z]+) ' /proc/diskstats; echo \"DF $(df -k /host/var/lib/ate | tail -1)\"; echo \"NET $(grep -E '^ *(eth0|ens[0-9]+):' /proc/net/dev | head -1)\"; echo END; sleep 15; done"]
+  volumes: [{name: host, hostPath: {path: /}}]

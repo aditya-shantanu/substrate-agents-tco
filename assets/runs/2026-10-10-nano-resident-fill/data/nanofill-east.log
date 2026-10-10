@@ -1,0 +1,25 @@
+21:23:25 [east] == ######## resident fill: gvisor nano agents, up to 9000 (+200 per 2m from 1150), 2Gi + 2 vCPU, 100 pods, prefix res-1791598802-gvisor-nano ########
+22:27:18 [east] == run.sh exit=1
+log: Unknown subcommand 'LOADTEST VERDICT: failure at 6150 active agents (turn-p90-vs-baseline); last sustainable level = 5950; hold at 5950 also failed (probe-p90-vs-baseline+turn-p90-vs-baseline)
+'
+usage:
+    log <command>
+
+global options:
+    -?, --help
+    -q, --quiet
+    -v, --verbose
+
+commands:
+    collect         gather system logs into a log archive
+    config          view/change logging system settings
+    erase           delete system logging data
+    repack          repack a log archive using a predicate
+    show            view/search system logs
+    stream          watch live system logs
+    stats           show system logging statistics
+
+further help:
+    log help <command>
+    log help predicates
+22:27:54 [east] == all done

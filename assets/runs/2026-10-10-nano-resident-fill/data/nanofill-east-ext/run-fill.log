@@ -1,0 +1,237 @@
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [1/5] GKE cluster 'agents-tco-east' + snapshot bucket + IAM  [2m(~10-15 min first time)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [2/5] Substrate control plane  [2m(ateapi · scheduler · router · atelet)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [3/5] Sandbox workload (glutton) + 100-worker pool[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [4/5] Experiment services  [2m(auto-suspender + 9000 simulated personal agents)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2m2026/10/09 22:28:27 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender[0m
+   [2m2026/10/09 22:28:28 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 22:28:28 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender for linux/amd64[0m
+   [2m2026/10/09 22:28:29 Publishing gcr.io/gke-ai-eco-dev/ate-images/autosuspender:latest[0m
+   [2m2026/10/09 22:28:30 existing manifest: sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom@sha256:f2cf270cdadc26db31725efed49b76eb735f5a2d7d6a89b279d4ae6ccda5704b[0m
+   [2m2026/10/09 22:28:30 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/autosuspender:sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom[0m
+   [2m2026/10/09 22:28:30 existing manifest: latest@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2m2026/10/09 22:28:30 Published gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2m2026/10/09 22:28:30 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim[0m
+   [2m2026/10/09 22:28:31 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 22:28:31 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim for linux/amd64[0m
+   [2m2026/10/09 22:28:31 Publishing gcr.io/gke-ai-eco-dev/ate-images/agentsim:latest[0m
+   [2m2026/10/09 22:28:34 existing manifest: latest@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2m2026/10/09 22:28:34 existing manifest: sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom@sha256:ebd9884f6879006b39899e8856ae910c4d4f54006d117ebb5f81e6a8daf4a67a[0m
+   [2m2026/10/09 22:28:34 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/agentsim:sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom[0m
+   [2m2026/10/09 22:28:34 Published gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mautosuspender: gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2magentsim:      gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mworkload: nano-personal-agent (script=nano-personal-agent, think ×0.02, suspend=idle, 1 sessions/tasks + 0 wakes per day, actor memory 2Gi)[0m
+   [2mnamespace/agent-sim configured[0m
+   [2mdeployment.apps/autosuspender unchanged[0m
+   [2mservice/autosuspender unchanged[0m
+   [2mjob.batch/agentsim created[0m
+   [2mdeployment "autosuspender" successfully rolled out[0m
+   [2mNAME                             READY   STATUS              RESTARTS     AGE[0m
+   [2magentsim-m2bbq                   0/1     ContainerCreating   0            1s[0m
+   [2mautosuspender-664987dd68-9hgp4   1/1     Running             1 (3h ago)   3h7m[0m
+   [2m[0m
+   [2mLive dashboard:  kubectl -n agent-sim port-forward svc/autosuspender 8080 &[0m
+   [2m                 open http://localhost:8080/[0m
+   [2mJob logs:        kubectl -n agent-sim logs -f job/agentsim | tee run.log[0m
+[32m[1m ✓ done in 13s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [5/5] TEST RUNNING — 9000 agents · 100 workers · window 240m (wall ≈ prep + window + drain) · time ×1[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mlive dashboard: http://localhost:18080/   (kept open while this runs)[0m
+
+[22:28:44] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+[22:29:06] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 0 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 0ms | refusals 0 errors 0
+[22:29:28] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 0 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 0ms | refusals 0 errors 0
+[22:29:51] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 91 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 4ms | refusals 0 errors 3
+[22:30:13] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 1367 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 4ms | refusals 0 errors 18
+[22:30:36] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 3343 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 4ms | refusals 0 errors 46
+[22:30:58] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 5256 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 4ms | refusals 0 errors 65
+[22:31:20] agents: 5954 awake / 7396 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 5950 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 4ms | refusals 0 errors 76
+[22:31:43] agents: 5955 awake / 7395 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 5952 activations | resume p50/p90/p99 0.8/0.8/0.8s | in-session req p50 4ms | refusals 0 errors 76
+[22:32:05] agents: 6003 awake / 7347 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 5988 activations | resume p50/p90/p99 1.0/1.4/1.5s | in-session req p50 4ms | refusals 0 errors 76
+[22:32:28] agents: 6068 awake / 7282 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 6045 activations | resume p50/p90/p99 1.1/2.5/4.4s | in-session req p50 4ms | refusals 0 errors 76
+[22:32:50] agents: 6126 awake / 7224 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 6121 activations | resume p50/p90/p99 1.6/3.8/5.8s | in-session req p50 4ms | refusals 0 errors 76
+[22:33:13] agents: 6150 awake / 7200 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 6222 activations | resume p50/p90/p99 1.4/3.8/5.8s | in-session req p50 4ms | refusals 0 errors 77
+[22:33:35] agents: 6150 awake / 7200 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 6665 activations | resume p50/p90/p99 1.4/3.8/5.8s | in-session req p50 4ms | refusals 0 errors 96
+[22:33:58] agents: 6170 awake / 7180 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 7541 activations | resume p50/p90/p99 1.4/3.8/5.8s | in-session req p50 4ms | refusals 0 errors 110
+[22:34:20] agents: 6239 awake / 7111 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 8827 activations | resume p50/p90/p99 1.4/3.7/5.0s | in-session req p50 4ms | refusals 0 errors 128
+[22:34:43] agents: 6322 awake / 7028 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 11410 activations | resume p50/p90/p99 2.1/4.8/7.1s | in-session req p50 4ms | refusals 0 errors 160
+[22:35:05] agents: 6350 awake / 7000 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 12091 activations | resume p50/p90/p99 1.9/4.6/7.1s | in-session req p50 4ms | refusals 0 errors 165
+[22:35:29] agents: 6350 awake / 7000 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 12401 activations | resume p50/p90/p99 1.9/4.6/7.1s | in-session req p50 4ms | refusals 0 errors 166
+[22:35:51] agents: 6363 awake / 6987 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 12721 activations | resume p50/p90/p99 1.9/4.6/7.1s | in-session req p50 4ms | refusals 0 errors 174
+[22:36:14] agents: 6425 awake / 6925 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 13465 activations | resume p50/p90/p99 1.9/4.4/7.1s | in-session req p50 4ms | refusals 0 errors 195
+[22:36:36] agents: 6512 awake / 6838 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 14599 activations | resume p50/p90/p99 2.3/5.0/7.1s | in-session req p50 4ms | refusals 0 errors 216
+[22:36:59] agents: 6547 awake / 6803 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 15913 activations | resume p50/p90/p99 2.4/5.0/7.1s | in-session req p50 4ms | refusals 0 errors 241
+[22:37:21] agents: 6550 awake / 6800 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 18038 activations | resume p50/p90/p99 2.3/5.0/7.1s | in-session req p50 4ms | refusals 0 errors 293
+[22:37:44] agents: 6550 awake / 6800 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 18577 activations | resume p50/p90/p99 2.3/5.0/7.1s | in-session req p50 4ms | refusals 0 errors 312
+[22:38:06] agents: 6600 awake / 6750 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 18909 activations | resume p50/p90/p99 2.3/4.9/7.1s | in-session req p50 4ms | refusals 0 errors 324
+[22:38:29] agents: 6672 awake / 6678 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 19359 activations | resume p50/p90/p99 2.5/5.3/7.5s | in-session req p50 4ms | refusals 0 errors 334
+[22:38:51] agents: 6739 awake / 6611 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 20319 activations | resume p50/p90/p99 2.7/6.0/8.2s | in-session req p50 4ms | refusals 2 errors 346
+[22:39:14] agents: 6750 awake / 6600 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 22045 activations | resume p50/p90/p99 2.7/5.9/8.4s | in-session req p50 4ms | refusals 2 errors 354
+[22:39:36] agents: 6750 awake / 6600 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 24740 activations | resume p50/p90/p99 2.7/5.9/8.4s | in-session req p50 4ms | refusals 2 errors 366
+[22:39:59] agents: 6781 awake / 6569 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 28234 activations | resume p50/p90/p99 2.7/5.9/8.4s | in-session req p50 4ms | refusals 2 errors 386
+[22:40:21] agents: 6852 awake / 6498 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 36725 activations | resume p50/p90/p99 2.7/6.0/8.4s | in-session req p50 4ms | refusals 3 errors 515
+[22:40:44] agents: 6919 awake / 6431 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 40598 activations | resume p50/p90/p99 2.8/6.4/9.5s | in-session req p50 4ms | refusals 8 errors 575
+[22:41:06] agents: 6950 awake / 6400 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 44417 activations | resume p50/p90/p99 2.9/6.7/10.4s | in-session req p50 4ms | refusals 15 errors 600
+[22:41:29] agents: 6950 awake / 6400 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 47524 activations | resume p50/p90/p99 2.9/6.7/10.4s | in-session req p50 4ms | refusals 15 errors 620
+[22:41:51] agents: 6963 awake / 6387 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 50860 activations | resume p50/p90/p99 2.9/6.7/10.4s | in-session req p50 4ms | refusals 15 errors 640
+[22:42:14] agents: 7028 awake / 6322 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 53910 activations | resume p50/p90/p99 2.8/6.6/10.4s | in-session req p50 4ms | refusals 15 errors 655
+[22:42:36] agents: 7108 awake / 6242 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 57485 activations | resume p50/p90/p99 2.9/6.8/10.3s | in-session req p50 4ms | refusals 15 errors 674
+[22:42:59] agents: 7149 awake / 6201 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 61255 activations | resume p50/p90/p99 3.1/7.2/11.1s | in-session req p50 4ms | refusals 25 errors 686
+[22:43:21] agents: 7150 awake / 6200 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 71208 activations | resume p50/p90/p99 3.1/7.2/11.0s | in-session req p50 4ms | refusals 25 errors 765
+[22:43:44] agents: 7151 awake / 6199 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 77491 activations | resume p50/p90/p99 3.1/7.2/11.0s | in-session req p50 4ms | refusals 25 errors 806
+[22:44:06] agents: 7211 awake / 6139 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 84196 activations | resume p50/p90/p99 3.0/7.2/11.0s | in-session req p50 5ms | refusals 25 errors 911
+[22:44:29] agents: 7262 awake / 6088 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 91327 activations | resume p50/p90/p99 3.1/7.1/11.0s | in-session req p50 5ms | refusals 25 errors 1039
+[22:44:52] agents: 7340 awake / 6010 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 98238 activations | resume p50/p90/p99 3.2/7.2/11.1s | in-session req p50 5ms | refusals 30 errors 1090
+[22:45:14] agents: 7350 awake / 6000 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 104125 activations | resume p50/p90/p99 3.3/7.6/11.3s | in-session req p50 5ms | refusals 42 errors 1145
+[22:45:37] agents: 7350 awake / 6000 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 109421 activations | resume p50/p90/p99 3.3/7.6/11.3s | in-session req p50 5ms | refusals 42 errors 1175
+[22:45:59] agents: 7375 awake / 5975 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 118534 activations | resume p50/p90/p99 3.2/7.5/11.3s | in-session req p50 5ms | refusals 42 errors 1203
+[22:46:23] agents: 7437 awake / 5913 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 123041 activations | resume p50/p90/p99 3.2/7.5/11.2s | in-session req p50 5ms | refusals 42 errors 1222
+[22:46:45] agents: 7525 awake / 5825 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 127878 activations | resume p50/p90/p99 3.4/7.7/11.5s | in-session req p50 5ms | refusals 48 errors 1370
+[22:47:08] agents: 7547 awake / 5803 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 133676 activations | resume p50/p90/p99 3.5/8.4/13.0s | in-session req p50 5ms | refusals 86 errors 2419
+[22:47:31] agents: 7547 awake / 5803 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 140258 activations | resume p50/p90/p99 3.5/8.5/13.2s | in-session req p50 5ms | refusals 94 errors 2627
+[22:47:53] agents: 7554 awake / 5796 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 147714 activations | resume p50/p90/p99 3.5/8.5/13.2s | in-session req p50 6ms | refusals 94 errors 2679
+[22:48:16] agents: 7628 awake / 5722 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+[22:48:38] agents: 7696 awake / 5653 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 162148 activations | resume p50/p90/p99 3.1/8.4/13.2s | in-session req p50 7ms | refusals 102 errors 4860
+[22:49:01] agents: 7617 awake / 5732 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 173345 activations | resume p50/p90/p99 3.2/8.8/13.2s | in-session req p50 7ms | refusals 119 errors 5158
+[22:49:23] agents: 7560 awake / 5789 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 177643 activations | resume p50/p90/p99 3.2/8.8/13.2s | in-session req p50 7ms | refusals 119 errors 5182
+[22:49:46] agents: 7560 awake / 5789 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 181594 activations | resume p50/p90/p99 3.2/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 5342
+[22:50:09] agents: 7560 awake / 5789 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 185566 activations | resume p50/p90/p99 3.2/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 5361
+[22:50:31] agents: 7562 awake / 5787 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 189858 activations | resume p50/p90/p99 3.2/8.7/13.2s | in-session req p50 6ms | refusals 119 errors 5379
+[22:50:54] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 194317 activations | resume p50/p90/p99 3.2/8.7/13.2s | in-session req p50 6ms | refusals 119 errors 5423
+[22:51:16] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 199731 activations | resume p50/p90/p99 3.2/8.7/13.2s | in-session req p50 6ms | refusals 119 errors 5503
+[22:51:39] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 205765 activations | resume p50/p90/p99 3.2/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 5543
+[22:52:01] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 217815 activations | resume p50/p90/p99 3.1/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 6570
+[22:52:24] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 224912 activations | resume p50/p90/p99 3.1/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 6628
+[22:52:46] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 230979 activations | resume p50/p90/p99 3.1/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 6654
+[22:53:09] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 234902 activations | resume p50/p90/p99 3.1/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 6804
+[22:53:31] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 241073 activations | resume p50/p90/p99 3.0/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 6865
+[22:53:54] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 245464 activations | resume p50/p90/p99 3.0/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 6887
+[22:54:17] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 249212 activations | resume p50/p90/p99 3.0/8.7/13.2s | in-session req p50 7ms | refusals 119 errors 6965
+[22:54:39] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 254828 activations | resume p50/p90/p99 3.0/8.6/13.2s | in-session req p50 7ms | refusals 119 errors 7112
+[22:55:02] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 264016 activations | resume p50/p90/p99 3.0/8.6/13.2s | in-session req p50 7ms | refusals 119 errors 7199
+[22:55:24] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 269490 activations | resume p50/p90/p99 3.0/8.6/13.2s | in-session req p50 7ms | refusals 119 errors 7322
+[22:55:47] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 274873 activations | resume p50/p90/p99 3.0/8.6/13.2s | in-session req p50 7ms | refusals 119 errors 7344
+[22:56:09] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+[22:56:32] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 283596 activations | resume p50/p90/p99 2.9/8.6/13.2s | in-session req p50 7ms | refusals 119 errors 8531
+[22:56:54] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 291811 activations | resume p50/p90/p99 2.9/8.6/13.2s | in-session req p50 7ms | refusals 119 errors 8983
+[22:57:17] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 300221 activations | resume p50/p90/p99 2.9/8.5/13.1s | in-session req p50 7ms | refusals 119 errors 9827
+[22:57:40] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 309620 activations | resume p50/p90/p99 2.9/8.5/13.1s | in-session req p50 8ms | refusals 119 errors 9951
+[22:58:02] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 326683 activations | resume p50/p90/p99 2.9/8.5/13.1s | in-session req p50 8ms | refusals 119 errors 10244
+[22:58:25] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 333206 activations | resume p50/p90/p99 2.9/8.5/13.1s | in-session req p50 8ms | refusals 119 errors 10307
+[22:58:47] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+           sim: 339571 activations | resume p50/p90/p99 2.9/8.5/13.1s | in-session req p50 8ms | refusals 119 errors 10347
+[22:59:10] agents: 7563 awake / 5786 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 133.5:1
+
+[32m[1m ✓ test complete[0m
+Traceback (most recent call last):
+  File "/Users/adityashantanu/repos/substrate-agents-tco/service/analysis/final_report.py", line 404, in <module>
+    main()
+  File "/Users/adityashantanu/repos/substrate-agents-tco/service/analysis/final_report.py", line 238, in main
+    idle_wait = parse_seconds(a.idle_timeout_run) if a.idle_timeout_run else a.idle_timeout_real
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adityashantanu/repos/substrate-agents-tco/service/analysis/final_report.py", line 105, in parse_seconds
+    return float(s)
+           ^^^^^^^^
+ValueError: could not convert string to float: '24h'

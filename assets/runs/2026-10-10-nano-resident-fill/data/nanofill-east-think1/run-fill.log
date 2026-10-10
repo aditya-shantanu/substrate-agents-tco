@@ -1,0 +1,144 @@
+ERROR: gcloud crashed (FileNotFoundError): [Errno 2] No such file or directory
+
+If you would like to report this issue, please run the following command:
+  gcloud feedback
+
+To check gcloud for common problems, please run the following command:
+  gcloud info --run-diagnostics
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [1/5] GKE cluster 'agents-tco-east' + snapshot bucket + IAM  [2m(~10-15 min first time)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2m2026/10/09 19:20:14 WARN GVISOR_NODE_MACHINE_TYPE is deprecated; use NODE_MACHINE_TYPE instead[0m
+   [2m2026/10/09 19:20:14 INFO Starting full bootstrap...[0m
+   [2m2026/10/09 19:20:14 INFO Step 1/7: Enabling required APIs...[0m
+   [2m2026/10/09 19:20:14 INFO Batch enabling services services="artifactregistry.googleapis.com, cloudresourcemanager.googleapis.com, container.googleapis.com, networkconnectivity.googleapis.com, serviceusage.googleapis.com, storage.googleapis.com, logging.googleapis.com, monitoring.googleapis.com, cloudtrace.googleapis.com, telemetry.googleapis.com"[0m
+   [2m2026/10/09 19:20:18 INFO Successfully enabled required services.[0m
+   [2m2026/10/09 19:20:18 INFO Step 2/7: Creating GKE Cluster...[0m
+   [2m2026/10/09 19:20:18 INFO Checking if cluster exists cluster=agents-tco-east location=us-east4-a[0m
+   [2m2026/10/09 19:20:19 INFO Cluster exists. Checking attributes... cluster=agents-tco-east[0m
+   [2m2026/10/09 19:20:19 INFO Cluster WorkloadIdentityConfig match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:20:19 INFO Cluster EnableK8SBetaApis match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:20:19 INFO Cluster ManagedOpentelemetryConfig match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:20:19 INFO Cluster Filestore CSI driver match perfectly. cluster=agents-tco-east[0m
+   [2m2026/10/09 19:20:19 INFO Step 3/7: Creating GCS Bucket for snapshots...[0m
+   [2m2026/10/09 19:20:19 INFO Checking if Bucket exists bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:20:19 INFO Bucket exists. Checking attributes... bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:20:19 INFO Bucket is in the correct project and region. Checking uniform-bucket-level-access setting... bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:20:19 INFO uniform-bucket-level-access is already correct bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:20:19 INFO Step 4/7: Granting GKE Node permissions...[0m
+   [2m2026/10/09 19:20:20 INFO IAM policy already has required GKE node permissions. Skipping update. project=gke-ai-eco-dev[0m
+   [2m2026/10/09 19:20:20 INFO Step 5/7: Granting Atelet permissions...[0m
+   [2m2026/10/09 19:20:20 INFO IAM policy already has required GKE node permissions. Skipping update. project=gke-ai-eco-dev[0m
+   [2m2026/10/09 19:20:20 INFO Step 6/7: Creating IAM policy bindings for bucket...[0m
+   [2m2026/10/09 19:20:21 INFO IAM policy is already correct bucket=snapshot-agents-tco-east-gke-ai-eco-dev[0m
+   [2m2026/10/09 19:20:21 INFO Step 7/7: Creating Monitoring Dashboards...[0m
+   [2m2026/10/09 19:20:21 INFO Updating dashboard displayName="Substrate gRPC Server — latency / QPS / errors" name=projects/142966328212/dashboards/4a536150-e3a1-4c68-9902-f508286b0b58 file=ate-grpc-dashboard.json[0m
+   [2m2026/10/09 19:20:22 INFO Updating dashboard displayName="Substrate Routing & E2E Latency" name=projects/142966328212/dashboards/9c55250b-9673-4c45-98e5-1301b56faa99 file=ate-e2e-latency-dashboard.json[0m
+   [2m2026/10/09 19:20:22 INFO Updating dashboard displayName="Substrate Snapshot Size & QPS" name=projects/142966328212/dashboards/dd8724e4-68ed-46b5-b625-b285c2b22981 file=ate-snapshot-dashboard.json[0m
+   [2m2026/10/09 19:20:23 INFO Bootstrap completed successfully.[0m
+   [2mFetching cluster endpoint and auth data.[0m
+   [2mkubeconfig entry generated for agents-tco-east.[0m
+   [2mUpdating node pool metal-pool...[0m
+   [2m...........................done.[0m
+   [2mUpdated [https://container.googleapis.com/v1/projects/gke-ai-eco-dev/zones/us-east4-a/clusters/agents-tco-east/nodePools/metal-pool].[0m
+   [2mNAME                                           STATUS   ROLES    AGE     VERSION[0m
+   [2mgke-agents-tco-east-metal-pool-539d6ba3-4723   Ready    <none>   3d21h   v1.36.4-gke.1495000[0m
+[32m[1m ✓ done in 28s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [2/5] Substrate control plane  [2m(ateapi · scheduler · router · atelet)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [3/5] Sandbox workload (glutton) + 100-worker pool[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [4/5] Experiment services  [2m(auto-suspender + 9000 simulated personal agents)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2m2026/10/09 19:20:41 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender[0m
+   [2m2026/10/09 19:20:42 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 19:20:42 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender for linux/amd64[0m
+   [2m2026/10/09 19:20:42 Publishing gcr.io/gke-ai-eco-dev/ate-images/autosuspender:latest[0m
+   [2m2026/10/09 19:20:44 existing blob: sha256:bb8fa58ec978821768266f0c728f5deffbceba0afcd8f819e906150f6ff268f1[0m
+   [2m2026/10/09 19:20:44 existing blob: sha256:4a2796d8ea5ef7ae1a64ba20ba56759987f49f2ea2091ddce6bade81c0ad1fa6[0m
+   [2m2026/10/09 19:20:44 pushed blob: sha256:465b5b4f0e444f4ea6931328d21bbadffac445f13a2d6059ee76fca9571286cc[0m
+   [2m2026/10/09 19:20:44 pushed blob: sha256:fcecd0be0dd8077235b9774b10adcfe0155c34fa002a6ed4117cefe60f735dde[0m
+   [2m2026/10/09 19:20:45 pushed blob: sha256:aa7a7c389549a543c808d4b9d430923091e5a338e7150d27f7db5ff83b3aadeb[0m
+   [2m2026/10/09 19:20:45 gcr.io/gke-ai-eco-dev/ate-images/autosuspender:sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom: digest: sha256:f2cf270cdadc26db31725efed49b76eb735f5a2d7d6a89b279d4ae6ccda5704b size: 374[0m
+   [2m2026/10/09 19:20:45 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/autosuspender:sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom[0m
+   [2m2026/10/09 19:20:48 pushed blob: sha256:1799a19c2d251b77acf290d37fd592c1ea787562feb11b5c1ab139839054bdd6[0m
+   [2m2026/10/09 19:20:49 gcr.io/gke-ai-eco-dev/ate-images/autosuspender:latest: digest: sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e size: 1417[0m
+   [2m2026/10/09 19:20:49 Published gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2m2026/10/09 19:20:49 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim[0m
+   [2m2026/10/09 19:20:49 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 19:20:49 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim for linux/amd64[0m
+   [2m2026/10/09 19:20:50 Publishing gcr.io/gke-ai-eco-dev/ate-images/agentsim:latest[0m
+   [2m2026/10/09 19:20:52 existing blob: sha256:bb8fa58ec978821768266f0c728f5deffbceba0afcd8f819e906150f6ff268f1[0m
+   [2m2026/10/09 19:20:52 existing blob: sha256:4a2796d8ea5ef7ae1a64ba20ba56759987f49f2ea2091ddce6bade81c0ad1fa6[0m
+   [2m2026/10/09 19:20:52 pushed blob: sha256:3ca9f5ed342779e936848d7c5bdaac0dd4710307969f62761d631be26f8676b8[0m
+   [2m2026/10/09 19:20:53 pushed blob: sha256:7ddb4bcb1ff9068e48b4a3e928b9268b64c9df1b157da94f9b28f171eb133e00[0m
+   [2m2026/10/09 19:20:53 pushed blob: sha256:8c32e60b44811f7b04a62a027dc86ffc9a559422829c7cd43064cfddefdd682d[0m
+   [2m2026/10/09 19:20:53 gcr.io/gke-ai-eco-dev/ate-images/agentsim:sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom: digest: sha256:ebd9884f6879006b39899e8856ae910c4d4f54006d117ebb5f81e6a8daf4a67a size: 374[0m
+   [2m2026/10/09 19:20:53 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/agentsim:sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom[0m
+   [2m2026/10/09 19:20:57 pushed blob: sha256:48afbafea9ed2c931dc98048def38b6ffd436ee4ee154ab9578c3b18299b848e[0m
+   [2m2026/10/09 19:20:58 gcr.io/gke-ai-eco-dev/ate-images/agentsim:latest: digest: sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730 size: 1417[0m
+   [2m2026/10/09 19:20:58 Published gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mautosuspender: gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2magentsim:      gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mworkload: nano-personal-agent (script=nano-personal-agent, think ×1, suspend=idle, 1 sessions/tasks + 0 wakes per day, actor memory 2Gi)[0m
+   [2mnamespace/agent-sim configured[0m
+   [2mdeployment.apps/autosuspender configured[0m
+   [2mservice/autosuspender unchanged[0m
+   [2mjob.batch/agentsim created[0m
+   [2mWaiting for deployment "autosuspender" rollout to finish: 1 old replicas are pending termination...[0m
+   [2mWaiting for deployment "autosuspender" rollout to finish: 1 old replicas are pending termination...[0m
+   [2mdeployment "autosuspender" successfully rolled out[0m
+   [2mNAME                             READY   STATUS        RESTARTS   AGE[0m
+   [2magentsim-gck2q                   1/1     Running       0          4s[0m
+   [2mautosuspender-664987dd68-9hgp4   1/1     Running       0          5s[0m
+   [2mautosuspender-8d9584fdb-7f2ch    1/1     Terminating   0          15h[0m
+   [2m[0m
+   [2mLive dashboard:  kubectl -n agent-sim port-forward svc/autosuspender 8080 &[0m
+   [2m                 open http://localhost:8080/[0m
+   [2mJob logs:        kubectl -n agent-sim logs -f job/agentsim | tee run.log[0m
+[32m[1m ✓ done in 27s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [5/5] TEST RUNNING — 9000 agents · 100 workers · window 240m (wall ≈ prep + window + drain) · time ×1[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mlive dashboard: http://localhost:18080/   (kept open while this runs)[0m
+
+[19:21:10] agents:  0 awake /   0 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 0.0:1
+[19:21:33] agents: 682 awake / 4609 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 52.9:1
+[19:21:55] agents: 682 awake / 4872 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 55.5:1
+[19:22:18] agents: 682 awake / 5165 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 58.5:1
+[19:22:40] agents: 682 awake / 5419 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 61.0:1
+[19:23:02] agents: 683 awake / 5751 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 64.3:1
+[19:23:25] agents: 683 awake / 6013 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 67.0:1
+[19:23:47] agents: 683 awake / 6316 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 70.0:1
+[19:24:10] agents: 682 awake / 6569 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 72.5:1
+[19:24:32] agents: 682 awake / 6925 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 76.1:1
+[19:24:54] agents: 683 awake / 7165 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 78.5:1
+[19:25:17] agents: 683 awake / 7460 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 81.4:1
+[19:25:39] agents: 683 awake / 7722 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 84.0:1
+[19:26:01] agents: 683 awake / 8038 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 87.2:1
+[19:26:24] agents: 683 awake / 8296 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 89.8:1
+[19:26:46] agents: 683 awake / 8596 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 92.8:1
+[19:27:09] agents: 683 awake / 8833 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 95.2:1
+[19:27:31] agents: 683 awake / 9169 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 98.5:1
+[19:27:53] agents: 683 awake / 9431 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 101.1:1
+[19:28:16] agents: 683 awake / 9732 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 104.2:1
+ ✗ agentsim FAILED — last logs:
+Error from server: Get "https://10.150.0.20:10250/containerLogs/agent-sim/agentsim-gck2q/agentsim": No agent available

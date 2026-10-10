@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: inotifytune, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    volumeMounts: [{name: host, mountPath: /host}]
+    command: ["sh", "-c", "echo before: $(cat /host/proc/sys/fs/inotify/max_user_instances) $(cat /host/proc/sys/fs/inotify/max_user_watches); echo 65536 > /host/proc/sys/fs/inotify/max_user_instances; echo 1048576 > /host/proc/sys/fs/inotify/max_user_watches; echo after: $(cat /host/proc/sys/fs/inotify/max_user_instances) $(cat /host/proc/sys/fs/inotify/max_user_watches)"]
+  volumes: [{name: host, hostPath: {path: /}}]

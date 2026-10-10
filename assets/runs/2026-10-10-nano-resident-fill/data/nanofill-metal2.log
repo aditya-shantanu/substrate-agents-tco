@@ -1,0 +1,25 @@
+20:57:41 [metal2] == ######## resident fill: microvm nano agents, up to 5000 (+250 per 3m from 3500), 256Mi + 2 vCPU, 100 pods, prefix res-1791598802-microvm-nano ########
+21:25:25 [metal2] == run.sh exit=1
+log: Unknown subcommand 'LOADTEST VERDICT: failure at 4500 active agents (turn-p90-vs-baseline+mem-available); last sustainable level = 4250; hold at 4250 also failed (probe-p90-vs-baseline+turn-p90-vs-baseline)
+'
+usage:
+    log <command>
+
+global options:
+    -?, --help
+    -q, --quiet
+    -v, --verbose
+
+commands:
+    collect         gather system logs into a log archive
+    config          view/change logging system settings
+    erase           delete system logging data
+    repack          repack a log archive using a predicate
+    show            view/search system logs
+    stream          watch live system logs
+    stats           show system logging statistics
+
+further help:
+    log help <command>
+    log help predicates
+21:25:38 [metal2] == all done

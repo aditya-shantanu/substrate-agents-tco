@@ -1,0 +1,13 @@
+{"time":"2026-10-10T02:37:48.032192354Z","level":"INFO","msg":"setup complete","agents":5000,"failed":0,"resident":false}
+{"time":"2026-10-10T02:37:48.032916443Z","level":"INFO","msg":"wave","active_agents":500,"observing_for":"4m0s"}
+{"time":"2026-10-10T02:41:48.0369936Z","level":"INFO","msg":"wave result","tag":"","active_agents":500,"activations":500,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":547,"wake_p90_ms":661,"wake_p99_ms":798,"turn_p90_ms":0,"turn_p99_ms":0,"probe_p50_ms":19,"probe_p90_ms":27,"probe_p99_ms":53,"mem_avail_pct":"74.1","psi_cpu_some10":0.45,"psi_mem_full10":14.52,"psi_io_some10":1.26,"running":1134,"crashed":13,"failed":true,"failed_on":"psi-mem-full"}
+=== agentsim csv ===
+=== agentsim profile ===
+=== agentsim steps ===
+=== agentsim summary ===
+=== end csv ===
+=== end loadtest ===
+=== end profile ===
+=== end steps ===
+=== loadtest waves ===
+LOADTEST VERDICT: failure at 500 active agents (psi-mem-full); last sustainable level = 0

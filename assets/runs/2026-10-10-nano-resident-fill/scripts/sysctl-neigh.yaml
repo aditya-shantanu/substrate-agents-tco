@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: neightune, namespace: kube-system}
+spec:
+  restartPolicy: Never
+  hostNetwork: true
+  priorityClassName: system-node-critical
+  tolerations: [{operator: Exists}]
+  containers:
+  - name: p
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    securityContext: {privileged: true}
+    command: ["sh", "-c", "for f in ipv4 ipv6; do sysctl -w net.$f.neigh.default.gc_thresh1=4096 net.$f.neigh.default.gc_thresh2=8192 net.$f.neigh.default.gc_thresh3=16384; done; cat /proc/sys/net/ipv4/neigh/default/gc_thresh3"]

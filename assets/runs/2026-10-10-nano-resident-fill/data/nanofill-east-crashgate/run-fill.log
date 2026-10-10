@@ -1,0 +1,106 @@
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [1/5] GKE cluster 'agents-tco-east' + snapshot bucket + IAM  [2m(~10-15 min first time)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [2/5] Substrate control plane  [2m(ateapi · scheduler · router · atelet)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [3/5] Sandbox workload (glutton) + 100-worker pool[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m ✓ already in place — skipped [2m(--force redoes it)[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [4/5] Experiment services  [2m(auto-suspender + 9000 simulated personal agents)[0m[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2m2026/10/09 20:18:03 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender[0m
+   [2m2026/10/09 20:18:03 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 20:18:03 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/autosuspender for linux/amd64[0m
+   [2m2026/10/09 20:18:04 Publishing gcr.io/gke-ai-eco-dev/ate-images/autosuspender:latest[0m
+   [2m2026/10/09 20:18:05 existing manifest: latest@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2m2026/10/09 20:18:06 existing manifest: sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom@sha256:f2cf270cdadc26db31725efed49b76eb735f5a2d7d6a89b279d4ae6ccda5704b[0m
+   [2m2026/10/09 20:18:06 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/autosuspender:sha256-23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e.sbom[0m
+   [2m2026/10/09 20:18:06 Published gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2m2026/10/09 20:18:06 Using base cgr.dev/chainguard/static:latest@sha256:fe55470f22d3259488d9d3739168d8f04da67755f0b69382bc26eda4a7d3d327 for github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim[0m
+   [2m2026/10/09 20:18:07 git doesn't contain any tags. Tag info will not be available[0m
+   [2mgit is in a dirty state[0m
+   [2mPlease check in your pipeline what can be changing the following files:[0m
+   [2m M assets/runs/2026-10-08-nanoturn-README.md[0m
+   [2m[0m
+   [2m2026/10/09 20:18:07 Building github.com/adityashantanu/substrate-agents-tco/service/cmd/agentsim for linux/amd64[0m
+   [2m2026/10/09 20:18:07 Publishing gcr.io/gke-ai-eco-dev/ate-images/agentsim:latest[0m
+   [2m2026/10/09 20:18:08 existing manifest: latest@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2m2026/10/09 20:18:08 existing manifest: sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom@sha256:ebd9884f6879006b39899e8856ae910c4d4f54006d117ebb5f81e6a8daf4a67a[0m
+   [2m2026/10/09 20:18:08 Published SBOM gcr.io/gke-ai-eco-dev/ate-images/agentsim:sha256-c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730.sbom[0m
+   [2m2026/10/09 20:18:08 Published gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mautosuspender: gcr.io/gke-ai-eco-dev/ate-images/autosuspender@sha256:23202d290b72ecb207c189b504c507b600ab2e1a84616d225568407ec115101e[0m
+   [2magentsim:      gcr.io/gke-ai-eco-dev/ate-images/agentsim@sha256:c091dafcdc9fd91bcd0f8941035683a7e7bd69e89459b04814325b09ff738730[0m
+   [2mworkload: nano-personal-agent (script=nano-personal-agent, think ×0.02, suspend=idle, 1 sessions/tasks + 0 wakes per day, actor memory 2Gi)[0m
+   [2mnamespace/agent-sim configured[0m
+   [2mdeployment.apps/autosuspender unchanged[0m
+   [2mservice/autosuspender unchanged[0m
+   [2mjob.batch/agentsim created[0m
+   [2mdeployment "autosuspender" successfully rolled out[0m
+   [2mNAME                             READY   STATUS    RESTARTS      AGE[0m
+   [2magentsim-kwswd                   1/1     Running   0             1s[0m
+   [2mautosuspender-664987dd68-9hgp4   1/1     Running   1 (49m ago)   57m[0m
+   [2m[0m
+   [2mLive dashboard:  kubectl -n agent-sim port-forward svc/autosuspender 8080 &[0m
+   [2m                 open http://localhost:8080/[0m
+   [2mJob logs:        kubectl -n agent-sim logs -f job/agentsim | tee run.log[0m
+[32m[1m ✓ done in 12s[0m
+
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[36m[1m [5/5] TEST RUNNING — 9000 agents · 100 workers · window 240m (wall ≈ prep + window + drain) · time ×1[0m
+[36m[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+   [2mlive dashboard: http://localhost:18080/   (kept open while this runs)[0m
+
+[20:18:18] agents:  6 awake / 9969 asleep | workers [############################........................................................................] 28/100 | 0 suspends, avg 0.0s | density now 388.6:1
+[20:18:40] agents: 35 awake / 10331 asleep | workers [################################....................................................................] 32/100 | 0 suspends, avg 0.0s | density now 352.3:1
+[20:19:02] agents: 35 awake / 10825 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 379.6:1
+[20:19:25] agents: 35 awake / 11258 asleep | workers [##################################..................................................................] 34/100 | 0 suspends, avg 0.0s | density now 358.8:1
+[20:19:47] agents: 35 awake / 11793 asleep | workers [###############################.....................................................................] 31/100 | 0 suspends, avg 0.0s | density now 410.8:1
+[20:20:09] agents: 35 awake / 12181 asleep | workers [##################################..................................................................] 34/100 | 0 suspends, avg 0.0s | density now 386.0:1
+[20:20:32] agents: 35 awake / 12664 asleep | workers [##################################..................................................................] 34/100 | 0 suspends, avg 0.0s | density now 400.2:1
+[20:20:54] agents:  3 awake / 13090 asleep | workers [###.................................................................................................] 3/100 | 0 suspends, avg 0.0s | density now 4666.7:1
+[20:21:17] agents:  3 awake / 13090 asleep | workers [###.................................................................................................] 3/100 | 0 suspends, avg 0.0s | density now 4666.7:1
+           sim: 0 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 0ms | refusals 0 errors 0
+[20:21:39] agents:  3 awake / 13090 asleep | workers [###.................................................................................................] 3/100 | 0 suspends, avg 0.0s | density now 4666.7:1
+           sim: 0 activations | resume p50/p90/p99 0.0/0.0/0.0s | in-session req p50 0ms | refusals 0 errors 0
+[20:22:01] agents: 40 awake / 13053 asleep | workers [###################################################.................................................] 51/100 | 0 suspends, avg 0.0s | density now 274.5:1
+           sim: 6 activations | resume p50/p90/p99 0.4/0.5/0.5s | in-session req p50 0ms | refusals 0 errors 0
+[20:22:24] agents: 193 awake / 12900 asleep | workers [################################################################################################....] 96/100 | 0 suspends, avg 0.0s | density now 145.8:1
+           sim: 101 activations | resume p50/p90/p99 0.5/0.6/0.7s | in-session req p50 4ms | refusals 0 errors 0
+[20:22:46] agents: 408 awake / 12685 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 140.0:1
+           sim: 267 activations | resume p50/p90/p99 0.5/0.6/0.7s | in-session req p50 4ms | refusals 0 errors 0
+[20:23:08] agents: 496 awake / 12597 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 140.0:1
+           sim: 499 activations | resume p50/p90/p99 0.5/0.6/0.7s | in-session req p50 4ms | refusals 0 errors 0
+[20:23:31] agents: 499 awake / 12594 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 140.0:1
+           sim: 500 activations | resume p50/p90/p99 0.5/0.6/0.7s | in-session req p50 4ms | refusals 5 errors 1
+[20:23:53] agents: 499 awake / 12594 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 140.0:1
+           sim: 500 activations | resume p50/p90/p99 0.5/0.6/0.7s | in-session req p50 4ms | refusals 5 errors 1
+[20:24:16] agents: 499 awake / 12594 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 140.0:1
+           sim: 500 activations | resume p50/p90/p99 0.5/0.6/0.7s | in-session req p50 4ms | refusals 5 errors 1
+[20:24:38] agents: 499 awake / 12594 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 140.0:1
+           sim: 500 activations | resume p50/p90/p99 0.5/0.6/0.7s | in-session req p50 4ms | refusals 5 errors 1
+[20:25:00] agents: 499 awake / 12594 asleep | workers [####################################################################################################] 100/100 | 0 suspends, avg 0.0s | density now 140.0:1
+
+[32m[1m ✓ test complete[0m
+Traceback (most recent call last):
+  File "/Users/adityashantanu/repos/substrate-agents-tco/service/analysis/final_report.py", line 404, in <module>
+    main()
+  File "/Users/adityashantanu/repos/substrate-agents-tco/service/analysis/final_report.py", line 238, in main
+    idle_wait = parse_seconds(a.idle_timeout_run) if a.idle_timeout_run else a.idle_timeout_real
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/adityashantanu/repos/substrate-agents-tco/service/analysis/final_report.py", line 105, in parse_seconds
+    return float(s)
+           ^^^^^^^^
+ValueError: could not convert string to float: '24h'

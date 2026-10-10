@@ -1,0 +1,8 @@
+{"time":"2026-10-10T02:25:29.146199926Z","level":"INFO","msg":"wave","active_agents":500,"observing_for":"4m0s"}
+{"time":"2026-10-10T02:29:29.16519847Z","level":"INFO","msg":"wave result","tag":"","active_agents":500,"activations":0,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":0,"wake_p90_ms":0,"wake_p99_ms":0,"turn_p90_ms":0,"turn_p99_ms":0,"probe_p50_ms":0,"probe_p90_ms":0,"probe_p99_ms":0,"mem_avail_pct":"81.8","psi_cpu_some10":0,"psi_mem_full10":0.29,"psi_io_some10":0.24,"running":634,"crashed":13,"failed":false,"failed_on":""}
+{"time":"2026-10-10T02:29:29.165899188Z","level":"INFO","msg":"wave","active_agents":1000,"observing_for":"4m0s"}
+{"time":"2026-10-10T02:33:29.184242469Z","level":"INFO","msg":"wave result","tag":"","active_agents":1000,"activations":0,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":0,"wake_p90_ms":0,"wake_p99_ms":0,"turn_p90_ms":0,"turn_p99_ms":0,"probe_p50_ms":0,"probe_p90_ms":0,"probe_p99_ms":0,"mem_avail_pct":"82.2","psi_cpu_some10":0.14,"psi_mem_full10":3.01,"psi_io_some10":3.09,"running":634,"crashed":13,"failed":false,"failed_on":""}
+{"time":"2026-10-10T02:33:29.185033871Z","level":"INFO","msg":"wave","active_agents":1500,"observing_for":"4m0s"}
+=== agentsim profile ===
+=== end cold starts ===
+=== end profile ===

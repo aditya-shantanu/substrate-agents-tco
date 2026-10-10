@@ -1,0 +1,14 @@
+{"time":"2026-10-10T03:33:08.258859597Z","level":"INFO","msg":"setup complete","agents":9000,"failed":0,"resident":false}
+{"time":"2026-10-10T03:33:08.260152541Z","level":"INFO","msg":"wave","active_agents":250,"observing_for":"3m0s"}
+{"time":"2026-10-10T03:36:08.303421908Z","level":"INFO","msg":"wave result","tag":"","active_agents":250,"activations":250,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":460,"wake_p90_ms":460,"wake_p99_ms":460,"turn_p90_ms":6,"turn_p99_ms":11,"probe_p50_ms":13,"probe_p90_ms":14,"probe_p99_ms":18,"mem_avail_pct":"91.9","psi_cpu_some10":0,"psi_mem_full10":0,"psi_io_some10":0,"running":500,"crashed":0,"failed":false,"failed_on":""}
+{"time":"2026-10-10T03:36:08.303800418Z","level":"INFO","msg":"wave","active_agents":500,"observing_for":"3m0s"}
+{"time":"2026-10-10T03:39:08.309314646Z","level":"INFO","msg":"wave result","tag":"","active_agents":500,"activations":468,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":0,"wake_p90_ms":0,"wake_p99_ms":0,"turn_p90_ms":6,"turn_p99_ms":8,"probe_p50_ms":13,"probe_p90_ms":15,"probe_p99_ms":18,"mem_avail_pct":"92.8","psi_cpu_some10":0,"psi_mem_full10":0,"psi_io_some10":0,"running":500,"crashed":0,"failed":false,"failed_on":""}
+{"time":"2026-10-10T03:39:08.309737808Z","level":"INFO","msg":"wave","active_agents":750,"observing_for":"3m0s"}
+{"time":"2026-10-10T03:42:08.31792417Z","level":"INFO","msg":"wave result","tag":"","active_agents":750,"activations":723,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":529,"wake_p90_ms":624,"wake_p99_ms":793,"turn_p90_ms":6,"turn_p99_ms":7,"probe_p50_ms":14,"probe_p90_ms":16,"probe_p99_ms":19,"mem_avail_pct":"91.0","psi_cpu_some10":0.02,"psi_mem_full10":0,"psi_io_some10":0,"running":750,"crashed":0,"failed":false,"failed_on":""}
+{"time":"2026-10-10T03:42:08.318328591Z","level":"INFO","msg":"wave","active_agents":1000,"observing_for":"3m0s"}
+{"time":"2026-10-10T03:45:08.325102427Z","level":"INFO","msg":"wave result","tag":"","active_agents":1000,"activations":1485,"refusal_pct":"0.0","error_pct":"0.5","wake_p50_ms":576,"wake_p90_ms":1192,"wake_p99_ms":6324,"turn_p90_ms":7,"turn_p99_ms":19712,"probe_p50_ms":14,"probe_p90_ms":15,"probe_p99_ms":20,"mem_avail_pct":"89.2","psi_cpu_some10":0.01,"psi_mem_full10":0,"psi_io_some10":0,"running":1000,"crashed":0,"failed":true,"failed_on":"turn-p99"}
+{"time":"2026-10-10T03:45:18.817845186Z","level":"INFO","msg":"hold","active_agents":750,"for":"10m0s"}
+=== agentsim profile ===
+=== cold starts ===
+=== end cold starts ===
+=== end profile ===

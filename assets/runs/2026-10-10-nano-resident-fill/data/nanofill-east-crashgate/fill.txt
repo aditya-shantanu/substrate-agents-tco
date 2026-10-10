@@ -1,0 +1,13 @@
+{"time":"2026-10-10T03:20:48.697211661Z","level":"INFO","msg":"wave","active_agents":500,"observing_for":"4m0s"}
+{"time":"2026-10-10T03:24:48.701287438Z","level":"INFO","msg":"wave result","tag":"","active_agents":500,"activations":500,"refusal_pct":"1.0","error_pct":"0.2","wake_p50_ms":511,"wake_p90_ms":622,"wake_p99_ms":749,"turn_p90_ms":4,"turn_p99_ms":4,"probe_p50_ms":14,"probe_p90_ms":16,"probe_p99_ms":20,"mem_avail_pct":"92.2","psi_cpu_some10":0,"psi_mem_full10":0,"psi_io_some10":0.04,"running":499,"crashed":907,"failed":true,"failed_on":"refusals+crashed"}
+=== agentsim csv ===
+=== agentsim profile ===
+=== agentsim steps ===
+=== agentsim summary ===
+=== end cold starts ===
+=== end csv ===
+=== end loadtest ===
+=== end profile ===
+=== end steps ===
+=== loadtest waves ===
+LOADTEST VERDICT: failure at 500 active agents (refusals+crashed); last sustainable level = 0

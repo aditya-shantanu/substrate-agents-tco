@@ -1,0 +1,13 @@
+{"time":"2026-10-10T03:50:30.857067073Z","level":"INFO","msg":"setup complete","agents":9000,"failed":0,"resident":false}
+{"time":"2026-10-10T03:50:30.858188568Z","level":"INFO","msg":"wave","active_agents":750,"observing_for":"2m0s"}
+{"time":"2026-10-10T03:52:30.863957538Z","level":"INFO","msg":"wave result","tag":"","active_agents":750,"activations":660,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":0,"wake_p90_ms":0,"wake_p99_ms":0,"turn_p90_ms":5,"turn_p99_ms":9,"probe_p50_ms":13,"probe_p90_ms":15,"probe_p99_ms":18,"mem_avail_pct":"90.7","psi_cpu_some10":0,"psi_mem_full10":0,"psi_io_some10":0.05,"running":750,"crashed":0,"failed":false,"failed_on":""}
+{"time":"2026-10-10T03:52:30.864228151Z","level":"INFO","msg":"wave","active_agents":950,"observing_for":"2m0s"}
+{"time":"2026-10-10T03:54:30.869877822Z","level":"INFO","msg":"wave result","tag":"","active_agents":950,"activations":261,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":477,"wake_p90_ms":563,"wake_p99_ms":644,"turn_p90_ms":5,"turn_p99_ms":8,"probe_p50_ms":13,"probe_p90_ms":15,"probe_p99_ms":19,"mem_avail_pct":"89.5","psi_cpu_some10":1.57,"psi_mem_full10":0,"psi_io_some10":0,"running":916,"crashed":0,"failed":false,"failed_on":""}
+{"time":"2026-10-10T03:54:30.870254116Z","level":"INFO","msg":"wave","active_agents":1150,"observing_for":"2m0s"}
+{"time":"2026-10-10T03:56:30.878337503Z","level":"INFO","msg":"wave result","tag":"","active_agents":1150,"activations":778,"refusal_pct":"0.0","error_pct":"0.0","wake_p50_ms":618,"wake_p90_ms":2983,"wake_p99_ms":6914,"turn_p90_ms":5,"turn_p99_ms":11227,"probe_p50_ms":13,"probe_p90_ms":15,"probe_p99_ms":19,"mem_avail_pct":"88.0","psi_cpu_some10":1.53,"psi_mem_full10":0,"psi_io_some10":0.01,"running":1117,"crashed":0,"failed":false,"failed_on":""}
+{"time":"2026-10-10T03:56:30.878789487Z","level":"INFO","msg":"wave","active_agents":1350,"observing_for":"2m0s"}
+{"time":"2026-10-10T03:58:30.885254791Z","level":"INFO","msg":"wave result","tag":"","active_agents":1350,"activations":622,"refusal_pct":"3.1","error_pct":"7.2","wake_p50_ms":3242,"wake_p90_ms":10503,"wake_p99_ms":12425,"turn_p90_ms":19644,"turn_p99_ms":36085,"probe_p50_ms":14,"probe_p90_ms":15,"probe_p99_ms":21,"mem_avail_pct":"86.6","psi_cpu_some10":1.35,"psi_mem_full10":0.14,"psi_io_some10":0.29,"running":1307,"crashed":0,"failed":true,"failed_on":"errors+wake-p99+turn-p99+turn-p90-vs-baseline"}
+{"time":"2026-10-10T03:58:38.585893895Z","level":"INFO","msg":"hold","active_agents":1150,"for":"10m0s"}
+=== agentsim profile ===
+=== end csv ===
+=== end profile ===
