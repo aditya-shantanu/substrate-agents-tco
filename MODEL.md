@@ -69,6 +69,18 @@ d_eff = d * (L + T_idle + T_r + T_s) / L
 (`T_idle = 0` models an oracle scheduler; a real policy of e.g. 10–30s protects
 against thrashing on multi-message conversations but costs occupancy.)
 
+
+**Share of agents active on a given day (`share`, default 100 %).** Every
+quantity above is per *active* agent-day. A fleet may also hold registered
+agents that do nothing on a given day: they keep their snapshot (or volume)
+and make no wake-ups. The calculator carries this as a fleet-average factor:
+`occupancy_avg = share × occupancy_active`, `activations_avg = share × A`.
+Agents per worker, churn and storage operations use the averages; the
+Filestore mapping below needs both the average and the per-active values.
+(The Filestore team's "long-running personal agent" scenario is 1,000 of
+100,000 agents concurrently active for 1 h/day each, i.e. 24 % active per
+day.)
+
 ## 3. Oversubscription (actors per worker)
 
 If workers could be packed to 100% busy:
@@ -218,6 +230,68 @@ Every non-live agent holds a snapshot (RAM + filesystem delta):
 C_storage_per_agent = S * C_store * (1 - d)   ≈ S * C_store
 C_ops_per_agent     = activations_per_month * (op_cost_write + op_cost_read)
 ```
+
+## 5b. Storage backend: Filestore agent volumes
+
+The calculator's second storage backend replaces the GCS snapshot bucket
+with one persistent NFS volume per agent (Filestore agent volumes). Pricing
+and tiering behaviour are a straight port of the Filestore team's *Filestore
+Agent Volumes TCO Calculator v2.7* (Nov 2026), sheet "Filestore Agent Volumes
+TCO" rows 18–58, so the two tools agree cell for cell on the same inputs
+(verified against four reference scenarios of the sheet, including the
+"Scenario 1" of the *TCO Scenario Alignment* document).
+
+**What is billed (1.00× region list):**
+
+| SKU | Price | Applies to |
+|---|---|---|
+| Hot tier | $0.30 / GiB-month | volumes mounted by an active sandbox |
+| Warm tier | $0.15 / GiB-month | unmounted volumes inside the inactivity window (billed at the Hot rate during the initial GA, selectable) |
+| Cold tier | $0.02 / GiB-month | dormant volumes past the window |
+| Tiering transfer | $0.01 / GiB | each way between Warm and Cold (Hot↔Warm is free) |
+| Provisioned IOPS | $0.027 / IOPS-month | every mounted volume: floor 1,600 IOPS (≤ 2 GiB, Default pool) or 3,000 (> 2 GiB, Large pool), plus any extra, max 7,500 |
+
+**The eight Filestore inputs and how the calculator derives them:**
+
+| Filestore input | Derived as |
+|---|---|
+| 1. Registered workspaces | `fleet` |
+| 2. Active concurrent workspaces `A_vol` | `fleet × share × d'_active`, sized for the busiest hour by default (`× P`, or `H + (1−H)·d'` in herd mode) because provisioned IOPS cannot be scaled hourly; the 24-h average is a switch (the Filestore sheet's convention) |
+| 3. Continuous 24/7 share `c` | input (0 % in the aligned scenario) |
+| 4. Daily active hours per workspace `h` | `d'_active × 24`: work + idle wait + suspend + resume of an active agent |
+| 5. Used capacity per volume `g` | workspace GiB (input, 1 GiB default) + snapshot GiB if the memory snapshot lives on the volume (default) |
+| 6. Extra IOPS | input, 0 default |
+| 7. Inactivity window `W` | input, 24 h default (service minimum) |
+| 8. Cold transition rate `k` | derived as the share of inter-wake gaps longer than `W` for wake-ups spread through the day, `k = exp(−A·W/24)`, or manual (10 % in the aligned scenario, 21.18 % in the sheet's default) |
+
+**The sheet's formulas (ported verbatim):**
+
+```
+r   = A_vol / N                                    # concurrency ratio
+T   = min((N − A_vol)/24,  N·r·(1−c)·(24/h)·(1−r)/24)   # volumes/hour leaving the active pool
+hot = A_vol · g
+warm_candidate = min(N·g − hot, ceil(T·(24·(1−k) + k·W)) · g)
+# break-even guardrail: Cold must pay for freeze+thaw ($0.02/GiB) through its
+# $0.13/GiB-mo saving, i.e. ≥ 112.3 h of dormancy; otherwise keep inactive volumes Warm
+warm = (k ≤ 0 or (N·g − hot − warm_candidate) < T·k·112.3·g) ? N·g − hot : warm_candidate
+cold = max(0, N·g − hot − warm)
+tiered_GiB_month = (cold > 0 ? min(2·cold, T·24·g·2·k) : 0) · 730/24
+iops_per_vol = min(7500, (g ≤ 2 ? 1600 : 3000) + extra)
+bill = hot·0.30 + warm·0.15 + cold·0.02 + tiered·0.01 + A_vol·iops_per_vol·0.027     (× (1 − discount))
+```
+
+In the fleet bill the first four terms take the "storage" line and the IOPS
+term the "operations" line; the GCS lines drop out unless the snapshot is
+kept in GCS, in which case they stay and the volume holds workspace files
+only. The "what is going on" panel under the bill prints the eight derived
+inputs, the tier split and the per-active-volume cost.
+
+**What it shows.** For the default personal-agent workload (10,000 agents,
+43 wake-ups/day, 1 GiB workspace) provisioned IOPS dominate: ~630 mounted
+volumes at the busiest hour × 1,600 IOPS × $0.027 ≈ $27k/month, about
+$2.70 of the $3.80 per agent, against $0.05 for snapshots and operations on
+GCS. Tiering and Cold storage stay at zero because agents that wake every
+half hour never pass a 24 h window, and the guardrail keeps the rest Warm.
 
 ## 6. Fixed / amortized costs
 

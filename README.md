@@ -20,6 +20,10 @@ outputs update live. Presets are shareable via URL parameters, e.g.
 
 ![calculator](assets/screenshots/calculator.png)
 
+With the Filestore agent volumes backend selected ([`?backend=fav`](https://aditya-shantanu.github.io/substrate-agents-tco/calculator.html?backend=fav)):
+
+![calculator with Filestore agent volumes](assets/screenshots/calculator-filestore.png)
+
 The math, price book (us-central1, retrieved 2026-09-25), and measured
 constants all live in [`MODEL.md`](MODEL.md). Core identity (the
 benchmarking QPS formula, inverted):
@@ -30,6 +34,12 @@ agents/worker    N  = utilization ÷ peak-adjusted occupancy
                       (busiest-hour multiplier, or a herd fraction charged at full occupancy)
 $/agent/month       = worker_$/hr × 730 / N + snapshot GiB × $/GiB-mo + GCS ops + fixed/fleet
 ```
+
+Storage backend is selectable: GCS snapshots (today's Substrate) or
+**Filestore agent volumes** (one tiered NFS volume per agent plus provisioned
+IOPS, priced per the Filestore team's v2.7 calculator and aligned with their
+scenario document; see MODEL.md §5b). A panel under the bill shows the eight
+Filestore inputs the calculator derives from the workload.
 
 What the calculator shows:
 - **The whole bill**: each machine's $/month, the fleet-wide monthly bill
