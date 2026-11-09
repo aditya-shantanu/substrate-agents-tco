@@ -77,6 +77,15 @@ and make no wake-ups. The calculator carries this as a fleet-average factor:
 `occupancy_avg = share × occupancy_active`, `activations_avg = share × A`.
 Agents per worker, churn and storage operations use the averages; the
 Filestore mapping below needs both the average and the per-active values.
+
+**Workspace in the overhead.** The measured suspend and resume times come from
+a 55 MiB memory-only snapshot. When the workspace travels in the snapshot
+(durable directory) each wake-up also pays `2 × W / rate` for tar + zstd +
+upload and download + untar, `rate` defaulting to 250 MB/s end to end (87–107
+MB/s per GCS stream, ~500 MB/s per node with 8 streams, 450 MB restored in
+2.2 s, measured). On a Filestore volume that term becomes the CSI attach +
+NFS mount and detach, 0.1 s by default. Both are added to `T_idle + T_s +
+T_r` in the occupancy above.
 (The Filestore team's "long-running personal agent" scenario is 1,000 of
 100,000 agents concurrently active for 1 h/day each, i.e. 24 % active per
 day.)
@@ -320,13 +329,13 @@ Alignment* document.
 | Filestore input | Derived as |
 |---|---|
 | 1. Registered workspaces | `fleet` |
-| 2. Active concurrent workspaces `A_vol` | mounted volumes = awake agents: `fleet × share × d'_active`, sized for the busiest hour by default (`× P`, or `H + (1−H)·d'` in herd mode) because provisioned IOPS cannot be scaled hourly; the 24-h average is a switch (the Filestore sheet's convention) |
+| 2. Active concurrent workspaces `A_vol` | mounted volumes = agents working or waiting: `fleet × share × (L + A·T_idle)/86400`, without the runtime's suspend and resume seconds, so the pool and the Filestore bill are identical for gVisor and microVM; sized for the busiest hour by default (`× P`, or `H + (1−H)·d` in herd mode) because provisioned IOPS cannot be scaled hourly; the 24-h average is a switch (the Filestore sheet's convention) |
 | 3. Continuous 24/7 share `c` | input (0 % in the aligned scenario) |
-| 4. Daily active hours per workspace `h` | `d'_active × 24`: work + idle wait + suspend + resume of an active agent |
+| 4. Daily active hours per workspace `h` | `(L + A·T_idle)/86400 × 24`: an active agent's useful work plus idle wait |
 | 5. Used capacity per volume `g` | `W`, the workspace GiB (uncompressed; the memory snapshot stays in GCS) |
 | 6. Extra IOPS | input, 0 default |
 | 7. Inactivity window `W_h` | input, 24 h default (service minimum) |
-| 8. Cold transition rate `k` | derived as the share of inter-wake gaps longer than the window, `k = exp(−A·W_h/24)`, or manual (10 % in the aligned scenario, 21.18 % in the sheet's default) |
+| 8. Cold transition rate `k` | manual, default 10 % (the aligned Scenario 1 value; 21.18 % is the sheet's default), or derived: gaps inside an active day (Poisson, `exp(−A·W_h/24)`) plus the gap to the next active day for the agents dormant tomorrow, `k = ((A−1)·exp(−A·W_h/24) + (1 − share)) / A`. Whatever `k`, Cold stays empty while every agent returns inside the window: the Warm buffer (turnover × window) then covers the whole fleet, and the sheet's guardrail does the same |
 
 **The sheet's formulas (ported verbatim):**
 
@@ -351,14 +360,20 @@ going on" panel under the bill prints the GCS derivation and the eight
 Filestore inputs with their provenance.
 
 **What it shows.** For the default personal-agent workload (10,000 agents,
-43 wake-ups/day, 1 GiB workspace) the two backends split like this: with the
-workspace in the snapshot, GCS costs $0.16/agent (operations, mostly the
-composite parts of a 512 MiB tar at every suspend) and moves ~250 TB/day;
-with the workspace on Filestore, GCS drops to $0.04/agent and 28 TB/day, but
-provisioned IOPS add $2.70/agent: ~630 mounted volumes at the busiest hour ×
-1,600 IOPS × $0.027. Tiering and Cold stay at zero because agents that wake
-every half hour never cross a 24 h window and the guardrail keeps the rest
-Warm.
+every one active daily with 43 wake-ups, 1 GiB workspace) the two backends
+split like this. With the workspace in the snapshot, GCS costs $0.16/agent
+(operations, mostly the composite parts of a 512 MiB tar at every suspend),
+moves ~250 TB/day, and adds ~8 s to every wake-up for the tar, compress,
+upload, download and untar of the workspace, which is why the compute line
+rises from $0.87 to $0.97/agent: $1.19 total on gVisor. With the workspace on
+Filestore, GCS drops to $0.04/agent and 28 TB/day and the wake-up overhead to
+~0.1 s, but provisioned IOPS add $2.47/agent: 572 mounted volumes at the
+busiest hour × 1,600 IOPS × $0.027, the same for both runtimes: $3.59 total.
+Tiering and Cold stay at zero because agents that wake every half hour never
+cross a 24 h window. The aligned Scenario 1 (24 % of 100,000 agents active a
+day, one 1-h wake-up each, pool sized on the average) reproduces the Filestore
+team's $50,014/mo exactly: 1,000 mounted volumes, Hot 1,000 / Warm 23,760 /
+Cold 75,240 GiB, $0.50 per registered agent.
 
 ## 6. Fixed / amortized costs
 
