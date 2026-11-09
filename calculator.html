@@ -118,7 +118,18 @@
 <div id="inputs">
 
   <div class="card">
-    <h2>1 · How busy is one agent?</h2>
+    <h2>1 · The fleet</h2>
+    <p class="why">How many agents are registered, how many of them do anything on a given day, and how many are awake at the same moment. The last one is the number everything is sized on: workers, machines, mounted volumes.</p>
+    <div class="row"><label for="fleet">Number of agents</label><input id="fleet" type="number" min="1" step="100" value="10000"><span class="unit">agents</span></div>
+    <div class="row"><label for="dailyShare">Share of agents active on a given day</label><input id="dailyShare" type="number" min="1" max="100" step="1" value="100"><span class="unit">%</span>
+      <div class="hint">The rest are registered but dormant that day: they hold their snapshot or volume and do no wake-ups. 100 % = every agent plays the pattern above every day (this calculator's original assumption). The Filestore team's "long-running personal agent" scenario implies 24 % (1,000 concurrently active of 100,000, 1 h/day each).</div></div>
+    <div class="row"><label for="concur">Agents awake at once (average)</label><input id="concur" type="number" min="1" step="10" value="314"><span class="unit">agents</span>
+      <div class="derived" id="concurDerived" style="margin-top:6px"></div>
+      <div class="hint">Derived from sections 2 and 3: agents × share active per day × the share of the day an active agent spends awake (useful work + idle wait + suspend + resume). You can type a target here: the calculator then scales the session and check-in lengths in section 2 to reach it, keeping the number of wake-ups, so churn and GCS traffic stay as they are. <span id="concurNote"></span></div></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · How busy is one agent?</h2>
     <p class="why">A personal agent (OpenClaw, Hermes) mostly sleeps: a few chats plus some scheduled check-ins per day. The <em>task script</em> preset is the coding-agent benchmark Phase 2 now runs by default (8 tasks × 20 steps, asleep during every LLM think gap): each step is one "check-in" of ≈2 s of work with no idle wait. Its step time and the 1 GiB actor's suspend/resume are estimates until a run measures them — the measured defaults stay on the personal profile.</p>
     <div class="row"><label for="preset">Start from a preset</label>
       <select id="preset" style="grid-column:2/4">
@@ -133,13 +144,11 @@
     <div class="row"><label for="wakes">Scheduled check-ins per day</label><input id="wakes" type="number" min="0" step="1" value="40"><span class="unit"></span>
       <div class="hint">Heartbeats, crons, reminders. OpenClaw's default heartbeat alone is every 30 min ≈ 40–48/day. (A real OpenClaw agent on a 20-min cron measured just 0.72% awake time.)</div></div>
     <div class="row"><label for="wakeSec">Length of one check-in</label><input id="wakeSec" type="number" min="0.5" step="0.1" value="15"><span class="unit">s</span></div>
-    <div class="row"><label for="dailyShare">Share of agents active on a given day</label><input id="dailyShare" type="number" min="1" max="100" step="1" value="100"><span class="unit">%</span>
-      <div class="hint">The rest are registered but dormant that day: they hold their snapshot or volume and do no wake-ups. 100 % = every agent plays the pattern above every day (this calculator's original assumption). The Filestore team's "long-running personal agent" scenario implies 24 % (1,000 concurrently active of 100,000, 1 h/day each).</div></div>
     <div class="derived" id="workloadDerived"></div>
   </div>
 
   <div class="card">
-    <h2>2 · How fast are suspend and resume?</h2>
+    <h2>3 · How fast are suspend and resume?</h2>
     <p class="why">While an agent is being suspended or resumed, its machine slot is busy but useless — that time is pure overhead added to every wake-up. These numbers depend on the agent (snapshot size, process thaw), not just on Substrate — re-measure for your workload (Phase 2).</p>
     <div class="row"><label for="srPreset">Start from a measurement</label>
       <select id="srPreset" style="grid-column:2/4">
@@ -157,7 +166,7 @@
   </div>
 
   <div class="card">
-    <h2>3 · Safety margins</h2>
+    <h2>4 · Safety margins</h2>
     <p class="why">You can't pack machines 100% full and still wake agents instantly, and evenings are busier than 4am.</p>
     <div class="row"><label for="util">How full workers run at peak</label><input id="util" type="number" min="0.1" max="1" step="0.05" value="0.70"><span class="unit">×</span>
       <div class="hint">0.7 = keep 30% headroom so a waking agent finds a free worker fast (the router only holds a request 5 s by default).</div></div>
@@ -177,7 +186,7 @@
   </div>
 
   <div class="card">
-    <h2>4 · Machines &amp; prices <span style="font-weight:400;color:var(--muted)">(us-central1, Sep 2026)</span></h2>
+    <h2>5 · Machines &amp; prices <span style="font-weight:400;color:var(--muted)">(us-central1, Sep 2026)</span></h2>
     <p class="why">A machine (GKE node) is carved into fixed-size <i>workers</i>; each worker hosts one live agent at a time. The microVM list only shows machines that support nested virtualization. <a href="MODEL.md">Price sources</a>.</p>
     <div class="duo-wrap">
       <div class="shape-row"><span class="who g">gVisor</span><select id="g_shape"></select></div>
@@ -198,7 +207,7 @@
   </div>
 
   <div class="card">
-    <h2>5 · Storage &amp; shared costs</h2>
+    <h2>6 · Storage &amp; shared costs</h2>
     <p class="why">A sleeping agent is a snapshot in GCS. Substrate captures three layers at suspend: the sandbox's memory, its root-filesystem writes, and its durable directories (the agent's workspace); all three are uploaded in full, zstd-compressed, and the workspace can instead live on a Filestore agent volume that is attached at resume and detached at suspend.</p>
     <div class="row"><label for="snapGiB">Memory snapshot per agent</label><input id="snapGiB" type="number" min="0.01" step="0.05" value="0.06"><span class="unit">GiB</span>
       <div class="hint">Compressed size as stored: memory image (sparse, zstd) plus root-filesystem writes. Measured 55–61 MB for a real OpenClaw agent, ~30 MB for the small test actor; budget up to ~½ of RSS for heavy agents.</div></div>
@@ -229,7 +238,7 @@
     <div id="favInputs" style="display:none">
     <div class="row"><label for="favSizing">Active-volume pool sized for</label>
       <select id="favSizing" style="grid-column:2/4">
-        <option value="peak" selected>the busiest hour (same peak lens as the machines, section 3)</option>
+        <option value="peak" selected>the busiest hour (same peak lens as the machines, section 4)</option>
         <option value="avg">the 24-hour average (the Filestore calculator's convention)</option>
       </select>
       <div class="hint">A volume is mounted while its agent is awake. Provisioned IOPS are billed on the number of mounted volumes the pool must hold; machines are sized for the peak above, so the pool is too by default.</div></div>
@@ -253,7 +262,6 @@
       </select></div>
     <div class="row"><label for="favDiscount">Filestore contract discount</label><input id="favDiscount" type="number" min="0" max="90" step="1" value="0"><span class="unit">%</span></div>
     </div>
-    <div class="row"><label for="fleet">Number of agents</label><input id="fleet" type="number" min="1" step="100" value="10000"><span class="unit"></span></div>
     <div class="row"><label for="cpMo">Control plane &amp; monitoring</label><input id="cpMo" type="number" min="0" step="50" value="500"><span class="unit">$/mo</span>
       <div class="hint">Substrate API servers, database, router, Prometheus — one bill for the whole fleet, plus GKE's $73/mo cluster fee.</div></div>
   </div>
@@ -811,7 +819,7 @@ function favExplain(G, M, w, fleet) {
   const mb = gib => fmt(gib*1024,0)+" MiB";
   const gcsRows = [
     ["What a snapshot holds", g.onFav ? `memory image + root-fs writes (${mb(g.memZ)} compressed); the workspace is on the Filestore volume and is not snapshotted` : `memory image + root-fs writes (${mb(g.memZ)}) + the workspace tarred and compressed (${mb(g.wsGiB)} → ${mb(g.wsZ)}) = ${mb(g.bytesPerSnapshot)} per snapshot`],
-    ["Uploaded per suspend", `${mb(g.bytesPerSnapshot)}; ≈ ${fmt(g.bytesPerSnapshot*1024/500,1)} s at the measured ~500 MB/s per node (counts toward the suspend time in section 2)`],
+    ["Uploaded per suspend", `${mb(g.bytesPerSnapshot)}; ≈ ${fmt(g.bytesPerSnapshot*1024/500,1)} s at the measured ~500 MB/s per node (counts toward the suspend time in section 3)`],
     ["GCS writes per suspend (class A)", two(g.writesPerSuspend, m.writesPerSuspend) + ` = one PUT per file (objects over 64 MiB go as 32 MiB parts + a compose), the manifest, and the listing that releases the previous snapshot`],
     ["Uploads per active agent per day", `${fmt(g.uploadsPerDay,1)} ` + (g.sync ? "(synchronous: every suspend)" : `(asynchronous: at most one per ${g.upDelay}-min window; ${fmt(w.acts,0)} suspends/day collapse to ${fmt(g.uploadsPerDay,1)})`)],
     ["Resumes served from the node-local copy", `${pctf(g.localFrac)} — gaps shorter than the ${fmt(g.detachMin,0)}-min detach delay; the rest download`],
@@ -828,7 +836,7 @@ function favExplain(G, M, w, fleet) {
     const sizing = $("favSizing").value === "peak" ? "busiest hour" : "24-h average";
     const rows = [
       ["1. Total registered agent workspaces", two(fleet, fleet), "= number of agents"],
-      ["2. Average active concurrent workspaces", two(gi.active, mi.active), `= agents × ${pctf(gi.share)} active per day × awake share of an active agent incl. suspend/resume overhead, sized for the ${sizing} (${two(gi.activeAvg, mi.activeAvg)} on average, ${two(gi.activePeak, mi.activePeak)} at the peak); a volume is mounted exactly while its agent is awake`],
+      ["2. Average active concurrent workspaces", two(gi.active, mi.active), `= agents × ${pctf(gi.share)} active per day × awake share of an active agent incl. suspend/resume overhead, sized for the ${sizing} (${two(gi.activeAvg, mi.activeAvg)} on average, ${two(gi.activePeak, mi.activePeak)} at the peak; section 1); a volume is mounted exactly while its agent is awake`],
       ["3. Continuous (24/7) share", pctf(gi.cont), "input above"],
       ["4. Average daily active hours per workspace", two(gi.hoursPerDay, mi.hoursPerDay, v=>fmt(v,2)+" h"), "= an active agent's awake share (work + wait + suspend + resume) × 24 h"],
       ["5. Used capacity per volume", fmt(gi.gib,2)+" GiB", "= workspace data per agent (the memory snapshot stays in GCS)"],
@@ -868,6 +876,15 @@ function recompute() {
     `An active agent is doing useful work <b>${fmt(w.liveSec/60,0)} min/day</b> across <b>${fmt(w.acts,0)} wake-ups</b>
      — awake <b>${pct(w.duty)}</b> of the time. Average wake-up: ${fmt(w.liveSec/Math.max(w.acts,1),0)} s of work
      + ${fmt(G.over,1)} s of overhead (wait + suspend + resume).${w.share < 1 ? ` <b>${pct(w.share)}</b> of the fleet is active on a given day; the rest sleep all day.` : ""}`;
+
+  // Fleet card: agents awake at once (the field doubles as a target, see applyConcurrency)
+  {
+    const avgG = fleet*G.dEff, avgM = fleet*M.dEff;
+    const pkG = G.herdMode ? fleet*(num("herd")/100 + (1-num("herd")/100)*G.dEff) : avgG*num("peak");
+    const pkM = M.herdMode ? fleet*(num("herd")/100 + (1-num("herd")/100)*M.dEff) : avgM*num("peak");
+    if (document.activeElement !== $("concur")) $("concur").value = Math.round(avgG);
+    $("concurDerived").innerHTML = `<b>${fmt(avgG,0)}</b> awake on average with gVisor (${fmt(avgM,0)} with microVM, whose suspend and resume take longer) = ${pct(G.dEff)} of ${fmt(fleet*w.share,0)} daily-active agents · <b>${fmt(pkG,0)}</b> / ${fmt(pkM,0)} at the busiest hour · ${fmt(w.acts,0)} wake-ups per agent-day.`;
+  }
 
   $("g_machineCost").innerHTML = `1 machine = <b>${fmt$(G.nodeMo)}/mo</b> at ${PRICE_NAMES[pG.priceModel]} → carved into <b>${G.wpn} workers</b> (${fmt$(G.nodeMo/G.wpn)}/worker/mo)`;
   $("m_machineCost").innerHTML = `1 machine = <b>${fmt$(M.nodeMo)}/mo</b> at ${PRICE_NAMES[pM.priceModel]} → carved into <b>${M.wpn} workers</b> (${fmt$(M.nodeMo/M.wpn)}/worker/mo)`;
@@ -1006,6 +1023,7 @@ function recompute() {
 }
 
 $("preset").addEventListener("change", () => {
+  $("concurNote").textContent = "";
   const p = PRESETS[$("preset").value];
   if (p) { for (const k in p) $(k).value = p[k]; }
   recompute();
@@ -1021,6 +1039,26 @@ $("srPreset").addEventListener("change", () => {
   if (p) { for (const k in p) $(k).value = p[k]; }
   recompute();
 });
+// Typing a concurrency target scales how long each wake-up lasts (session and check-in lengths), not how often agents wake.
+function applyConcurrency() {
+  const target = num("concur"); if (!(target > 0)) return;
+  const fleet = num("fleet"), share = Math.min(1, Math.max(0.01, num("dailyShare")/100));
+  const w = workload(), over = num("tidle") + num("g_ts") + num("g_tr");
+  const occTarget = target*86400/(fleet*share);        // worker-seconds per active agent-day needed
+  const floor = w.acts*over;                           // overhead alone, with zero useful work
+  let note = "";
+  if (w.liveSec <= 0) note = "No session or check-in length to scale: set sessions or check-ins first.";
+  else if (occTarget <= floor*1.001) {
+    note = `Not reachable: ${fmt(w.acts,0)} wake-ups × ${fmt(over,1)} s of idle wait + suspend + resume already keep an agent awake ${pct(floor/86400)} of the day (${fmt(fleet*share*floor/86400,0)} agents). Shorten the idle wait (section 4) or reduce wake-ups.`;
+  } else {
+    const k = (occTarget - floor)/w.liveSec;
+    const sm = Math.round(num("sessMin")*k*100)/100, ws = Math.round(num("wakeSec")*k*10)/10;
+    $("sessMin").value = sm; $("wakeSec").value = ws; $("preset").value = "custom";
+    note = `Set session length to ${fmt(sm,2)} min and check-in length to ${fmt(ws,1)} s (×${fmt(k,2)}); wake-up counts unchanged.` + (sm > 180 ? " Sessions over 3 h: you may mean more agents rather than longer sessions." : "");
+  }
+  $("concurNote").textContent = note;
+}
+$("concur").addEventListener("input", () => { applyConcurrency(); recompute(); });
 function syncBackendUI() {
   const fav = backendIsFav();
   $("favInputs").style.display = fav ? "" : "none";
@@ -1031,7 +1069,7 @@ $("backend").addEventListener("change", () => { syncBackendUI(); recompute(); })
 $("dur").addEventListener("change", () => { syncBackendUI(); recompute(); });
 $("favColdMode").addEventListener("change", () => { syncBackendUI(); recompute(); });
 document.querySelectorAll("input, select").forEach(i => {
-  if (i.id !== "preset" && i.id !== "srPreset") i.addEventListener("input", () => {
+  if (i.id !== "preset" && i.id !== "srPreset" && i.id !== "concur") i.addEventListener("input", () => {
     if (["sessions","sessMin","wakes","wakeSec","dailyShare"].includes(i.id)) $("preset").value = "custom";
     if (["g_ts","g_tr","m_ts","m_tr","snapGiB"].includes(i.id)) $("srPreset").value = "custom";
     recompute();

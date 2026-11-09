@@ -81,6 +81,14 @@ Filestore mapping below needs both the average and the per-active values.
 100,000 agents concurrently active for 1 h/day each, i.e. 24 % active per
 day.)
 
+**Agents awake at once.** The calculator shows the fleet-level consequence of
+the per-agent numbers, `fleet × share × d'` on average and `× P` (or the
+herd form) at the peak, as an editable field. Typing a target there scales
+the useful-work part of the day (session and check-in lengths) so the fleet
+reaches that concurrency, keeping the number of wake-ups fixed, so churn and
+GCS traffic do not move; a target below the overhead-only floor
+(`A × (T_idle + T_s + T_r)` per day) is refused with a note.
+
 ## 3. Oversubscription (actors per worker)
 
 If workers could be packed to 100% busy:
