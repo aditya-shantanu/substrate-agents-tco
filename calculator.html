@@ -199,42 +199,42 @@
 
   <div class="card">
     <h2>5 · Storage &amp; shared costs</h2>
-    <p class="why">A sleeping agent is just its saved state in storage, plus its share of cluster-wide fixed costs. Pick where that state lives.</p>
-    <div class="row"><label for="backend">Storage backend</label>
+    <p class="why">A sleeping agent is a snapshot in GCS. Substrate captures three layers at suspend: the sandbox's memory, its root-filesystem writes, and its durable directories (the agent's workspace); all three are uploaded in full, zstd-compressed, and the workspace can instead live on a Filestore agent volume that is attached at resume and detached at suspend.</p>
+    <div class="row"><label for="snapGiB">Memory snapshot per agent</label><input id="snapGiB" type="number" min="0.01" step="0.05" value="0.06"><span class="unit">GiB</span>
+      <div class="hint">Compressed size as stored: memory image (sparse, zstd) plus root-filesystem writes. Measured 55–61 MB for a real OpenClaw agent, ~30 MB for the small test actor; budget up to ~½ of RSS for heavy agents.</div></div>
+    <div class="row"><label for="wsGiB">Workspace data per agent</label><input id="wsGiB" type="number" min="0" step="0.5" value="1"><span class="unit">GiB</span>
+      <div class="hint">Files the agent keeps between sessions (sessions db, memory, skills, repos). 1 GiB = the Filestore team's long-running personal agent scenario; the Hermes fleet measured 3 GB median; OpenClaw keeps tens of MB. ≤ 2 GiB lands in Filestore's Default pool (1,600 IOPS floor), above that the Large pool (3,000).</div></div>
+    <div class="row"><label for="wsZ">… compresses in GCS to</label><input id="wsZ" type="number" min="5" max="100" step="5" value="50"><span class="unit">% of its size</span>
+      <div class="hint">Only matters while the workspace is a durable directory: Substrate tars it on every checkpoint and zstd-compresses it on upload. Text and sqlite halve; media and random bytes do not.</div></div>
+    <div class="row"><label for="backend">Workspace lives in</label>
       <select id="backend" style="grid-column:2/4">
-        <option value="gcs" selected>GCS snapshots — one compressed snapshot per agent in a bucket</option>
-        <option value="fav">Filestore agent volumes — one persistent NFS volume per agent, tiered Hot / Warm / Cold + provisioned IOPS</option>
+        <option value="durdir" selected>a durable directory — part of every snapshot, uploaded to GCS on each suspend (Substrate today)</option>
+        <option value="fav">a Filestore agent volume — external CSI volume, attached at resume, detached at suspend, never snapshotted</option>
       </select>
-      <div class="hint">GCS is what Substrate does today. Filestore agent volumes is the per-agent file-storage product (pricing and tiering model from the <em>Filestore Agent Volumes TCO Calculator v2.7</em>, Nov 2026); its eight workload inputs are derived from sections 1–3 above and shown in the "what is going on" panel below the bill.</div></div>
-    <div class="row"><label for="snapGiB">Snapshot size per agent</label><input id="snapGiB" type="number" min="0.01" step="0.05" value="0.06"><span class="unit">GiB</span>
-      <div class="hint">Default = measured 55–61 MB for a real OpenClaw agent (small test actor: ~30 MB). Tracks the agent's live memory, not its chat history; budget up to ~½ of RSS for heavy agents.</div></div>
-    <div id="gcsInputs">
-    <div class="row"><label for="storeClass">Where snapshots live</label>
+      <div class="hint">Memory snapshots go to GCS in both cases. With Filestore the workspace leaves the snapshot, and the volume is billed by tier (Hot while mounted, Warm then Cold while idle), by tiering traffic and by provisioned IOPS, per the <em>Filestore Agent Volumes TCO Calculator v2.7</em>; its eight inputs are derived below.</div></div>
+    <div class="row"><label for="storeClass">GCS storage class for snapshots</label>
       <select id="storeClass" style="grid-column:2/4">
         <option value="0.020" selected>GCS Standard — $0.02/GiB-mo</option>
         <option value="0.010">GCS Nearline — $0.01/GiB-mo</option>
-        <option value="0.100">pd-balanced — $0.10/GiB-mo</option>
       </select></div>
-    <div class="row"><label for="opsW">Storage writes per suspend</label><input id="opsW" type="number" min="0" step="1" value="7"><span class="unit">ops</span></div>
-    <div class="row"><label for="opsR">Storage reads per resume</label><input id="opsR" type="number" min="0" step="1" value="4"><span class="unit">ops</span>
-      <div class="hint">Measured 5–9 writes per suspend, 3–6 reads per resume ($5.00 / $0.40 per million ops).</div></div>
-    </div>
+    <div class="row"><label for="dur">Suspend durability</label>
+      <select id="dur" style="grid-column:2/4">
+        <option value="sync" selected>Synchronous — upload before SuspendActor returns (one upload per suspend)</option>
+        <option value="async">Asynchronous — keep the checkpoint on the node, upload the latest one at most once per upload window</option>
+      </select></div>
+    <div class="row" id="rowUpDelay" style="display:none"><label for="upDelay">Upload window (async)</label><input id="upDelay" type="number" min="1" step="1" value="5"><span class="unit">min</span>
+      <div class="hint">Substrate's <code>--snapshot-upload-delay</code>, default 5 min. Checkpoints superseded inside the window are never uploaded.</div></div>
+    <div class="row"><label for="detach">Node-local copy kept for</label><input id="detach" type="number" min="0" step="5" value="30"><span class="unit">min</span>
+      <div class="hint">Substrate's <code>--snapshot-detach-delay</code>, default 30 min: a resume on the same node inside this window restores from the local copy and makes no GCS request. Share of resumes served locally = share of gaps between wake-ups shorter than the window.</div></div>
     <div id="favInputs" style="display:none">
-    <div class="row"><label for="volGiB">Workspace data per agent</label><input id="volGiB" type="number" min="0.1" step="0.5" value="1"><span class="unit">GiB</span>
-      <div class="hint">Files the agent keeps between sessions (sessions db, memory, skills). 1 GiB = the Filestore team's "long-running personal agent" scenario; the Hermes fleet measured 3 GB median. ≤ 2 GiB puts the volume in the Default pool (1,600 IOPS floor), above that the Large pool (3,000 IOPS floor).</div></div>
-    <div class="row"><label for="favSnap">Where the memory snapshot lives</label>
-      <select id="favSnap" style="grid-column:2/4">
-        <option value="vol" selected>On the agent's Filestore volume (replaces GCS entirely)</option>
-        <option value="gcs">Still in GCS (volume holds workspace files only)</option>
-      </select></div>
     <div class="row"><label for="favSizing">Active-volume pool sized for</label>
       <select id="favSizing" style="grid-column:2/4">
         <option value="peak" selected>the busiest hour (same peak lens as the machines, section 3)</option>
         <option value="avg">the 24-hour average (the Filestore calculator's convention)</option>
       </select>
-      <div class="hint">Provisioned IOPS are billed on the number of mounted volumes the pool must hold. Machines are sized for the peak above, so the pool is too by default.</div></div>
+      <div class="hint">A volume is mounted while its agent is awake. Provisioned IOPS are billed on the number of mounted volumes the pool must hold; machines are sized for the peak above, so the pool is too by default.</div></div>
     <div class="row"><label for="favCont">Share of active agents pinned 24/7</label><input id="favCont" type="number" min="0" max="100" step="1" value="0"><span class="unit">%</span>
-      <div class="hint">Agents that never unmount (always-on). 0 % in the aligned scenario; such agents never go Warm or Cold.</div></div>
+      <div class="hint">Agents that never unmount. 0 % in the aligned scenario; such agents never go Warm or Cold.</div></div>
     <div class="row"><label for="favWindow">Inactivity window before archival</label><input id="favWindow" type="number" min="0" step="1" value="24"><span class="unit">hours</span>
       <div class="hint">How long an unmounted volume stays Warm (instant resume) before moving to Cold (~5 s wake). Service minimum 24 h.</div></div>
     <div class="row"><label for="favColdMode">Cold transition rate</label>
@@ -243,7 +243,7 @@
         <option value="manual">Manual (enter below)</option>
       </select></div>
     <div class="row"><label for="favColdRate">Cold transition rate (manual)</label><input id="favColdRate" type="number" min="0" max="100" step="1" value="10"><span class="unit">%</span>
-      <div class="hint">Share of finished sessions that stay idle past the window and go to Cold. The aligned scenario uses 10 %; the Filestore calculator's default is 21.18 % (exponential reuse decay, half-life 10.7 h). With this calculator's workload every agent wakes every day, so the derived value is ~0 unless wake-ups are rarer than the window.</div></div>
+      <div class="hint">Share of finished sessions that stay idle past the window and go to Cold. The aligned scenario uses 10 %; the Filestore calculator's default is 21.18 % (exponential reuse decay, half-life 10.7 h). Agents that wake every day never reach a 24 h window, so the derived value is ~0 for this calculator's workloads.</div></div>
     <div class="row"><label for="favExtraIops">Extra IOPS per active volume</label><input id="favExtraIops" type="number" min="0" step="100" value="0"><span class="unit">IOPS</span>
       <div class="hint">Above the pool floor, up to 7,500 per volume. 0 in the aligned scenario.</div></div>
     <div class="row"><label for="favGA">Warm tier billing</label>
@@ -501,26 +501,39 @@ function scenario(p, w) {
 
   // The fleet bill, per month
   const machinesMo = nodes*nodeMo;
-  let snapshotsMo = fleet*num("snapGiB")*parseFloat($("storeClass").value);
-  let opsMo = fleet*actsAvg*30.44*(num("opsW")*OPS_A + num("opsR")*OPS_B);
-  let fav = null;
-  const backend = $("backend").value;
-  if (backend === "fav") {
-    // Map this calculator's workload onto the Filestore model's eight inputs.
-    const snapOnVol = $("favSnap").value === "vol";
+  // ---- storage: GCS snapshots (always) + the workspace either inside the snapshot or on a Filestore volume
+  const backend = $("backend").value, onFav = backend === "fav";
+  const memZ = num("snapGiB"), wsGiB = num("wsGiB"), wsZ = wsGiB*num("wsZ")/100;   // GiB as stored in GCS
+  const MiB = x => x*1024;
+  const parts = gib => MiB(gib) <= 64 ? 1 : Math.ceil(MiB(gib)/32) + 1;          // single PUT, or 32 MiB parts + compose
+  const ranges = gib => Math.max(1, Math.ceil(MiB(gib)/16));                    // 16 MiB range GETs
+  const smallFiles = p.cls === "g" ? 2 : 4;   // gVisor: checkpoint.img + rootfs bundle; microVM: config, state, base-id, rootfs-upper tar
+  const writesPerSuspend = parts(memZ) + (onFav ? 0 : parts(wsZ)) + smallFiles + 1 /*manifest*/ + 1 /*LIST releasing the old snapshot*/;
+  const readsPerDownload = 1 /*manifest*/ + ranges(memZ) + (onFav ? 0 : ranges(wsZ)) + smallFiles;
+  const sync = $("dur").value === "sync", upDelay = Math.max(1, num("upDelay")), detachMin = num("detach");
+  const uploadsPerDay = sync ? w.acts : (1440/upDelay)*(1 - Math.exp(-w.acts*upDelay/1440));   // per active agent
+  const localFrac = 1 - Math.exp(-w.acts*detachMin/1440);          // resumes that find the node-local copy
+  const downloadsPerDay = w.acts*(1 - localFrac);
+  const bytesPerSnapshot = memZ + (onFav ? 0 : wsZ);                 // GiB stored / uploaded / downloaded
+  const gcs = {memZ, wsZ, wsGiB, onFav, writesPerSuspend, readsPerDownload, uploadsPerDay, downloadsPerDay, localFrac, sync, upDelay, detachMin,
+               bytesPerSnapshot, atRestGiB: bytesPerSnapshot,
+               storageMo: fleet*bytesPerSnapshot*parseFloat($("storeClass").value),
+               opsMo: fleet*share*30.44*(uploadsPerDay*writesPerSuspend*OPS_A + downloadsPerDay*readsPerDownload*OPS_B),
+               uploadGBday: fleet*share*uploadsPerDay*bytesPerSnapshot*1.074, downloadGBday: fleet*share*downloadsPerDay*bytesPerSnapshot*1.074};
+  let snapshotsMo = gcs.storageMo, opsMo = gcs.opsMo, fav = null;
+  if (onFav) {
+    // Map this calculator's workload onto the Filestore model's eight inputs. The volume holds the workspace only.
     const activeAvg = fleet*dEff;                                   // = fleet × share × per-active occupancy
     const activePeak = herdMode ? fleet*(H + (1-H)*dEff) : fleet*dEff*num("peak");
     const active = Math.max(1, Math.min(fleet, $("favSizing").value === "peak" ? activePeak : activeAvg));
     const windowH = num("favWindow");
-    // Share of inter-wake gaps longer than the window, for wake-ups spread through the day (Poisson gaps).
-    const coldAuto = Math.exp(-w.acts*windowH/24);
+    const coldAuto = Math.exp(-w.acts*windowH/24);                  // share of inter-wake gaps longer than the window
     const coldRate = $("favColdMode").value === "auto" ? coldAuto : num("favColdRate")/100;
     fav = favModel({registered:fleet, active, activeAvg, activePeak, cont:num("favCont")/100, hoursPerDay:dEffActive*24, share,
-                    gib:num("volGiB") + (snapOnVol ? num("snapGiB") : 0), extraIops:num("favExtraIops"), windowH,
-                    coldRate, coldAuto, discount:num("favDiscount")/100, ga:$("favGA").value === "ga", snapOnVol});
-    // Volumes (hot/warm/cold + tiering traffic) take the "storage" slot of the bill; provisioned IOPS the "operations" slot.
-    snapshotsMo = fav.cStorage + fav.cXfer + (snapOnVol ? 0 : snapshotsMo);
-    opsMo = fav.cIops + (snapOnVol ? 0 : opsMo);
+                    gib:wsGiB, extraIops:num("favExtraIops"), windowH, coldRate, coldAuto, discount:num("favDiscount")/100, ga:$("favGA").value === "ga"});
+    // Volume tiers + tiering traffic join the "storage" line; provisioned IOPS join the "operations" line.
+    snapshotsMo += fav.cStorage + fav.cXfer;
+    opsMo += fav.cIops;
   }
   const fixedMo = CLUSTER_FEE_MO + num("cpMo");
   const totalMo = machinesMo + snapshotsMo + opsMo + fixedMo;
@@ -545,10 +558,10 @@ function scenario(p, w) {
           compute: machinesMo/fleet, storage: snapshotsMo/fleet,
           opsPerAgent: opsMo/fleet, fixedPerAgent: fixedMo/fleet,
           dedicated: workerHr*HRS_MO, over,
-          resumesPerSec, cyclesPerWorkerHr, ceilingPerWorkerHr, fav, backend};
+          resumesPerSec, cyclesPerWorkerHr, ceilingPerWorkerHr, fav, gcs, backend};
 }
 function params(pref) {
-  return {ts:num(pref+"_ts"), tr:num(pref+"_tr"), shape:$(pref+"_shape").value,
+  return {cls:pref, ts:num(pref+"_ts"), tr:num(pref+"_tr"), shape:$(pref+"_shape").value,
           priceModel:$(pref+"_price").value, wcpu:num(pref+"_wcpu"),
           wmem:num(pref+"_wmem"), penalty: pref==="m" ? num("nestPen")/100 : 0};
 }
@@ -673,15 +686,13 @@ function nearestIdx(arr, v) {
 /* ---------- stacked breakdown bars ---------- */
 const BD_PARTS = [
   {key:"compute",      name:"Machines (worker share)", color:"--s1"},
-  {key:"storage",      name:"Snapshot storage",        color:"--s2"},
-  {key:"opsPerAgent",  name:"Storage operations",      color:"--s3"},
+  {key:"storage",      name:"GCS snapshots at rest",   color:"--s2"},
+  {key:"opsPerAgent",  name:"GCS operations",          color:"--s3"},
   {key:"fixedPerAgent",name:"Cluster fee + control plane", color:"--s4"},
 ];
 function partName(p, res) {
-  if (res && res.backend === "fav") {
-    if (p.key === "storage") return res.fav.inputs.snapOnVol ? "Filestore volumes (hot/warm/cold + tiering)" : "Filestore volumes + GCS snapshots";
-    if (p.key === "opsPerAgent") return res.fav.inputs.snapOnVol ? "Filestore provisioned IOPS" : "Provisioned IOPS + GCS operations";
-  }
+  if (p.key === "storage") return res && res.backend === "fav" ? "GCS snapshots + Filestore volumes" : "GCS snapshots at rest";
+  if (p.key === "opsPerAgent") return res && res.backend === "fav" ? "GCS operations + Filestore IOPS" : "GCS operations";
   return p.name;
 }
 function breakdownChart(svg, rows) {
@@ -775,61 +786,77 @@ function table(elId, header, rows) {
 
 /* ---------- render ---------- */
 function storageBillRows(G, M, w, fleet) {
-  if (G.backend !== "fav") return [
-    {cells:[`Snapshot storage (${fmt(fleet,0)} agents × ${num("snapGiB")} GiB)`, fmt$(G.snapshotsMo)+"/mo", fmt$(M.snapshotsMo)+"/mo"]},
-    {cells:[`Storage operations (${fmt(w.actsAvg*fleet,0)} wake-ups/day)`, fmt$(G.opsMo)+"/mo", fmt$(M.opsMo)+"/mo"]},
-  ];
-  const g = G.fav, m = M.fav, gi = g.inputs;
+  const g = G.gcs, m = M.gcs;
   const rows = [
-    {cells:[`Filestore Hot tier (${fmt(g.hot,0)} / ${fmt(m.hot,0)} GiB mounted × $${FAV.hot}/GiB-mo)`, fmt$(g.cHot)+"/mo", fmt$(m.cHot)+"/mo"]},
-    {cells:[`Filestore Warm tier (${fmt(g.warm,0)} / ${fmt(m.warm,0)} GiB × $${g.warmRate}/GiB-mo)`, fmt$(g.cWarm)+"/mo", fmt$(m.cWarm)+"/mo"]},
-    {cells:[`Filestore Cold tier (${fmt(g.cold,0)} / ${fmt(m.cold,0)} GiB × $${FAV.cold}/GiB-mo)`, fmt$(g.cCold)+"/mo", fmt$(m.cCold)+"/mo"]},
-    {cells:[`Filestore tiering transfers (${fmt(g.monthlyTiered,0)} / ${fmt(m.monthlyTiered,0)} GiB/mo × $${FAV.xfer}/GiB)`, fmt$(g.cXfer)+"/mo", fmt$(m.cXfer)+"/mo"]},
-    {cells:[`Filestore provisioned IOPS (${fmt(gi.active,0)} / ${fmt(m.inputs.active,0)} active volumes × ${fmt(g.iopsPerVol,0)} IOPS × $${FAV.iops}/IOPS-mo)`, fmt$(g.cIops)+"/mo", fmt$(m.cIops)+"/mo"]},
+    {cells:[`GCS snapshots at rest (${fmt(fleet,0)} agents × ${g.atRestGiB.toFixed(2)} GiB: memory image${g.onFav ? "" : " + workspace tar"})`, fmt$(g.storageMo)+"/mo", fmt$(m.storageMo)+"/mo"]},
+    {cells:[`GCS operations (${fmt(g.uploadsPerDay*fleet*w.share,0)} uploads × ${g.writesPerSuspend} / ${m.writesPerSuspend} writes, ${fmt(g.downloadsPerDay*fleet*w.share,0)} downloads × ${g.readsPerDownload} / ${m.readsPerDownload} reads per day)`, fmt$(g.opsMo)+"/mo", fmt$(m.opsMo)+"/mo"]},
   ];
-  if (!gi.snapOnVol) {
-    rows.push({cells:[`GCS snapshots (${fmt(fleet,0)} agents × ${num("snapGiB")} GiB)`, fmt$(fleet*num("snapGiB")*parseFloat($("storeClass").value))+"/mo", fmt$(fleet*num("snapGiB")*parseFloat($("storeClass").value))+"/mo"]});
-    const ops = fleet*w.actsAvg*30.44*(num("opsW")*OPS_A + num("opsR")*OPS_B);
-    rows.push({cells:[`GCS operations (${fmt(w.actsAvg*fleet,0)} wake-ups/day)`, fmt$(ops)+"/mo", fmt$(ops)+"/mo"]});
+  if (G.backend === "fav") {
+    const gf = G.fav, mf = M.fav;
+    rows.push(
+      {cells:[`Filestore Hot tier (${fmt(gf.hot,0)} / ${fmt(mf.hot,0)} GiB mounted × $${FAV.hot}/GiB-mo)`, fmt$(gf.cHot)+"/mo", fmt$(mf.cHot)+"/mo"]},
+      {cells:[`Filestore Warm tier (${fmt(gf.warm,0)} / ${fmt(mf.warm,0)} GiB × $${gf.warmRate}/GiB-mo)`, fmt$(gf.cWarm)+"/mo", fmt$(mf.cWarm)+"/mo"]},
+      {cells:[`Filestore Cold tier (${fmt(gf.cold,0)} / ${fmt(mf.cold,0)} GiB × $${FAV.cold}/GiB-mo)`, fmt$(gf.cCold)+"/mo", fmt$(mf.cCold)+"/mo"]},
+      {cells:[`Filestore tiering transfers (${fmt(gf.monthlyTiered,0)} / ${fmt(mf.monthlyTiered,0)} GiB/mo × $${FAV.xfer}/GiB)`, fmt$(gf.cXfer)+"/mo", fmt$(mf.cXfer)+"/mo"]},
+      {cells:[`Filestore provisioned IOPS (${fmt(gf.inputs.active,0)} / ${fmt(mf.inputs.active,0)} mounted volumes × ${fmt(gf.iopsPerVol,0)} IOPS × $${FAV.iops}/IOPS-mo)`, fmt$(gf.cIops)+"/mo", fmt$(mf.cIops)+"/mo"]},
+    );
   }
   return rows;
 }
 function favExplain(G, M, w, fleet) {
   const box = $("favExplain");
-  if (G.backend !== "fav") { box.innerHTML = ""; return; }
-  const g = G.fav, m = M.fav, gi = g.inputs, mi = m.inputs;
-  const pctf = v => (v*100).toFixed(v*100 < 1 ? 3 : 2)+"%";
+  const g = G.gcs, m = M.gcs;
+  const pctf = v => (v*100).toFixed(v*100 < 1 && v > 0 ? 3 : 1)+"%";
   const two = (a, b, f=v=>fmt(v,0)) => `${f(a)} / ${f(b)}`;
-  const sizing = $("favSizing").value === "peak" ? "busiest hour" : "24-h average";
-  const rows = [
-    ["1. Total registered agent workspaces", two(fleet, fleet), "= number of agents (section 5)"],
-    ["2. Average active concurrent workspaces", two(gi.active, mi.active), `= agents × ${pctf(gi.share)} active per day × awake share of an active agent incl. suspend/resume overhead, sized for the ${sizing} (${two(gi.activeAvg, mi.activeAvg)} on average, ${two(gi.activePeak, mi.activePeak)} at the peak) — sections 1 + 3`],
-    ["3. Continuous (24/7) share", pctf(gi.cont), "input above"],
-    ["4. Average daily active hours per workspace", two(gi.hoursPerDay, mi.hoursPerDay, v=>fmt(v,2)+" h"), "= an active agent's awake share (work + wait + suspend + resume) × 24 h"],
-    ["5. Used capacity per volume", two(gi.gib, mi.gib, v=>fmt(v,2)+" GiB"), gi.snapOnVol ? "= workspace data + memory snapshot (the snapshot lives on the volume)" : "= workspace data (snapshot stays in GCS)"],
-    ["6. Additional IOPS per active volume", fmt(gi.extraIops,0), `pool floor ${fmt(g.iopsPerVol - gi.extraIops,0)} IOPS (${gi.gib <= FAV.smallGiB ? "Default pool, ≤ 2 GiB" : "Large pool, > 2 GiB"}) → ${fmt(g.iopsPerVol,0)} IOPS per active volume`],
-    ["7. Inactivity window before archival", fmt(gi.windowH,0)+" h", "input above"],
-    ["8. Cold storage transition rate", pctf(gi.coldRate), $("favColdMode").value === "auto" ? `derived: share of gaps between ${fmt(w.acts,0)} daily wake-ups longer than ${fmt(gi.windowH,0)} h (${pctf(gi.coldAuto)})` : `manual (derived value would be ${pctf(gi.coldAuto)})`],
+  const mb = gib => fmt(gib*1024,0)+" MiB";
+  const gcsRows = [
+    ["What a snapshot holds", g.onFav ? `memory image + root-fs writes (${mb(g.memZ)} compressed); the workspace is on the Filestore volume and is not snapshotted` : `memory image + root-fs writes (${mb(g.memZ)}) + the workspace tarred and compressed (${mb(g.wsGiB)} → ${mb(g.wsZ)}) = ${mb(g.bytesPerSnapshot)} per snapshot`],
+    ["Uploaded per suspend", `${mb(g.bytesPerSnapshot)}; ≈ ${fmt(g.bytesPerSnapshot*1024/500,1)} s at the measured ~500 MB/s per node (counts toward the suspend time in section 2)`],
+    ["GCS writes per suspend (class A)", two(g.writesPerSuspend, m.writesPerSuspend) + ` = one PUT per file (objects over 64 MiB go as 32 MiB parts + a compose), the manifest, and the listing that releases the previous snapshot`],
+    ["Uploads per active agent per day", `${fmt(g.uploadsPerDay,1)} ` + (g.sync ? "(synchronous: every suspend)" : `(asynchronous: at most one per ${g.upDelay}-min window; ${fmt(w.acts,0)} suspends/day collapse to ${fmt(g.uploadsPerDay,1)})`)],
+    ["Resumes served from the node-local copy", `${pctf(g.localFrac)} — gaps shorter than the ${fmt(g.detachMin,0)}-min detach delay; the rest download`],
+    ["GCS reads per downloading resume (class B)", two(g.readsPerDownload, m.readsPerDownload) + " = manifest + one 16 MiB range per file part"],
+    ["Fleet traffic per day", `${fmt(g.uploadGBday,0)} GB up, ${fmt(g.downloadGBday,0)} GB down (free of charge in-region; it is node and worker time)`],
+    ["At rest", `${g.atRestGiB.toFixed(2)} GiB per agent × ${fmt(fleet,0)} = ${fmt(g.atRestGiB*fleet,0)} GiB (one snapshot per agent; a second one exists briefly during each suspend)`],
   ];
-  const derived = [
-    ["Volumes leaving the active pool per hour", two(g.turnoverPerHour, m.turnoverPerHour, v=>fmt(v,1))],
-    ["Hot / Warm / Cold GiB", `${fmt(g.hot,0)} / ${fmt(g.warm,0)} / ${fmt(g.cold,0)} (gVisor) · ${fmt(m.hot,0)} / ${fmt(m.warm,0)} / ${fmt(m.cold,0)} (microVM)`],
-    ["Data moved between tiers per month", two(g.monthlyTiered, m.monthlyTiered, v=>fmt(v,0)+" GiB")],
-    ["Provisioned IOPS for the pool", two(g.poolIops, m.poolIops)],
-    ["Filestore bill: storage + tiering / IOPS / total", `${fmt$(g.cStorage+g.cXfer)} / ${fmt$(g.cIops)} / ${fmt$(g.cTotal)} per month (gVisor) · ${fmt$(m.cStorage+m.cXfer)} / ${fmt$(m.cIops)} / ${fmt$(m.cTotal)} (microVM)`],
-    ["Per registered agent / per active volume", `$${(g.cTotal/fleet).toFixed(3)} / ${fmt$(g.cTotal/gi.active)} per month (gVisor) · $${(m.cTotal/fleet).toFixed(3)} / ${fmt$(m.cTotal/mi.active)} (microVM)`],
-  ];
-  const notes = [];
-  if (g.guardrail || m.guardrail) notes.push(`Warm-vs-Cold break-even guardrail is active: with this reuse pattern a volume would come back from Cold sooner than the ${fmt(FAV.breakEvenH,0)} h it takes for Cold's $${FAV.cold} rate to pay for the $${FAV.xfer}+$${FAV.xfer} freeze/thaw fees, so inactive volumes are kept Warm and nothing is tiered. The Filestore calculator applies the same rule.`);
-  if (gi.ga) notes.push("Initial-GA billing: Warm volumes are charged the Hot rate.");
-  notes.push(`Alignment check against the Filestore team's Scenario 1 (100,000 agents, 1,000 concurrently active, 1 h/day, 1 GiB, 24 h window, 10 % cold): the same formulas give their $50,014/mo (Hot $300, Warm $3,564, Cold $1,505, tiering $1,445, IOPS $43,200), $0.50 per registered agent and $50.01 per active volume. <a href="?fleet=100000&dailyShare=24&backend=fav&favColdMode=manual&favColdRate=10&favSizing=avg&volGiB=1&favSnap=gcs&sessions=0&wakes=1&wakeSec=3600&tidle=0">This link</a> sets the calculator to that scenario: 24 % of agents active per day, each awake 1 h in a single wake-up, pool sized on the 24-h average, snapshot kept in GCS so the volume is exactly 1 GiB (suspend + resume overhead makes it ~1,002 active volumes rather than 1,000).`);
-  box.innerHTML = `<div class="card" style="margin-top:14px"><h2>Filestore agent volumes — what is going on</h2>
-    <p class="why">The Filestore product bills three things: tiered capacity (Hot while mounted, Warm while recently idle, Cold when dormant), $0.01/GiB each way between Warm and Cold, and provisioned IOPS for every mounted volume (floor 1,600 or 3,000). Its calculator takes eight workload inputs; here they are derived from the workload above (gVisor / microVM):</p>
+  let html = `<div class="card" style="margin-top:14px"><h2>Storage — what is going on</h2>
+    <p class="why">GCS is only touched at suspend (upload) and at resume (download when the node-local copy is gone). Nothing an agent does while awake reads or writes GCS: its files go to the node's disk (microVM) or sandbox memory (gVisor) and are captured into the next snapshot, unless they live on an external volume.</p>
+    <div style="overflow-x:auto"><table class="detail"><tr><th>GCS</th><th>gVisor / microVM</th></tr>
+    ${gcsRows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}</table></div>`;
+  if (G.backend === "fav") {
+    const gf = G.fav, mf = M.fav, gi = gf.inputs, mi = mf.inputs;
+    const sizing = $("favSizing").value === "peak" ? "busiest hour" : "24-h average";
+    const rows = [
+      ["1. Total registered agent workspaces", two(fleet, fleet), "= number of agents"],
+      ["2. Average active concurrent workspaces", two(gi.active, mi.active), `= agents × ${pctf(gi.share)} active per day × awake share of an active agent incl. suspend/resume overhead, sized for the ${sizing} (${two(gi.activeAvg, mi.activeAvg)} on average, ${two(gi.activePeak, mi.activePeak)} at the peak); a volume is mounted exactly while its agent is awake`],
+      ["3. Continuous (24/7) share", pctf(gi.cont), "input above"],
+      ["4. Average daily active hours per workspace", two(gi.hoursPerDay, mi.hoursPerDay, v=>fmt(v,2)+" h"), "= an active agent's awake share (work + wait + suspend + resume) × 24 h"],
+      ["5. Used capacity per volume", fmt(gi.gib,2)+" GiB", "= workspace data per agent (the memory snapshot stays in GCS)"],
+      ["6. Additional IOPS per active volume", fmt(gi.extraIops,0), `pool floor ${fmt(gf.iopsPerVol - gi.extraIops,0)} IOPS (${gi.gib <= FAV.smallGiB ? "Default pool, ≤ 2 GiB" : "Large pool, > 2 GiB"}) → ${fmt(gf.iopsPerVol,0)} IOPS per mounted volume`],
+      ["7. Inactivity window before archival", fmt(gi.windowH,0)+" h", "input above"],
+      ["8. Cold storage transition rate", pctf(gi.coldRate), $("favColdMode").value === "auto" ? `derived: share of gaps between ${fmt(w.acts,0)} daily wake-ups longer than ${fmt(gi.windowH,0)} h (${pctf(gi.coldAuto)})` : `manual (derived value would be ${pctf(gi.coldAuto)})`],
+    ];
+    const derived = [
+      ["Volumes leaving the active pool per hour", two(gf.turnoverPerHour, mf.turnoverPerHour, v=>fmt(v,1))],
+      ["Hot / Warm / Cold GiB", `${fmt(gf.hot,0)} / ${fmt(gf.warm,0)} / ${fmt(gf.cold,0)} (gVisor) · ${fmt(mf.hot,0)} / ${fmt(mf.warm,0)} / ${fmt(mf.cold,0)} (microVM)`],
+      ["Data moved between tiers per month", two(gf.monthlyTiered, mf.monthlyTiered, v=>fmt(v,0)+" GiB")],
+      ["Provisioned IOPS for the pool", two(gf.poolIops, mf.poolIops)],
+      ["Filestore bill: storage + tiering / IOPS / total", `${fmt$(gf.cStorage+gf.cXfer)} / ${fmt$(gf.cIops)} / ${fmt$(gf.cTotal)} per month (gVisor) · ${fmt$(mf.cStorage+mf.cXfer)} / ${fmt$(mf.cIops)} / ${fmt$(mf.cTotal)} (microVM)`],
+      ["Per registered agent / per mounted volume", `$${(gf.cTotal/fleet).toFixed(3)} / ${fmt$(gf.cTotal/gi.active)} per month (gVisor) · $${(mf.cTotal/fleet).toFixed(3)} / ${fmt$(mf.cTotal/mi.active)} (microVM)`],
+    ];
+    const notes = [];
+    if (gf.guardrail || mf.guardrail) notes.push(`Warm-vs-Cold break-even guardrail is active: with this reuse pattern a volume would come back from Cold sooner than the ${fmt(FAV.breakEvenH,0)} h it takes for Cold's $${FAV.cold} rate to pay for the $${FAV.xfer}+$${FAV.xfer} freeze/thaw fees, so inactive volumes are kept Warm and nothing is tiered. The Filestore calculator applies the same rule.`);
+    if (gi.ga) notes.push("Initial-GA billing: Warm volumes are charged the Hot rate.");
+    notes.push(`In Substrate terms the volume is an external CSI volume: created with the actor, attached by the control plane at every resume, detached at every suspend, never part of a snapshot, deleted with the actor (preview gate <code>ExternalVolumes</code>). The repo ships an NFS driver; a Filestore driver would be an operator-supplied CSIDriverConfig.`);
+    notes.push(`Alignment check against the Filestore team's Scenario 1 (100,000 agents, 1,000 concurrently active, 1 h/day, 1 GiB, 24 h window, 10 % cold): the same formulas give their $50,014/mo (Hot $300, Warm $3,564, Cold $1,505, tiering $1,445, IOPS $43,200), $0.50 per registered agent and $50.01 per active volume. <a href="?fleet=100000&dailyShare=24&backend=fav&favColdMode=manual&favColdRate=10&favSizing=avg&wsGiB=1&sessions=0&wakes=1&wakeSec=3600&tidle=0">This link</a> sets the calculator to that scenario (24 % of agents active per day, each awake 1 h in one wake-up, pool sized on the 24-h average; suspend + resume overhead makes it ~1,002 mounted volumes rather than 1,000).`);
+    html += `<p class="why" style="margin-top:12px">The Filestore product bills three things: tiered capacity (Hot while mounted, Warm while recently idle, Cold when dormant), $0.01/GiB each way between Warm and Cold, and provisioned IOPS for every mounted volume (floor 1,600 or 3,000). Its calculator takes eight workload inputs; here they are derived from the workload above (gVisor / microVM):</p>
     <div style="overflow-x:auto"><table class="detail"><tr><th>Filestore input</th><th>Value used</th><th>Where it comes from</th></tr>
     ${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</table></div>
     <div style="overflow-x:auto; margin-top:10px"><table class="detail"><tr><th>Derived</th><th>Value</th></tr>
     ${derived.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}</table></div>
-    <p class="why" style="margin-top:10px">${notes.join("<br>")}</p></div>`;
+    <p class="why" style="margin-top:10px">${notes.join("<br>")}</p>`;
+  }
+  box.innerHTML = html + "</div>";
 }
 function recompute() {
   const w = workload();
@@ -964,11 +991,13 @@ function recompute() {
     {cells:["Cycles per worker per hour", fmt(G.cyclesPerWorkerHr,1), fmt(M.cyclesPerWorkerHr,1)]},
     {cells:["Worker cycle ceiling per hour", fmt(G.ceilingPerWorkerHr,0), fmt(M.ceilingPerWorkerHr,0)]},
     {cells:["Machines $/agent/mo", fmt$(G.compute), fmt$(M.compute)]},
-    {cells:[G.backend === "fav" ? "Filestore volumes + tiering $/agent/mo" : "Snapshot $/agent/mo", "$"+G.storage.toFixed(3), "$"+M.storage.toFixed(3)]},
-    {cells:[G.backend === "fav" ? "Filestore provisioned IOPS $/agent/mo" : "Storage ops $/agent/mo", "$"+G.opsPerAgent.toFixed(3), "$"+M.opsPerAgent.toFixed(3)]},
+    {cells:[G.backend === "fav" ? "GCS snapshots + Filestore volumes $/agent/mo" : "GCS snapshots at rest $/agent/mo", "$"+G.storage.toFixed(3), "$"+M.storage.toFixed(3)]},
+    {cells:[G.backend === "fav" ? "GCS operations + Filestore IOPS $/agent/mo" : "GCS operations $/agent/mo", "$"+G.opsPerAgent.toFixed(3), "$"+M.opsPerAgent.toFixed(3)]},
+    {cells:["GCS writes per suspend / reads per downloading resume", `${G.gcs.writesPerSuspend} / ${G.gcs.readsPerDownload}`, `${M.gcs.writesPerSuspend} / ${M.gcs.readsPerDownload}`]},
+    {cells:["Resumes served from the node-local copy", pct(G.gcs.localFrac), pct(M.gcs.localFrac)]},
     ...(G.backend === "fav" ? [
-      {cells:["Active Filestore volumes (pool size)", fmt(G.fav.inputs.active,0), fmt(M.fav.inputs.active,0)]},
-      {cells:["Filestore $ per active volume per month", fmt$(G.fav.cTotal/G.fav.inputs.active), fmt$(M.fav.cTotal/M.fav.inputs.active)]},
+      {cells:["Mounted Filestore volumes (pool size)", fmt(G.fav.inputs.active,0), fmt(M.fav.inputs.active,0)]},
+      {cells:["Filestore $ per mounted volume per month", fmt$(G.fav.cTotal/G.fav.inputs.active), fmt$(M.fav.cTotal/M.fav.inputs.active)]},
     ] : []),
     {cells:["Fixed $/agent/mo", "$"+G.fixedPerAgent.toFixed(3), "$"+M.fixedPerAgent.toFixed(3)]},
     {cls:"total", cells:["Total $/agent/mo", fmt$(G.perAgent), fmt$(M.perAgent)]},
@@ -994,11 +1023,12 @@ $("srPreset").addEventListener("change", () => {
 });
 function syncBackendUI() {
   const fav = backendIsFav();
-  $("gcsInputs").style.display = fav ? "none" : "";
   $("favInputs").style.display = fav ? "" : "none";
   $("favColdRate").disabled = fav && $("favColdMode").value === "auto";
+  $("rowUpDelay").style.display = $("dur").value === "async" ? "" : "none";
 }
 $("backend").addEventListener("change", () => { syncBackendUI(); recompute(); });
+$("dur").addEventListener("change", () => { syncBackendUI(); recompute(); });
 $("favColdMode").addEventListener("change", () => { syncBackendUI(); recompute(); });
 document.querySelectorAll("input, select").forEach(i => {
   if (i.id !== "preset" && i.id !== "srPreset") i.addEventListener("input", () => {

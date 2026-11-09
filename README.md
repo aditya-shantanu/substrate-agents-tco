@@ -35,11 +35,14 @@ agents/worker    N  = utilization ÷ peak-adjusted occupancy
 $/agent/month       = worker_$/hr × 730 / N + snapshot GiB × $/GiB-mo + GCS ops + fixed/fleet
 ```
 
-Storage backend is selectable: GCS snapshots (today's Substrate) or
-**Filestore agent volumes** (one tiered NFS volume per agent plus provisioned
-IOPS, priced per the Filestore team's v2.7 calculator and aligned with their
-scenario document; see MODEL.md §5b). A panel under the bill shows the eight
-Filestore inputs the calculator derives from the workload.
+Storage follows what Substrate does: memory snapshots always go to GCS, and
+the agent's workspace is either a durable directory captured into every
+snapshot (today) or a **Filestore agent volume**, an external CSI volume that
+is attached at resume and detached at suspend (tiered capacity, tiering
+traffic and provisioned IOPS priced per the Filestore team's v2.7 calculator,
+aligned with their scenario document; MODEL.md §5 and §5b). GCS operations,
+the node-local resume copy and the suspend durability mode are modelled from
+the code, and a panel under the bill shows every derived storage number.
 
 What the calculator shows:
 - **The whole bill**: each machine's $/month, the fleet-wide monthly bill

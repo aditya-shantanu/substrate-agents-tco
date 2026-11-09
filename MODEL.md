@@ -216,36 +216,92 @@ C_compute_per_agent = C_worker * 730 / N    $/month
    suspend/resume times (snapshot includes guest RAM).
 3. **`T_r` / `T_s`.** Different checkpoint/restore paths and snapshot sizes.
 
-## 5. Storage cost (suspended state)
+## 5. Storage cost
 
-Every non-live agent holds a snapshot (RAM + filesystem delta):
+What Substrate actually does (upstream main, November 2026, read from
+`cmd/atelet`, `cmd/ateworker-*`, `internal/objectstoreplugin`,
+`pkg/objectstorage`, `cmd/ateapi/internal/controlapi`):
 
-| Symbol | Meaning |
-|---|---|
-| `S` | snapshot size GB (RAM working set + FS delta, possibly compressed) |
-| `C_store` | $/GB-month for snapshot storage (GCS Standard, or PD if node-local architecture) |
-| `ops` | 2 storage writes+reads per activation cycle — GCS ops cost, usually cents |
+- **GCS holds snapshots and nothing else.** It is written at suspend and read
+  at resume. Nothing an agent does while awake touches GCS: its file writes
+  go to the node's boot disk (microVM: overlay upper and durable directories
+  through virtiofs) or to sandbox memory (gVisor: rootfs overlay and durable
+  directories are sentry tmpfs, charged to the actor's memory limit).
+- **A snapshot has three layers**, each written in full on every checkpoint:
+  the memory image (sparse; the only layer that compresses to its populated
+  pages), the root-filesystem writes, and every `durableDir` volume, tarred
+  (microVM) or bundled (gVisor). Compression is zstd, applied only on upload.
+  External CSI volumes are never part of a snapshot.
+- **One snapshot per agent at rest**; the previous one is released when the
+  next suspend commits. Golden snapshots are one copy per template.
+- **Operations.** Each data file is one PUT (objects over 64 MiB go as
+  32 MiB parts plus a compose), the manifest is one PUT, and releasing the
+  previous snapshot costs one LIST (deletes are free). A resume downloads the
+  manifest and one 16 MiB range per file part, unless the node still holds
+  the local copy.
+- **Node-local copy.** After a suspend the checkpoint stays on the node for
+  `--snapshot-detach-delay` (default 30 min). A resume on the same node inside
+  that window makes no GCS request.
+- **Durability mode.** `DURABILITY_MODE_SYNCHRONOUS` uploads before
+  SuspendActor returns, once per suspend. `ASYNCHRONOUS` keeps the checkpoint
+  local and uploads the latest one at most once per `--snapshot-upload-delay`
+  (default 5 min) window, so checkpoints superseded inside the window are
+  never uploaded.
+
+The calculator's inputs and derivations:
+
+| Symbol | Meaning | Default |
+|---|---|---|
+| `S_mem` | memory image + rootfs writes, compressed, GiB | 0.06 (OpenClaw measured) |
+| `W` | workspace (durable directory) data, GiB | 1 (Filestore scenario; Hermes 3 GB, OpenClaw tens of MB) |
+| `z` | workspace compression on upload | 50 % |
+| `S` | bytes per snapshot in GCS = `S_mem + W·z` (durable dir) or `S_mem` (Filestore volume) | |
+| `F_small` | small files per snapshot: gVisor 2 (checkpoint.img, rootfs bundle), microVM 4 (config, state, base-id, rootfs-upper tar) | |
+| `D` | detach delay, min | 30 |
+| `U` | upload window for async, min | 5 |
 
 ```
-C_storage_per_agent = S * C_store * (1 - d)   ≈ S * C_store
-C_ops_per_agent     = activations_per_month * (op_cost_write + op_cost_read)
+parts(x)   = x ≤ 64 MiB ? 1 : ceil(x / 32 MiB) + 1          # PUTs incl. compose
+ranges(x)  = max(1, ceil(x / 16 MiB))                       # GETs
+writes_per_suspend  = parts(S_mem) + [durdir] parts(W·z) + F_small + 1 (manifest) + 1 (LIST)
+reads_per_download  = 1 (manifest) + ranges(S_mem) + [durdir] ranges(W·z) + F_small
+uploads_per_day     = sync ? A : (1440/U) · (1 − exp(−A·U/1440))
+local_fraction      = 1 − exp(−A·D/1440)                     # resumes that find the node-local copy
+downloads_per_day   = A · (1 − local_fraction)
+
+C_at_rest_per_agent = S · C_store                                     ($0.02/GiB-mo Standard)
+C_ops_per_agent     = share · 30.44 · (uploads_per_day · writes · $5e-6 + downloads_per_day · reads · $4e-7)
 ```
 
-## 5b. Storage backend: Filestore agent volumes
+The gap model is Poisson (wake-ups spread through the day), which is what the
+personal-agent profiles assume. Bytes moved are free in-region but are
+reported, because `S` bytes per suspend at ~500 MB/s per node is time inside
+the suspend, and fleet-wide upload rates of tens of GB/s are an operational
+limit long before they are a cost: with a 1 GiB durable directory at 43
+suspends a day, 10,000 agents push ~250 TB/day through the snapshot path.
 
-The calculator's second storage backend replaces the GCS snapshot bucket
-with one persistent NFS volume per agent (Filestore agent volumes). Pricing
-and tiering behaviour are a straight port of the Filestore team's *Filestore
-Agent Volumes TCO Calculator v2.7* (Nov 2026), sheet "Filestore Agent Volumes
-TCO" rows 18–58, so the two tools agree cell for cell on the same inputs
-(verified against four reference scenarios of the sheet, including the
-"Scenario 1" of the *TCO Scenario Alignment* document).
+## 5b. Storage backend: Filestore agent volumes for the workspace
+
+The second backend keeps the memory snapshot in GCS and moves the workspace
+out of the snapshot onto one Filestore agent volume per agent. In Substrate
+terms the volume is an external CSI volume (`ExternalVolumes` preview gate):
+created with the actor, attached by the control plane at every resume,
+detached at every suspend, never snapshotted, deleted with the actor. The repo
+ships an NFS CSI driver and the hooks for any driver with a `CSIDriverConfig`;
+a Filestore driver is operator-supplied. Writing the memory image to the
+volume as well is not modelled: it would need new Substrate work.
+
+Pricing and tiering behaviour are a straight port of the Filestore team's
+*Filestore Agent Volumes TCO Calculator v2.7* (Nov 2026), sheet "Filestore
+Agent Volumes TCO" rows 18–58, verified cell for cell against four of its
+reference scenarios including the "Scenario 1" of the *TCO Scenario
+Alignment* document.
 
 **What is billed (1.00× region list):**
 
 | SKU | Price | Applies to |
 |---|---|---|
-| Hot tier | $0.30 / GiB-month | volumes mounted by an active sandbox |
+| Hot tier | $0.30 / GiB-month | volumes mounted by an awake agent |
 | Warm tier | $0.15 / GiB-month | unmounted volumes inside the inactivity window (billed at the Hot rate during the initial GA, selectable) |
 | Cold tier | $0.02 / GiB-month | dormant volumes past the window |
 | Tiering transfer | $0.01 / GiB | each way between Warm and Cold (Hot↔Warm is free) |
@@ -256,21 +312,21 @@ TCO" rows 18–58, so the two tools agree cell for cell on the same inputs
 | Filestore input | Derived as |
 |---|---|
 | 1. Registered workspaces | `fleet` |
-| 2. Active concurrent workspaces `A_vol` | `fleet × share × d'_active`, sized for the busiest hour by default (`× P`, or `H + (1−H)·d'` in herd mode) because provisioned IOPS cannot be scaled hourly; the 24-h average is a switch (the Filestore sheet's convention) |
+| 2. Active concurrent workspaces `A_vol` | mounted volumes = awake agents: `fleet × share × d'_active`, sized for the busiest hour by default (`× P`, or `H + (1−H)·d'` in herd mode) because provisioned IOPS cannot be scaled hourly; the 24-h average is a switch (the Filestore sheet's convention) |
 | 3. Continuous 24/7 share `c` | input (0 % in the aligned scenario) |
 | 4. Daily active hours per workspace `h` | `d'_active × 24`: work + idle wait + suspend + resume of an active agent |
-| 5. Used capacity per volume `g` | workspace GiB (input, 1 GiB default) + snapshot GiB if the memory snapshot lives on the volume (default) |
+| 5. Used capacity per volume `g` | `W`, the workspace GiB (uncompressed; the memory snapshot stays in GCS) |
 | 6. Extra IOPS | input, 0 default |
-| 7. Inactivity window `W` | input, 24 h default (service minimum) |
-| 8. Cold transition rate `k` | derived as the share of inter-wake gaps longer than `W` for wake-ups spread through the day, `k = exp(−A·W/24)`, or manual (10 % in the aligned scenario, 21.18 % in the sheet's default) |
+| 7. Inactivity window `W_h` | input, 24 h default (service minimum) |
+| 8. Cold transition rate `k` | derived as the share of inter-wake gaps longer than the window, `k = exp(−A·W_h/24)`, or manual (10 % in the aligned scenario, 21.18 % in the sheet's default) |
 
 **The sheet's formulas (ported verbatim):**
 
 ```
-r   = A_vol / N                                    # concurrency ratio
+r   = A_vol / N
 T   = min((N − A_vol)/24,  N·r·(1−c)·(24/h)·(1−r)/24)   # volumes/hour leaving the active pool
 hot = A_vol · g
-warm_candidate = min(N·g − hot, ceil(T·(24·(1−k) + k·W)) · g)
+warm_candidate = min(N·g − hot, ceil(T·(24·(1−k) + k·W_h)) · g)
 # break-even guardrail: Cold must pay for freeze+thaw ($0.02/GiB) through its
 # $0.13/GiB-mo saving, i.e. ≥ 112.3 h of dormancy; otherwise keep inactive volumes Warm
 warm = (k ≤ 0 or (N·g − hot − warm_candidate) < T·k·112.3·g) ? N·g − hot : warm_candidate
@@ -280,18 +336,21 @@ iops_per_vol = min(7500, (g ≤ 2 ? 1600 : 3000) + extra)
 bill = hot·0.30 + warm·0.15 + cold·0.02 + tiered·0.01 + A_vol·iops_per_vol·0.027     (× (1 − discount))
 ```
 
-In the fleet bill the first four terms take the "storage" line and the IOPS
-term the "operations" line; the GCS lines drop out unless the snapshot is
-kept in GCS, in which case they stay and the volume holds workspace files
-only. The "what is going on" panel under the bill prints the eight derived
-inputs, the tier split and the per-active-volume cost.
+In the fleet bill the GCS lines stay (memory snapshot at rest and its
+operations, now without the workspace tar), the volume tiers and tiering join
+the storage line, and the IOPS term joins the operations line. The "what is
+going on" panel under the bill prints the GCS derivation and the eight
+Filestore inputs with their provenance.
 
 **What it shows.** For the default personal-agent workload (10,000 agents,
-43 wake-ups/day, 1 GiB workspace) provisioned IOPS dominate: ~630 mounted
-volumes at the busiest hour × 1,600 IOPS × $0.027 ≈ $27k/month, about
-$2.70 of the $3.80 per agent, against $0.05 for snapshots and operations on
-GCS. Tiering and Cold storage stay at zero because agents that wake every
-half hour never pass a 24 h window, and the guardrail keeps the rest Warm.
+43 wake-ups/day, 1 GiB workspace) the two backends split like this: with the
+workspace in the snapshot, GCS costs $0.16/agent (operations, mostly the
+composite parts of a 512 MiB tar at every suspend) and moves ~250 TB/day;
+with the workspace on Filestore, GCS drops to $0.04/agent and 28 TB/day, but
+provisioned IOPS add $2.70/agent: ~630 mounted volumes at the busiest hour ×
+1,600 IOPS × $0.027. Tiering and Cold stay at zero because agents that wake
+every half hour never cross a 24 h window and the guardrail keeps the rest
+Warm.
 
 ## 6. Fixed / amortized costs
 
