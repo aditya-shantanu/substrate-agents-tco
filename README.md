@@ -59,10 +59,13 @@ What the calculator shows:
   OpenClaw deployment), with a small-test-actor preset for the optimistic
   end. Sources and numbers: [`MODEL.md`](MODEL.md) appendices.
 
-Ballpark with defaults (10k agents, measured switch times, 10s idle wait,
-3y CUD, both scenarios on n2-standard-16): **≈$1.0/agent/month gVisor,
-≈$1.1 microVM**, versus ~$7–15 for a dedicated worker or VPS. LLM tokens
-are out of scope (and typically dominate).
+Ballpark with defaults (10k registered agents, 32 % using their workspace on
+a given day, ~1 % awake at once, measured switch times, 10s idle wait, 1 GiB
+workspace shipped in the snapshot, 3y CUD, both scenarios on n2-standard-16):
+**≈$0.45/agent/month gVisor, ≈$0.48 microVM**; with the workspace on a
+Filestore agent volume instead, ≈$0.83 / $0.88 (the Filestore bill alone is
+the Filestore team's ~$0.50/workspace baseline). Versus ~$7–15 for a dedicated
+worker or VPS. LLM tokens are out of scope (and typically dominate).
 
 ## Phase 2: measure it
 

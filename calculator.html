@@ -120,10 +120,11 @@
   <div class="card">
     <h2>1 · The fleet</h2>
     <p class="why">How many agents are registered, how many of them do anything on a given day, and how many are awake at the same moment. The last one is the number everything is sized on: workers, machines, mounted volumes.</p>
-    <div class="row"><label for="fleet">Number of agents</label><input id="fleet" type="number" min="1" step="100" value="10000"><span class="unit">agents</span></div>
-    <div class="row"><label for="dailyShare">Share of agents active on a given day</label><input id="dailyShare" type="number" min="1" max="100" step="1" value="100"><span class="unit">%</span>
-      <div class="hint">The rest are registered but dormant that day: they hold their snapshot or volume and do no wake-ups. 100 % = every agent plays the pattern above every day (this calculator's original assumption). The Filestore team's "long-running personal agent" scenario implies 24 % (1,000 concurrently active of 100,000, 1 h/day each).</div></div>
-    <div class="row"><label for="concur">Agents awake at once (average)</label><input id="concur" type="number" min="1" step="10" value="314"><span class="unit">agents</span>
+    <div class="row"><label for="fleet">Total registered agents (100 % always-addressable)</label><input id="fleet" type="number" min="1" step="100" value="10000"><span class="unit">agents</span>
+      <div class="hint">Every registered agent can be addressed at any instant: a message to a suspended one resumes it. The fleet cost below is spread over all of them.</div></div>
+    <div class="row"><label for="dailyShare">Share of workspaces used on a given day (DAU %)</label><input id="dailyShare" type="number" min="1" max="100" step="1" value="32"><span class="unit">%</span>
+      <div class="hint">Agents whose workspace is used that day play the pattern in section 2. The rest stay suspended at $0 compute: their snapshot waits in GCS and, on a Filestore volume, the workspace tiers to Cold after the inactivity window (24 h by default). 32 % with the personal-agent preset puts ~1 % of the fleet awake at once, the concurrency of the Filestore team's aligned "long-running personal agent" scenario (1,000 of 100,000). 100 % was this calculator's original assumption.</div></div>
+    <div class="row"><label for="concur">Agents awake at once (average)</label><input id="concur" type="number" min="1" step="10" value="100"><span class="unit">agents</span>
       <div class="derived" id="concurDerived" style="margin-top:6px"></div>
       <div class="hint">Derived from sections 2 and 3: agents × share active per day × the share of the day an active agent spends awake (useful work + idle wait + suspend + resume). You can type a target here: the calculator then scales the session and check-in lengths in section 2 to reach it, keeping the number of wake-ups, so churn and GCS traffic stay as they are. <span id="concurNote"></span></div></div>
   </div>
@@ -242,10 +243,10 @@
     <div id="favInputs" style="display:none">
     <div class="row"><label for="favSizing">Active-volume pool sized for</label>
       <select id="favSizing" style="grid-column:2/4">
-        <option value="peak" selected>the busiest hour (same peak lens as the machines, section 4)</option>
-        <option value="avg">the 24-hour average (the Filestore calculator's convention)</option>
+        <option value="peak">the busiest hour (same peak lens as the machines, section 4)</option>
+        <option value="avg" selected>the 24-hour average (the Filestore calculator's convention)</option>
       </select>
-      <div class="hint">A volume is mounted while its agent is awake. Provisioned IOPS are billed on the number of mounted volumes the pool must hold; machines are sized for the peak above, so the pool is too by default.</div></div>
+      <div class="hint">A volume is mounted while its agent is awake. Provisioned IOPS are billed on the number of mounted volumes the pool must hold. The default follows the Filestore calculator and sizes on the 24-h average; pick the busiest hour if the pool's IOPS cannot follow the daily curve, which sizes it like the machines in section 4.</div></div>
     <div class="row"><label for="favCont">Share of active agents pinned 24/7</label><input id="favCont" type="number" min="0" max="100" step="1" value="0"><span class="unit">%</span>
       <div class="hint">Agents that never unmount. 0 % in the aligned scenario; such agents never go Warm or Cold.</div></div>
     <div class="row"><label for="favWindow">Inactivity window before archival</label><input id="favWindow" type="number" min="0" step="1" value="24"><span class="unit">hours</span>
@@ -430,7 +431,7 @@ const HRS_MO = 730;
 const $ = id => document.getElementById(id);
 const num = id => parseFloat($(id).value) || 0;
 const PRESETS = {
-  personal: {sessions:3,  sessMin:8,  wakes:40, wakeSec:15},
+  personal: {sessions:3,  sessMin:8,  wakes:40, wakeSec:15, dailyShare:32},
   chatty:   {sessions:12, sessMin:6,  wakes:48, wakeSec:15},
   coder:    {sessions:2,  sessMin:45, wakes:8,  wakeSec:30},
   // The coding-agent task script (substrate#1934) as Phase 2 runs it by
